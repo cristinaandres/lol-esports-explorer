@@ -1,8 +1,9 @@
-# LoL Esports Explorer
+# Herald Lens
 
 An explorer for **3,091 international League of Legends games** played between
 2011 and 2026 — from the era, to the event, to the series, to the game and its
-draft.
+draft. The repository is `lol-esports-explorer`; the site it builds is Herald
+Lens.
 
 **Live:** <https://cristinaandres.github.io/lol-esports-explorer/>
 

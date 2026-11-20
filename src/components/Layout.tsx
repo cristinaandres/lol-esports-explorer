@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router'
 
+import { DATA_REPO, REPO_URL, SITE_NAME, SITE_TAGLINE } from '../lib/site'
 import type { Meta } from '../lib/types'
 
 const links = [
@@ -15,9 +16,9 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-5 py-4">
           <Link to="/" className="group flex items-baseline gap-2.5 no-underline">
             <span className="bg-gold size-2 rounded-full" aria-hidden />
-            <span className="text-fog-100 font-semibold tracking-tight">LoL Esports Explorer</span>
+            <span className="text-fog-100 font-semibold tracking-tight">{SITE_NAME}</span>
             <span className="text-fog-600 hidden text-xs tracking-widest uppercase sm:inline">
-              intl · 2011–2026
+              {SITE_TAGLINE}
             </span>
           </Link>
           <nav className="flex items-center gap-5 text-sm">
@@ -34,7 +35,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
               </NavLink>
             ))}
             <a
-              href="https://github.com/cristinaandres/lol-esports-explorer"
+              href={REPO_URL}
               className="text-fog-500 hover:text-fog-100 no-underline"
               rel="noreferrer"
             >
@@ -54,10 +55,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
               Leaguepedia
             </a>{' '}
             (CC BY-SA 3.0), via the{' '}
-            <a
-              className="text-fog-500 hover:text-fog-100"
-              href="https://github.com/RRiboulet/lol-dataset"
-            >
+            <a className="text-fog-500 hover:text-fog-100" href={DATA_REPO}>
               lol-dataset
             </a>{' '}
             build.

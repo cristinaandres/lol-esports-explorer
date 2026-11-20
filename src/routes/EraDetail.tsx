@@ -16,8 +16,10 @@ export default function EraDetail() {
   if (status === 'loading') return <p className="text-fog-600">Loading…</p>
   if (status !== 'ready') return <p className="text-fog-600">Nothing to show.</p>
 
-  const index = data.eras.findIndex((candidate) => candidate.era === id)
-  const era = data.eras[index]
+  // Empty declared eras are documented in the glossary but are not part of the
+  // navigation, so stepping through the spine never lands on a page with no game.
+  const navigable = data.eras.filter((candidate) => candidate.games > 0)
+  const era = data.eras.find((candidate) => candidate.era === id)
 
   if (!era) {
     return (
@@ -33,8 +35,9 @@ export default function EraDetail() {
 
   const events = data.events.filter((event) => event.eras?.split(', ').includes(era.era))
   const copy = eraCopy(era.era)
-  const previous = data.eras[index - 1]
-  const next = data.eras[index + 1]
+  const position = navigable.findIndex((candidate) => candidate.era === era.era)
+  const previous = position > 0 ? navigable[position - 1] : undefined
+  const next = position >= 0 ? navigable[position + 1] : undefined
 
   return (
     <>
@@ -155,6 +158,15 @@ export default function EraDetail() {
         {previous ? <EraStep era={previous} direction="Previous" /> : <span />}
         {next ? <EraStep era={next} direction="Next" align="right" /> : null}
       </nav>
+
+      {era.games === 0 ? (
+        <p className="text-fog-600 mt-6 text-xs">
+          This era is reachable by URL for citation, but it is not part of the navigation.{' '}
+          <Link to="/glossary" className="text-fog-500 hover:text-fog-100">
+            Glossary
+          </Link>
+        </p>
+      ) : null}
     </>
   )
 }

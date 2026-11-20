@@ -1,5 +1,7 @@
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { PageHeader } from '../components/PageHeader'
+import { useDataset } from '../lib/data'
+import { eraCopy } from '../lib/eras'
 
 /**
  * The definitions page. It is not decoration: this site's claim is that a number
@@ -35,6 +37,9 @@ const terms = [
 ]
 
 export default function Glossary() {
+  const { data } = useDataset()
+  const gaps = data?.eras.filter((era) => era.games === 0) ?? []
+
   return (
     <>
       <Breadcrumbs items={[{ label: 'Glossary' }]} />
@@ -52,6 +57,30 @@ export default function Glossary() {
           </div>
         ))}
       </dl>
+
+      <section className="mt-12 max-w-3xl">
+        <h2 className="text-fog-100 mb-2 text-lg font-semibold tracking-tight">
+          Declared eras with no game
+        </h2>
+        <p className="text-fog-300 text-sm leading-relaxed">
+          The era spine is declared upstream, cited to a patch, and not inferred from the games.
+          Two boundaries therefore govern no game at all: the game changed during a window in which
+          no international event was played. They are not shown in the navigation, because a card
+          that opens onto nothing is not a navigable level — but they stay in the data, so the chain
+          of boundaries and its citations stays complete.
+        </p>
+        {gaps.length > 0 ? (
+          <ul className="divide-line border-line mt-5 divide-y border-y">
+            {gaps.map((era) => (
+              <li key={era.era} className="flex flex-wrap items-baseline justify-between gap-2 py-3">
+                <span className="text-fog-100 text-sm font-semibold">{eraCopy(era.era).title}</span>
+                <span className="text-fog-600 font-mono text-xs">declared from {era.from}</span>
+                <span className="text-fog-500 w-full text-xs">{eraCopy(era.era).empty}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </section>
 
       <section className="mt-12 max-w-3xl">
         <h2 className="text-fog-100 mb-2 text-lg font-semibold tracking-tight">
