@@ -30,7 +30,7 @@ import {
   parseFilter,
   recoverFilter,
 } from '../lib/filters'
-import { championships, titlesForPlayer } from '../lib/titles'
+import { championships, groupTitlesByCompetition, titlesForPlayer } from '../lib/titles'
 import { count, dayMonthYear, duration, monthYear, perGame, stripDateSuffix } from '../lib/format'
 import { buildIndexes, championName, championPath, teamName, teamPath } from '../lib/indexes'
 import type { EventRow, Match } from '../lib/types'
@@ -142,6 +142,7 @@ export default function PlayerDetail() {
   const { player, former, index } = prepared
   const all = prepared.appearances
   const titles = titlesForPlayer(prepared.champs, all)
+  const titleGroups = groupTitlesByCompetition(titles, (key) => prepared.events.get(key)?.competition)
   const visible = applyFilter(all, filter)
   const career = prepared.ready ? careerFrom(visible) : null
   const options = optionsFor(all)
@@ -344,28 +345,43 @@ export default function PlayerDetail() {
               from the final series, so an event whose final cannot be identified awards nothing.
             </p>
 
-            {titles.length === 0 ? (
+            {titleGroups.length === 0 ? (
               <p className="text-fog-600 text-sm">No title this player can be named for.</p>
             ) : (
-              <ul className="divide-line border-line divide-y border-y">
-                {titles.map((title) => (
-                  <li key={title.eventKey} className="flex flex-wrap items-baseline justify-between gap-3 py-2.5">
-                    <span className="text-fog-100 text-sm">
-                      {prepared.events.get(title.eventKey) ? (
-                        <Link
-                          to={`/events/${prepared.events.get(title.eventKey)!.event_id}`}
-                          className="hover:text-gold"
+              <div className="space-y-6">
+                {titleGroups.map((group) => (
+                  <div key={group.competition}>
+                    <h3 className="text-fog-600 border-line mb-2 flex items-baseline justify-between border-b pb-1.5 text-[11px] tracking-[0.14em] uppercase">
+                      <span>{group.competition}</span>
+                      <span className="text-fog-500">
+                        {group.titles.length} {group.titles.length === 1 ? 'title' : 'titles'}
+                      </span>
+                    </h3>
+                    <ul className="divide-line divide-y">
+                      {group.titles.map((title) => (
+                        <li
+                          key={title.eventKey}
+                          className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
                         >
-                          {prepared.events.get(title.eventKey)!.event_name}
-                        </Link>
-                      ) : (
-                        'Unknown event'
-                      )}
-                    </span>
-                    <span className="text-fog-600 font-mono text-xs">{dayMonthYear(title.date)}</span>
-                  </li>
+                          <span className="text-fog-100 text-sm">
+                            {prepared.events.get(title.eventKey) ? (
+                              <Link
+                                to={`/events/${prepared.events.get(title.eventKey)!.event_id}`}
+                                className="hover:text-gold"
+                              >
+                                {prepared.events.get(title.eventKey)!.event_name}
+                              </Link>
+                            ) : (
+                              'Unknown event'
+                            )}
+                          </span>
+                          <span className="text-fog-600 font-mono text-xs">{dayMonthYear(title.date)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
 

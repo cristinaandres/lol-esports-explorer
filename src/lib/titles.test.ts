@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { Appearance } from './career'
-import { championships, isFinalName, titlesForPlayer, titlesForTeam } from './titles'
+import { championships, groupTitlesByCompetition, isFinalName, titlesForPlayer, titlesForTeam } from './titles'
 import type { Game, Match } from './types'
 
 function match(overrides: Partial<Match> = {}): Match {
@@ -157,5 +157,41 @@ describe('titlesForPlayer', () => {
   it('counts one title even when the player appeared many times in the event', () => {
     const titles = titlesForPlayer(champs, [appearance(1, 10), appearance(1, 10), appearance(1, 10)])
     expect(titles).toHaveLength(1)
+  })
+})
+
+describe('groupTitlesByCompetition', () => {
+  const competitions = new Map([
+    [1, 'Worlds'],
+    [2, 'Worlds'],
+    [3, 'MSI'],
+  ])
+  const titles = [
+    { eventKey: 1, teamKey: 10, wins: 3, losses: 0, date: '2023-11-19T00:00:00Z', finalName: 'f' },
+    { eventKey: 2, teamKey: 10, wins: 3, losses: 2, date: '2024-11-02T00:00:00Z', finalName: 'f' },
+    { eventKey: 3, teamKey: 10, wins: 3, losses: 1, date: '2016-05-15T00:00:00Z', finalName: 'f' },
+  ]
+
+  it('groups by competition', () => {
+    const groups = groupTitlesByCompetition(titles, (key) => competitions.get(key))
+    expect(groups.map((group) => group.competition)).toEqual(['Worlds', 'MSI'])
+    expect(groups[0]?.titles).toHaveLength(2)
+  })
+
+  it('puts the competition with most titles first, then orders by name', () => {
+    const groups = groupTitlesByCompetition(titles, (key) => competitions.get(key))
+    expect(groups[0]?.competition).toBe('Worlds')
+  })
+
+  it('orders each group newest first', () => {
+    const groups = groupTitlesByCompetition(titles, (key) => competitions.get(key))
+    expect(groups[0]?.titles.map((title) => title.eventKey)).toEqual([2, 1])
+  })
+
+  it('keeps a title the caller cannot name instead of dropping it', () => {
+    const groups = groupTitlesByCompetition(titles, () => undefined)
+    expect(groups).toHaveLength(1)
+    expect(groups[0]?.competition).toBe('Unknown')
+    expect(groups[0]?.titles).toHaveLength(3)
   })
 })

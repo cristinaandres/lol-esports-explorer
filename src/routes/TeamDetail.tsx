@@ -22,7 +22,7 @@ import {
 import { count, dayMonthYear } from '../lib/format'
 import { buildIndexes, playerName, playerPath } from '../lib/indexes'
 import { rosterFrom, rosterOfGame, teamAppearancesFor, teamSummaryFrom } from '../lib/team'
-import { championships, titlesForTeam } from '../lib/titles'
+import { championships, groupTitlesByCompetition, titlesForTeam } from '../lib/titles'
 
 /**
  * One team's record.
@@ -95,6 +95,7 @@ export default function TeamDetail() {
 
   const { team, index, events, playerGames } = prepared
   const titles = titlesForTeam(prepared.champs, team.team_key)
+  const titleGroups = groupTitlesByCompetition(titles, (key) => events.get(key)?.competition)
   const all = prepared.appearances
   const visible = applyFilter(all, filter)
   const summary = teamSummaryFrom(visible)
@@ -190,30 +191,48 @@ export default function TeamDetail() {
               here rather than guess a team.
             </p>
 
-            {titles.length === 0 ? (
+            {titleGroups.length === 0 ? (
               <p className="text-fog-600 text-sm">No title this team can be named for.</p>
             ) : (
-              <ul className="divide-line border-line divide-y border-y">
-                {titles.map((title) => (
-                  <li key={title.eventKey} className="flex flex-wrap items-baseline justify-between gap-3 py-2.5">
-                    <span className="text-fog-100 text-sm">
-                      {events.get(title.eventKey) ? (
-                        <Link to={`/events/${events.get(title.eventKey)!.event_id}`} className="hover:text-gold">
-                          {events.get(title.eventKey)!.event_name}
-                        </Link>
-                      ) : (
-                        'Unknown event'
-                      )}
-                    </span>
-                    <span className="text-fog-600 flex items-baseline gap-4 text-xs">
-                      <span className="font-mono tabular-nums">
-                        {title.wins} – {title.losses} in the final
+              <div className="space-y-6">
+                {titleGroups.map((group) => (
+                  <div key={group.competition}>
+                    <h3 className="text-fog-600 border-line mb-2 flex items-baseline justify-between border-b pb-1.5 text-[11px] tracking-[0.14em] uppercase">
+                      <span>{group.competition}</span>
+                      <span className="text-fog-500">
+                        {group.titles.length} {group.titles.length === 1 ? 'title' : 'titles'}
                       </span>
-                      <span className="font-mono">{dayMonthYear(title.date)}</span>
-                    </span>
-                  </li>
+                    </h3>
+                    <ul className="divide-line divide-y">
+                      {group.titles.map((title) => (
+                        <li
+                          key={title.eventKey}
+                          className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
+                        >
+                          <span className="text-fog-100 text-sm">
+                            {events.get(title.eventKey) ? (
+                              <Link
+                                to={`/events/${events.get(title.eventKey)!.event_id}`}
+                                className="hover:text-gold"
+                              >
+                                {events.get(title.eventKey)!.event_name}
+                              </Link>
+                            ) : (
+                              'Unknown event'
+                            )}
+                          </span>
+                          <span className="text-fog-600 flex items-baseline gap-4 text-xs">
+                            <span className="font-mono tabular-nums">
+                              {title.wins} – {title.losses} in the final
+                            </span>
+                            <span className="font-mono">{dayMonthYear(title.date)}</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
 

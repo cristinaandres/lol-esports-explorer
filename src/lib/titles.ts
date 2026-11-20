@@ -114,3 +114,39 @@ export function titlesForPlayer(
 
   return [...won.values()].sort((a, b) => b.date.localeCompare(a.date))
 }
+
+export type TitleGroup = { competition: string; titles: Championship[] }
+
+/**
+ * Titles grouped by the competition they were won in.
+ *
+ * Ordered by how many of each, then by name, so a page reads as a record rather
+ * than a list: five Worlds and two MSI is a different career from five First Stand
+ * and two IEM, and the count is what makes the difference visible.
+ *
+ * An event the caller cannot name lands in its own group instead of being dropped;
+ * a title whose competition is unknown is still a title.
+ */
+export function groupTitlesByCompetition(
+  titles: Championship[],
+  competitionOf: (eventKey: number) => string | undefined,
+): TitleGroup[] {
+  const groups = new Map<string, Championship[]>()
+
+  for (const title of titles) {
+    const competition = competitionOf(title.eventKey) ?? 'Unknown'
+    const bucket = groups.get(competition)
+    if (bucket) bucket.push(title)
+    else groups.set(competition, [title])
+  }
+
+  return [...groups.entries()]
+    .map(([competition, rows]) => ({
+      competition,
+      titles: [...rows].sort((a, b) => b.date.localeCompare(a.date)),
+    }))
+    .sort(
+      (a, b) =>
+        b.titles.length - a.titles.length || a.competition.localeCompare(b.competition),
+    )
+}
