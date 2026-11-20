@@ -1,4 +1,3 @@
-import { Breadcrumbs } from '../components/Breadcrumbs'
 import { PageHeader } from '../components/PageHeader'
 import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
@@ -42,7 +41,6 @@ export default function Glossary() {
 
   return (
     <>
-      <Breadcrumbs items={[{ label: 'Glossary' }]} />
       <PageHeader
         eyebrow="Definitions"
         title="What the numbers mean"

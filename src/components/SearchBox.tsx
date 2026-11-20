@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import { loadAliases, useDataset } from '../lib/data'
@@ -16,7 +16,7 @@ import type { AliasRow } from '../lib/types'
  * through a live region, because a list that appears silently is a list a screen
  * reader never mentions.
  */
-export function SearchBox() {
+export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
   const dataset = useDataset()
   const navigate = useNavigate()
 
@@ -26,6 +26,7 @@ export function SearchBox() {
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
   const input = useRef<HTMLInputElement>(null)
+  const listId = useId()
   const wrapper = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -82,7 +83,7 @@ export function SearchBox() {
   const grouped = ['player', 'team', 'champion'] as const
 
   return (
-    <div ref={wrapper} className="relative">
+    <div ref={wrapper} className={fullWidth ? 'relative w-full' : 'relative'}>
       <input
         ref={input}
         type="search"
@@ -90,7 +91,7 @@ export function SearchBox() {
         placeholder="Search a player, team or champion"
         aria-label="Search a player, team or champion by any name"
         aria-expanded={open}
-        aria-controls="search-results"
+        aria-controls={listId}
         role="combobox"
         onFocus={() => {
           setArmed(true)
@@ -102,7 +103,9 @@ export function SearchBox() {
           setActive(0)
         }}
         onKeyDown={onKeyDown}
-        className="border-line bg-ink-900 text-fog-100 placeholder:text-fog-600 focus-visible:outline-gold w-48 rounded-lg border px-2.5 py-1.5 text-xs transition-[width] focus:w-64"
+        className={`border-line bg-ink-900 text-fog-100 placeholder:text-fog-600 focus-visible:outline-gold rounded-lg border px-2.5 py-1.5 text-xs transition-[width] ${
+          fullWidth ? 'w-full' : 'w-48 focus:w-64'
+        }`}
       />
 
       <span role="status" aria-live="polite" className="sr-only">
@@ -113,9 +116,9 @@ export function SearchBox() {
 
       {open && query.length > 0 ? (
         <div
-          id="search-results"
+          id={listId}
           role="listbox"
-          className="border-line bg-ink-900 absolute top-full right-0 z-40 mt-2 max-h-80 w-80 overflow-y-auto rounded-xl border p-1.5 shadow-2xl"
+          className="border-line bg-ink-900 absolute top-full right-0 z-40 mt-2 max-h-80 w-80 max-w-[calc(100vw-2.5rem)] overflow-y-auto rounded-xl border p-1.5 shadow-2xl"
         >
           {results.length === 0 ? (
             <p className="text-fog-500 px-2.5 py-2 text-xs">
