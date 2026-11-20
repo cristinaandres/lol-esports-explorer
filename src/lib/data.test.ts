@@ -159,6 +159,14 @@ describe('aliases.json', () => {
     ])
   })
 
+  it('does not print the current name of a champion, only the one it replaced', () => {
+    const nunu = aliases.find((row) => row.entity_name === 'Nunu & Willump')
+    expect(nunu).toBeDefined()
+    expect(namesFor(aliases, 'champion', nunu!.entity_id).map((row) => row.alias_string)).toEqual([
+      'Nunu',
+    ])
+  })
+
   it('really does contain names two entities share', () => {
     // Not a defect: short handles collide. It is why resolve returns a list.
     const matches = resolve(aliases, 'APA').filter((match) => match.kind === 'player')

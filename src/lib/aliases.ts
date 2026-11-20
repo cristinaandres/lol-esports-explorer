@@ -48,14 +48,20 @@ export function normalise(text: string): string {
  * The names an entity is known to have played under, oldest first.
  *
  * The entity's own current name is excluded, because a page that lists "also known
- * as" does not need to repeat its title. Undated redirects are excluded too: they
- * are searchable, but a team page listing nine spellings of its name stops being a
- * page about the team.
+ * as" does not need to repeat its title, and that name is the page's heading. The
+ * comparison is on the normalised form, not the raw string: the bridge carries
+ * "Nunu &amp; Willump" against the entity name "Nunu & Willump", which is the same
+ * name with an HTML entity left in it, and a raw comparison would print it as a
+ * former name. Accents and case fold for the same reason -- a name that changed
+ * only in its diacritics did not change.
+ *
+ * Undated redirects are excluded too: they are searchable, but a team page listing
+ * nine spellings of its name stops being a page about the team.
  */
 export function namesFor(aliases: AliasRow[], kind: AliasKind, entityId: string): AliasRow[] {
   return aliases
     .filter((row) => row.kind === kind && row.entity_id === entityId)
-    .filter((row) => row.alias_string !== row.entity_name)
+    .filter((row) => normalise(row.alias_string) !== normalise(row.entity_name))
     .filter((row) => row.valid_from !== null)
     .sort((a, b) => (a.valid_from ?? '').localeCompare(b.valid_from ?? ''))
 }
