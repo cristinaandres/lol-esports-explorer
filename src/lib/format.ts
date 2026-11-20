@@ -86,6 +86,18 @@ export function orDash(value: number | null | undefined): string {
   return value === null || value === undefined ? '—' : count(value)
 }
 
+/**
+ * A per-game average, formatted so it stays comparable to the total beside it.
+ *
+ * One decimal below 100, whole numbers above: 3.6 kills per game is a measurement,
+ * 13,371 gold per game is a magnitude. Rounding the first to "4" would make the
+ * same figure disagree with the one in the header strip.
+ */
+export function perGame(value: number | null | undefined): string {
+  if (value === null || value === undefined) return '—'
+  return value < 100 ? value.toFixed(1) : count(Math.round(value))
+}
+
 /** A percentage already computed, with no denominator attached. Prefer Ratio. */
 export function fixed(value: number, digits = 1): string {
   return value.toFixed(digits)

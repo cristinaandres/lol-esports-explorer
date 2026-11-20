@@ -1,7 +1,7 @@
 # 02: A player page that answers who this is and how they did
 
 **Blocked by:** 01 (the alias bridge, for the names the player appeared under)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -45,3 +45,25 @@ Unit tests on the career module (a career spanning two eras, a career with zero
 deaths, a single-game career, an empty filter), and a data test that cross-checks
 the module's answer against the same aggregation in SQL for the most-modelled
 player. Covers spec R1 and R7.
+
+## Built
+
+- **The loader was split.** A career page needs the player rows and nothing else,
+  so `loadPlayerGames()` is its own cached promise and `loadGameDetail()` composes
+  it. A career page therefore pays 620 KB gzip rather than 950, and a game page
+  after it reuses the same answer.
+- **The in-session reuse is asserted at the loader, not in a browser.** It is a
+  property of the module, not of a click, so the test stubs `fetch` and proves that
+  three callers cause one request. A full document load starts a new session and
+  pays again, which is expected.
+- **A formatting rule came out of a bug.** The first version rendered per-game
+  averages rounded to whole numbers in the table and to one decimal in the header,
+  so the same figure disagreed with itself on one page. `perGame()` is now the only
+  formatter: one decimal below 100, whole numbers above.
+- **Alias lists collapse spellings that differ only in case.** The bridge lists
+  `BeBe`, `bebe` and `bebe (Chang Bo-Wei)` as three dated names; a page printing
+  all three is a thesaurus. The module keeps the first dated spelling of each
+  normalised name, so BeBe shows one.
+- Verified: Faker renders 410 games and 4.11, damage shows `248 / 410`, and a
+  player whose only aliases are undated redirects shows no "also known as" line at
+  all — which is the honest outcome, not a gap.

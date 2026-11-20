@@ -137,6 +137,17 @@ describe('namesFor', () => {
     expect(namesFor([alias({ alias_string: 'Splyce', entity_id: 'tm-x', entity_name: 'Splyce' })], 'team', 'tm-x')).toEqual([])
   })
 
+  it('collapses spellings that differ only in case', () => {
+    const rows = namesFor(bridge, 'team', 'tm-koi').map((row) => row.alias_string)
+    const rows2 = namesFor(
+      [alias({ alias_string: 'beBe', valid_from: '2013-01-01' }), alias({ alias_string: 'BeBe', valid_from: '2014-01-01' })],
+      'team',
+      'tm-koi',
+    ).map((row) => row.alias_string)
+    expect(rows2).toEqual(['beBe'])
+    expect(rows).toEqual(['Splyce', 'MAD Lions', 'MAD Lions KOI'])
+  })
+
   it('does not mix kinds', () => {
     expect(namesFor(bridge, 'player', 'tm-koi')).toEqual([])
   })

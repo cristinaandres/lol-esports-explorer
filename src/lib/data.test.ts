@@ -4,8 +4,9 @@ import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { namesFor, resolve } from './aliases'
+import { careerFor } from './career'
 import { slotSide } from './draft'
-import type { AliasRow, DraftSlot, EventRow, Game, Match, PlayerGame } from './types'
+import type { AliasRow, DraftSlot, EventRow, Game, Match, Player, PlayerGame } from './types'
 
 /**
  * Invariants over the committed artifacts, not over a fixture.
@@ -25,6 +26,7 @@ const playerGames = read<PlayerGame[]>('player-games.json')
 const picks = read<DraftSlot[]>('picks.json')
 const bans = read<DraftSlot[]>('bans.json')
 const aliases = read<AliasRow[]>('aliases.json')
+const players = read<Player[]>('players.json')
 
 describe('games.json', () => {
   it('carries every game exactly once', () => {
@@ -171,6 +173,48 @@ describe('aliases.json', () => {
     // Not a defect: short handles collide. It is why resolve returns a list.
     const matches = resolve(aliases, 'APA').filter((match) => match.kind === 'player')
     expect(matches.length).toBeGreaterThan(1)
+  })
+})
+
+describe('career aggregation', () => {
+  const faker = players.find((row) => row.player_name === 'Faker')!
+
+  /**
+   * The cross-check the phase 3 spec asks for: the browser's answer and the
+   * pipeline's answer to the same question, against the same bytes.
+   *
+   * The SQL is:
+   *   select count(*), round((sum(kills)+sum(assists))/nullif(sum(deaths),0), 2)
+   *   from fact_player_game where player_key = 753
+   */
+  it('matches SQL for the most-modelled player in the corpus', () => {
+    const career = careerFor(games, playerGames, faker.player_key)
+
+    expect(career.games).toBe(410)
+    expect(career.wins + career.losses).toBe(410)
+    expect(Number(career.kda!.toFixed(2))).toBe(4.11)
+    expect(career.kills).toBe(1_484)
+    expect(career.deaths).toBe(947)
+    expect(career.assists).toBe(2_407)
+  })
+
+  it('averages a measure over the rows that state it', () => {
+    const career = careerFor(games, playerGames, faker.player_key)
+    // 248 of Faker's 410 rows state damage; the rest would otherwise divide the
+    // average down towards zero.
+    expect(career.measures.damage.measured).toBe(248)
+    expect(career.measures.damage.average).toBeCloseTo(career.measures.damage.sum / 248, 6)
+  })
+
+  it('gives a player who appears once a career of one game', () => {
+    const counts = new Map<number, number>()
+    for (const row of playerGames) counts.set(row.player_key, (counts.get(row.player_key) ?? 0) + 1)
+    const [key] = [...counts.entries()].find(([, n]) => n === 1)!
+    const career = careerFor(games, playerGames, key)
+
+    expect(career.games).toBe(1)
+    expect(career.kda).not.toBeNull()
+    expect(career.wins + career.losses).toBe(1)
   })
 })
 

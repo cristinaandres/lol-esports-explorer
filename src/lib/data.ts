@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import type {
+  AliasRow,
   DraftSlot,
   Champion,
   Era,
@@ -86,12 +87,35 @@ export function loadDataset(): Promise<Dataset> {
   return eager
 }
 
+let playerRows: Promise<PlayerGame[]> | null = null
+
+/**
+ * The player rows, on their own.
+ *
+ * A player page needs 30,910 rows and nothing else; a game page needs them plus
+ * the scoreboards and the draft. Loading the smaller set first means a career page
+ * costs 620 KB gzip rather than 950, and the game page reuses the same promise
+ * instead of fetching the file twice.
+ */
+export function loadPlayerGames(): Promise<PlayerGame[]> {
+  playerRows ??= getJson<PlayerGame[]>('player-games.json')
+  return playerRows
+}
+
+let aliasRows: Promise<AliasRow[]> | null = null
+
+/** The alias bridge, fetched by entity pages and by search, never by a list. */
+export function loadAliases(): Promise<AliasRow[]> {
+  aliasRows ??= getJson<AliasRow[]>('aliases.json')
+  return aliasRows
+}
+
 let detail: Promise<GameDetail> | null = null
 
 export function loadGameDetail(): Promise<GameDetail> {
   detail ??= Promise.all([
     getJson<Side[]>('sides.json'),
-    getJson<PlayerGame[]>('player-games.json'),
+    loadPlayerGames(),
     getJson<DraftSlot[]>('bans.json'),
     getJson<DraftSlot[]>('picks.json'),
   ]).then(([sides, playerGames, bans, picks]) => ({ sides, playerGames, bans, picks }))
@@ -126,4 +150,12 @@ export function useDataset(): Async<Dataset> {
 
 export function useGameDetail(): Async<GameDetail> {
   return useAsync(loadGameDetail)
+}
+
+export function usePlayerGames(): Async<PlayerGame[]> {
+  return useAsync(loadPlayerGames)
+}
+
+export function useAliases(): Async<AliasRow[]> {
+  return useAsync(loadAliases)
 }

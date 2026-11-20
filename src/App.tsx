@@ -8,6 +8,7 @@ import GameDetail from './routes/GameDetail'
 import Glossary from './routes/Glossary'
 import Home from './routes/Home'
 import NotFound from './routes/NotFound'
+import PlayerDetail from './routes/PlayerDetail'
 import SeriesDetail from './routes/SeriesDetail'
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
         <Route path="/events/:event" element={<EventDetail />} />
         <Route path="/series/:series" element={<SeriesDetail />} />
         <Route path="/games/:game" element={<GameDetail />} />
+        <Route path="/players/:player" element={<PlayerDetail />} />
         <Route path="/glossary" element={<Glossary />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

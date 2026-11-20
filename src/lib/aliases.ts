@@ -59,11 +59,23 @@ export function normalise(text: string): string {
  * nine spellings of its name stops being a page about the team.
  */
 export function namesFor(aliases: AliasRow[], kind: AliasKind, entityId: string): AliasRow[] {
+  const seen = new Set<string>()
+
   return aliases
     .filter((row) => row.kind === kind && row.entity_id === entityId)
     .filter((row) => normalise(row.alias_string) !== normalise(row.entity_name))
     .filter((row) => row.valid_from !== null)
     .sort((a, b) => (a.valid_from ?? '').localeCompare(b.valid_from ?? ''))
+    .filter((row) => {
+      // The bridge lists "BeBe", "bebe" and "bebe (Chang Bo-Wei)" as three dated
+      // names. Two of those are the same name, so the list a page prints collapses
+      // them; the first window is the one kept, because it is the earliest the
+      // name is dated.
+      const key = normalise(row.alias_string)
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
 }
 
 /**
