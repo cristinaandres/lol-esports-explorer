@@ -11,8 +11,9 @@ a best-of-one) → game. Chronological, narrowing.
 
 **Axis B — the entity: who did it.** Player, team, champion. These do not hang
 under an era; they cross every era and take the era as a filter. Each kind has an
-index of its own, and an entity page's breadcrumb starts there — `Players / Faker`,
-not `Eras / Faker`.
+index of its own, and every trail starts at **Home** — `Home / Players / Faker`,
+never `Home / Eras / Faker`. The root crumb names the level, not what currently
+fills it, so reorganising the home page does not falsify every breadcrumb.
 
 The two axes meet at a game page, where every name is a link into Axis B that
 carries its context.

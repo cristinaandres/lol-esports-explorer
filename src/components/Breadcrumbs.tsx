@@ -8,10 +8,14 @@ import { Link } from 'react-router'
  */
 export function Breadcrumbs({
   items,
-  root = { label: 'Eras', to: '/' },
+  root = { label: 'Home', to: '/' },
 }: {
   items: { label: string; to?: string }[]
-  /** The first crumb. An entity page starts from its own index, not from the eras. */
+  /**
+   * The first crumb. It is Home and not "Eras" on purpose: the home page is the
+   * era spine today, but the label describes the level, not what currently fills
+   * it, so renaming or reorganising the home page does not falsify every trail.
+   */
   root?: { label: string; to: string }
 }) {
   return (

@@ -99,7 +99,7 @@ export default function ChampionDetail() {
 
   return (
     <>
-      <Breadcrumbs root={{ label: 'Champions', to: '/champions' }} items={[{ label: champion.champion_name }]} />
+      <Breadcrumbs items={[{ label: 'Champions', to: '/champions' }, { label: champion.champion_name }]} />
 
       <PageHeader
         eyebrow="champion"

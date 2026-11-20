@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
+import { Breadcrumbs } from '../components/Breadcrumbs'
 import { PageHeader } from '../components/PageHeader'
 import { useDataset } from '../lib/data'
 import { count } from '../lib/format'
@@ -103,6 +104,7 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
 
   return (
     <>
+      <Breadcrumbs items={[{ label: copy.title }]} />
       <PageHeader
         eyebrow={`Index · ${copy.groupLabel}`}
         title={copy.title}
