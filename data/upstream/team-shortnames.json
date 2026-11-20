@@ -1,0 +1,784 @@
+{
+  "source": "https://lol.fandom.com (Leaguepedia), cargo table Teams, field Short",
+  "query": "action=cargoquery&tables=Teams&fields=Name,Short&where=Name IN (<the model's teams>)",
+  "fetched": "2026-11-20",
+  "note": "Team short names for search: 'KC' has to find Karmine Corp. The model carries neither the field nor the table, so it is pinned. Refresh and read the diff.",
+  "teams": [
+    {
+      "name": "100 Thieves",
+      "short": "100T"
+    },
+    {
+      "name": "ALTERNATE aTTaX",
+      "short": "ATN"
+    },
+    {
+      "name": "Albus NoX Luna",
+      "short": "ANX"
+    },
+    {
+      "name": "Anexis eSports",
+      "short": "AXS"
+    },
+    {
+      "name": "Anyone's Legend",
+      "short": "AL"
+    },
+    {
+      "name": "Ascension Gaming",
+      "short": "ASC"
+    },
+    {
+      "name": "Astralis",
+      "short": "AST"
+    },
+    {
+      "name": "Azubu Blaze",
+      "short": "AZB"
+    },
+    {
+      "name": "Azubu Frost",
+      "short": "AZF"
+    },
+    {
+      "name": "BNK FEARX",
+      "short": "BFX"
+    },
+    {
+      "name": "Bangkok Titans",
+      "short": "BKT"
+    },
+    {
+      "name": "Beyond Gaming",
+      "short": "BYG"
+    },
+    {
+      "name": "Beşiktaş Esports",
+      "short": "BJK"
+    },
+    {
+      "name": "Bilibili Gaming",
+      "short": "BLG"
+    },
+    {
+      "name": "Blackbean",
+      "short": "BB"
+    },
+    {
+      "name": "Bombers",
+      "short": "BMR"
+    },
+    {
+      "name": "CJ Entus",
+      "short": "CJ"
+    },
+    {
+      "name": "CJ Entus Blaze",
+      "short": "CJB"
+    },
+    {
+      "name": "CJ Entus Frost",
+      "short": "CJF"
+    },
+    {
+      "name": "CTBC Flying Oyster",
+      "short": "CFO"
+    },
+    {
+      "name": "Chiefs Esports Club",
+      "short": "CHF"
+    },
+    {
+      "name": "Cloud9",
+      "short": "C9"
+    },
+    {
+      "name": "Counter Logic Gaming",
+      "short": "CLG"
+    },
+    {
+      "name": "Counter Logic Gaming Europe",
+      "short": "CLG.EU"
+    },
+    {
+      "name": "DN SOOPers",
+      "short": "DNS"
+    },
+    {
+      "name": "Dark Passage",
+      "short": "DP"
+    },
+    {
+      "name": "Dash9 Gaming",
+      "short": "D9"
+    },
+    {
+      "name": "Deep Cross Gaming",
+      "short": "DCG"
+    },
+    {
+      "name": "DetonatioN FocusMe",
+      "short": "DFM"
+    },
+    {
+      "name": "Dignitas",
+      "short": "DIG"
+    },
+    {
+      "name": "Dire Wolves",
+      "short": "DW"
+    },
+    {
+      "name": "Disguised",
+      "short": "DSG"
+    },
+    {
+      "name": "Dplus Kia",
+      "short": "DK"
+    },
+    {
+      "name": "EDward Gaming",
+      "short": "EDG"
+    },
+    {
+      "name": "EHOME",
+      "short": "EHOME"
+    },
+    {
+      "name": "EPIK Gamer",
+      "short": "EPIK"
+    },
+    {
+      "name": "ESC Gaming",
+      "short": "ESC"
+    },
+    {
+      "name": "ESC Shane",
+      "short": "ESC"
+    },
+    {
+      "name": "EVOS Esports",
+      "short": "EVS"
+    },
+    {
+      "name": "Echo Fox",
+      "short": "FOX"
+    },
+    {
+      "name": "Elements",
+      "short": "EL"
+    },
+    {
+      "name": "Energy Pacemaker",
+      "short": "EP"
+    },
+    {
+      "name": "Estral Esports",
+      "short": "EST"
+    },
+    {
+      "name": "Evil Geniuses",
+      "short": "EG"
+    },
+    {
+      "name": "FURIA",
+      "short": "FUR"
+    },
+    {
+      "name": "Fenerbahçe Esports",
+      "short": "FB"
+    },
+    {
+      "name": "Flamengo MDL",
+      "short": "FLA"
+    },
+    {
+      "name": "Flash Wolves",
+      "short": "FW"
+    },
+    {
+      "name": "Fluxo W7M",
+      "short": "FX"
+    },
+    {
+      "name": "FlyQuest",
+      "short": "FLY"
+    },
+    {
+      "name": "Fnatic",
+      "short": "FNC"
+    },
+    {
+      "name": "Fukuoka SoftBank HAWKS gaming",
+      "short": "SHG"
+    },
+    {
+      "name": "FunPlus Phoenix",
+      "short": "FPX"
+    },
+    {
+      "name": "Furious Gaming",
+      "short": "FG"
+    },
+    {
+      "name": "G-Rex",
+      "short": "GRX"
+    },
+    {
+      "name": "G2 Esports",
+      "short": "G2"
+    },
+    {
+      "name": "GAM Esports",
+      "short": "GAM"
+    },
+    {
+      "name": "GIANTX",
+      "short": "GX"
+    },
+    {
+      "name": "Galatasaray Esports",
+      "short": "GS"
+    },
+    {
+      "name": "Galions",
+      "short": "GL"
+    },
+    {
+      "name": "Gambit Esports",
+      "short": "GMB"
+    },
+    {
+      "name": "Gambit Gaming",
+      "short": "GMB"
+    },
+    {
+      "name": "GashBears",
+      "short": "GB"
+    },
+    {
+      "name": "Gen.G",
+      "short": "GEN"
+    },
+    {
+      "name": "Golden Guardians",
+      "short": "GG"
+    },
+    {
+      "name": "Griffin",
+      "short": "GRF"
+    },
+    {
+      "name": "Ground Zero Gaming",
+      "short": "GZ"
+    },
+    {
+      "name": "H2k-Gaming",
+      "short": "H2K"
+    },
+    {
+      "name": "HANJIN BRION",
+      "short": "BRO"
+    },
+    {
+      "name": "Hanwha Life Esports",
+      "short": "HLE"
+    },
+    {
+      "name": "Hong Kong Attitude",
+      "short": "HKA"
+    },
+    {
+      "name": "I May",
+      "short": "IM"
+    },
+    {
+      "name": "INFINITY",
+      "short": "INF"
+    },
+    {
+      "name": "INTZ",
+      "short": "INTZ"
+    },
+    {
+      "name": "IceLanD",
+      "short": "ILD"
+    },
+    {
+      "name": "Immortals",
+      "short": "IMT"
+    },
+    {
+      "name": "Invictus Gaming",
+      "short": "iG"
+    },
+    {
+      "name": "Isurus",
+      "short": "ISG"
+    },
+    {
+      "name": "J Team",
+      "short": "JT"
+    },
+    {
+      "name": "JD Gaming",
+      "short": "JDG"
+    },
+    {
+      "name": "Just Toys Havoks",
+      "short": "JTH"
+    },
+    {
+      "name": "KT Rolster",
+      "short": "KT"
+    },
+    {
+      "name": "KT Rolster Bullets",
+      "short": "KT.B"
+    },
+    {
+      "name": "KaBuM! Ilha das Lendas",
+      "short": "KBM"
+    },
+    {
+      "name": "Kaos Latin Gamers",
+      "short": "KLG"
+    },
+    {
+      "name": "Karmine Corp",
+      "short": "KC"
+    },
+    {
+      "name": "Kiwoom DRX",
+      "short": "KRX"
+    },
+    {
+      "name": "Kongdoo Monster",
+      "short": "KDM"
+    },
+    {
+      "name": "Kuala Lumpur Hunters",
+      "short": "KLH"
+    },
+    {
+      "name": "LGD Gaming",
+      "short": "LGD"
+    },
+    {
+      "name": "LNG Esports",
+      "short": "LNG"
+    },
+    {
+      "name": "LOUD",
+      "short": "LOUD"
+    },
+    {
+      "name": "LYON",
+      "short": "LYON"
+    },
+    {
+      "name": "Legacy Esports",
+      "short": "LGC"
+    },
+    {
+      "name": "Lemondogs",
+      "short": "LD"
+    },
+    {
+      "name": "Leviatan",
+      "short": "LEV"
+    },
+    {
+      "name": "Liyab Esports",
+      "short": "LYB"
+    },
+    {
+      "name": "Longzhu Gaming",
+      "short": "LZ"
+    },
+    {
+      "name": "Lowkey Esports.Vietnam",
+      "short": "LK"
+    },
+    {
+      "name": "LØS",
+      "short": "LOS"
+    },
+    {
+      "name": "M19",
+      "short": "M19"
+    },
+    {
+      "name": "MAD Team",
+      "short": "MAD"
+    },
+    {
+      "name": "MAMMOTH",
+      "short": "MEC"
+    },
+    {
+      "name": "MEGA",
+      "short": "MG"
+    },
+    {
+      "name": "MVK Esports",
+      "short": "MVK"
+    },
+    {
+      "name": "MVP",
+      "short": "MVP"
+    },
+    {
+      "name": "Machi Esports",
+      "short": "MCX"
+    },
+    {
+      "name": "Meat Playground",
+      "short": "MP"
+    },
+    {
+      "name": "MeetYourMakers",
+      "short": "MYM"
+    },
+    {
+      "name": "MiTH Flashdive",
+      "short": "MiTH FD"
+    },
+    {
+      "name": "Millenium",
+      "short": "MIL"
+    },
+    {
+      "name": "Misfits Gaming",
+      "short": "MSF"
+    },
+    {
+      "name": "Moscow 5",
+      "short": "M5"
+    },
+    {
+      "name": "Movistar KOI",
+      "short": "MKOI"
+    },
+    {
+      "name": "NASR eSports Turkey",
+      "short": "NASR"
+    },
+    {
+      "name": "NRG",
+      "short": "NRG"
+    },
+    {
+      "name": "NaJin Black Sword",
+      "short": "NJBS"
+    },
+    {
+      "name": "NaJin White Shield",
+      "short": "NJWS"
+    },
+    {
+      "name": "Natus Vincere",
+      "short": "NAVI"
+    },
+    {
+      "name": "Newbee",
+      "short": "NB"
+    },
+    {
+      "name": "Ninjas in Pyjamas",
+      "short": "NIP"
+    },
+    {
+      "name": "Nongshim RedForce",
+      "short": "NS"
+    },
+    {
+      "name": "ORDER",
+      "short": "ORD"
+    },
+    {
+      "name": "Oh My God",
+      "short": "OMG"
+    },
+    {
+      "name": "PEACE",
+      "short": "PCE"
+    },
+    {
+      "name": "PENTAGRAM",
+      "short": "PGM"
+    },
+    {
+      "name": "PSG Talon",
+      "short": "PSG"
+    },
+    {
+      "name": "Pacific eSports",
+      "short": "PCFC"
+    },
+    {
+      "name": "Pain Gaming",
+      "short": "PG"
+    },
+    {
+      "name": "Papara SuperMassive",
+      "short": "SUP"
+    },
+    {
+      "name": "Pentanet.GG",
+      "short": "PGG"
+    },
+    {
+      "name": "RED Canids",
+      "short": "RED"
+    },
+    {
+      "name": "ROX Tigers",
+      "short": "ROX"
+    },
+    {
+      "name": "Rebirth eSports",
+      "short": "RBT"
+    },
+    {
+      "name": "RoX",
+      "short": "RoX"
+    },
+    {
+      "name": "Rogue",
+      "short": "RGE"
+    },
+    {
+      "name": "Rogue Warriors",
+      "short": "RW"
+    },
+    {
+      "name": "Royal Club",
+      "short": "RYL"
+    },
+    {
+      "name": "Royal Never Give Up",
+      "short": "RNG"
+    },
+    {
+      "name": "Royal Paladin Eclipse",
+      "short": "RPE.E"
+    },
+    {
+      "name": "SK Gaming",
+      "short": "SK"
+    },
+    {
+      "name": "SK Telecom T1 S",
+      "short": "SKT S"
+    },
+    {
+      "name": "Saigon Jokers",
+      "short": "SAJ"
+    },
+    {
+      "name": "Samsung Blue",
+      "short": "SSB"
+    },
+    {
+      "name": "Samsung Galaxy",
+      "short": "SSG"
+    },
+    {
+      "name": "Samsung White",
+      "short": "SSW"
+    },
+    {
+      "name": "Sentinels",
+      "short": "SEN"
+    },
+    {
+      "name": "Shifters",
+      "short": "SHFT"
+    },
+    {
+      "name": "Shopify Rebellion",
+      "short": "SR"
+    },
+    {
+      "name": "Sin Gaming",
+      "short": "SIN"
+    },
+    {
+      "name": "Singapore Sentinels",
+      "short": "SGS"
+    },
+    {
+      "name": "Solary",
+      "short": "SLY"
+    },
+    {
+      "name": "Suning",
+      "short": "SN"
+    },
+    {
+      "name": "T1",
+      "short": "T1"
+    },
+    {
+      "name": "TSM",
+      "short": "TSM"
+    },
+    {
+      "name": "Taipei Assassins",
+      "short": "TPA"
+    },
+    {
+      "name": "Team ANG",
+      "short": "ANG"
+    },
+    {
+      "name": "Team AURORA",
+      "short": "AUR"
+    },
+    {
+      "name": "Team Aze",
+      "short": "AZE"
+    },
+    {
+      "name": "Team Dynamic",
+      "short": "DYN"
+    },
+    {
+      "name": "Team FeaR",
+      "short": "FR"
+    },
+    {
+      "name": "Team Heretics",
+      "short": "TH"
+    },
+    {
+      "name": "Team Immunity",
+      "short": "IM"
+    },
+    {
+      "name": "Team Impulse",
+      "short": "TIP"
+    },
+    {
+      "name": "Team Just",
+      "short": "TJ"
+    },
+    {
+      "name": "Team Liquid",
+      "short": "TL"
+    },
+    {
+      "name": "Team LoLPro",
+      "short": "PRO"
+    },
+    {
+      "name": "Team Secret Whales",
+      "short": "TSW"
+    },
+    {
+      "name": "Team Sypher",
+      "short": "Sypher"
+    },
+    {
+      "name": "Team Ultra Vires",
+      "short": "TUV"
+    },
+    {
+      "name": "Team Vitality",
+      "short": "VIT"
+    },
+    {
+      "name": "Team WE",
+      "short": "WE"
+    },
+    {
+      "name": "Team gamed!de",
+      "short": "GDE"
+    },
+    {
+      "name": "The RED",
+      "short": "RED"
+    },
+    {
+      "name": "ThunderTalk Gaming",
+      "short": "TT"
+    },
+    {
+      "name": "Top Esports",
+      "short": "TES"
+    },
+    {
+      "name": "Ultra Prime",
+      "short": "UP"
+    },
+    {
+      "name": "Unicorns of Love.CIS",
+      "short": "UOL"
+    },
+    {
+      "name": "Unsold Stuff Gaming",
+      "short": "USG"
+    },
+    {
+      "name": "V3 Esports",
+      "short": "V3"
+    },
+    {
+      "name": "Vaevictis eSports",
+      "short": "VS"
+    },
+    {
+      "name": "Vega Squadron",
+      "short": "VEG"
+    },
+    {
+      "name": "Vikings Gaming",
+      "short": "HNV"
+    },
+    {
+      "name": "Virtus.pro",
+      "short": "VP"
+    },
+    {
+      "name": "Vivo Keyd Stars",
+      "short": "VKS"
+    },
+    {
+      "name": "Weibo Gaming",
+      "short": "WBG"
+    },
+    {
+      "name": "XDG Gaming",
+      "short": "XDG"
+    },
+    {
+      "name": "Xan",
+      "short": "XAN"
+    },
+    {
+      "name": "YouthCrew Esports",
+      "short": "YC"
+    },
+    {
+      "name": "against All authority",
+      "short": "aAa"
+    },
+    {
+      "name": "ahq eSports Club",
+      "short": "ahq"
+    },
+    {
+      "name": "compLexity Gaming",
+      "short": "COL"
+    },
+    {
+      "name": "paiN Gaming",
+      "short": "PAIN"
+    },
+    {
+      "name": "İstanbul Wildcats",
+      "short": "IW"
+    }
+  ]
+}

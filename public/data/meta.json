@@ -1,6 +1,6 @@
 {
   "artifacts": {
-    "aliases.json": "f6523f291f8167f74a0a5780fa49052a374242ccf95d712503fdec2426576ee1",
+    "aliases.json": "f13406cdeac658450167c931d9b19bb7aba1b9c0b9bf8e205dd5d2710f528f22",
     "bans.json": "aa015fb29b7eaa69b40dea485c386d9be0cc04c9addaeb3b7237ce041420742b",
     "champions.json": "6bdfac6de257022845e8711baa94c80158d094ad01bb5e5143ba56debc89676d",
     "eras.json": "756a66e41964b96be1bed0c23273a456037618df212fc80857572a84578a4adf",
@@ -41,6 +41,7 @@
     "champion-releases.json": "1aa3673e0a11cc6817bb04fd45b8739ee2abc71043a3c0e4034d15c21d7e4f16",
     "event-coverage.json": "a0cf323d773ace6853405e548619bd4b1983843743e7e30aac8e0ccc598cae04",
     "event-selection.json": "1d8161205279bc316ddbe9cd145801c9bab093b5c5f162e3f7e8ec842d633e43",
-    "game-eras.json": "a3758bccdb650792ab266b1100f41736c987c5a97b17e371dbdf03520ad4ab4c"
+    "game-eras.json": "a3758bccdb650792ab266b1100f41736c987c5a97b17e371dbdf03520ad4ab4c",
+    "team-shortnames.json": "9777b22478aa7cbd0df153504d785388dbc649304bfa63711cc4ec49ab691385"
   }
 }

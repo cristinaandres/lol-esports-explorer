@@ -124,11 +124,13 @@ describe('draft artifacts', () => {
 })
 
 describe('aliases.json', () => {
-  it('carries every alias the model recorded', () => {
-    expect(aliases).toHaveLength(3_791)
+  it('carries every alias the model recorded, plus the pinned short names', () => {
+    // 3,791 rows from the bridge and 193 team short names pinned from the wiki. The
+    // 194th, 'Pain Gaming', is spelled differently there and joins to nothing.
+    expect(aliases).toHaveLength(3_984)
     const byKind = new Map<string, number>()
     for (const row of aliases) byKind.set(row.kind, (byKind.get(row.kind) ?? 0) + 1)
-    expect(Object.fromEntries(byKind)).toEqual({ player: 2_872, team: 747, champion: 172 })
+    expect(Object.fromEntries(byKind)).toEqual({ player: 2_872, team: 940, champion: 172 })
   })
 
   it('points every alias at an entity', () => {
@@ -151,6 +153,17 @@ describe('aliases.json', () => {
     const matches = resolve(aliases, 'MAD Team').filter((match) => match.kind === 'team')
     expect(matches.map((match) => match.entityId)).toEqual(['tm-017ed54b4572'])
     expect(matches[0]?.entityName).toBe('MAD Team')
+  })
+
+  it('resolves a team by the short name people use', () => {
+    expect(resolve(aliases, 'KC').filter((m) => m.kind === 'team')[0]).toMatchObject({
+      entityName: 'Karmine Corp',
+      matched: 'KC',
+    })
+    expect(resolve(aliases, 'GEN').filter((m) => m.kind === 'team')[0]?.entityName).toBe('Gen.G')
+    expect(resolve(aliases, 'BLG').filter((m) => m.kind === 'team')[0]?.entityName).toBe(
+      'Bilibili Gaming',
+    )
   })
 
   it('lists the dated names it played under, and no redirects', () => {

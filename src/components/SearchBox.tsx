@@ -80,7 +80,9 @@ export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
     }
   }
 
-  const grouped = ['player', 'team', 'champion'] as const
+  // The groups follow the ranking, not a fixed order: an exact team short name must
+  // not sit below a player whose handle merely contains the same letters.
+  const grouped = [...new Set(results.map((result) => result.kind))]
 
   return (
     <div ref={wrapper} className={fullWidth ? 'relative w-full' : 'relative'}>

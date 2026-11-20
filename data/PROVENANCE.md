@@ -26,6 +26,8 @@ data/upstream/event-selection.json
                           every candidate event the rule considered, with its decision
 data/upstream/event-coverage.json
                           coverage per event, as the dataset measured it
+data/upstream/team-shortnames.json
+                          team short names for search ("KC" must find Karmine Corp)
 data/upstream/champion-releases.json
                           champion release dates, pinned from Leaguepedia because the
                           dimensional model has no such column

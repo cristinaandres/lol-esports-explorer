@@ -69,7 +69,7 @@ ARTIFACTS: dict[str, str] = {
     """,
     "patches.json": "select * from dim_patch order by patch_key",
     # Renames. Loaded by the entity pages and by search, not by the lists.
-    "aliases.json": "select * from alias_rows order by kind, entity_id, alias_string, valid_from",
+    "aliases.json": "select * from alias_all order by kind, entity_id, alias_string, valid_from",
     # Lazy: fetched on the first game page and cached for the session.
     "sides.json": "select * from side_rows order by game_key, side",
     "player-games.json": "select * from player_rows order by game_key, side, player_key",
