@@ -38,9 +38,11 @@ link to a route that does not exist yet is worse than plain text.
 ## 3 — Entities
 
 Spec: `docs/specs/2026-11-20-phase-3-entities.md`
+Tickets: `docs/specs/tickets/2026-11-20-phase-3-entities/` (seven, in dependency order)
 
-`/players/:id` with the context/career split and the competition → year filters,
-`/teams/:id` with a derived roster, `/champions/:id` across eras.
+The alias bridge first, then `/players/:id` with the competition → year filters and
+the context/career split, `/teams/:id` with a derived roster and its renames,
+`/champions/:id` across eras, and search by any former name.
 
 ## 4 — The pick'em view
 

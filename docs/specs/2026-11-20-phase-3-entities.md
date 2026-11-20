@@ -1,7 +1,19 @@
 # Phase 3 — Entities, and the local/global split
 
-Status: proposed. Depends on phase 2 (player and team names must be reachable
-from a game first). Phase 4 depends on this one for team identity.
+Status: proposed, broken into tickets. Depends on phase 2 (player and team names
+must be reachable from a game first). Phase 4 depends on this one for team identity.
+
+Tickets: `docs/specs/tickets/2026-11-20-phase-3-entities/`.
+
+| Ticket | Blocked by | Delivers |
+|---|---|---|
+| 01 | — | The alias bridge: renames, as data and as a pure module |
+| 02 | 01 | The player page, its aggregation module and its tests |
+| 03 | 02 | Competition → year filters, derived era, empty states |
+| 04 | 03 | Arriving from a game: context block and player links |
+| 05 | 03 | The team page, its filters, and renames shown |
+| 06 | 02 | The champion page across eras |
+| 07 | 05, 06 | Search by any name an entity ever had |
 
 ## Objective
 
@@ -40,10 +52,25 @@ it on demand.**
   "no data".
 - **R5** `/teams/:id` renders the event record, the side preference and the roster
   over time, derived from the player rows rather than from a roster table the
-  model does not have.
+  model does not have. *(Extended in review: the page takes the competition → year
+  filters, because a team unfiltered accumulates fifteen years of roster, and it
+  lists the names the team played under — `MAD Lions`, `MAD Lions KOI` and
+  `MKOI` are one team, and `MAD Team` is not.)*
 - **R6** `/champions/:id` renders picks, bans and presence by era, each with the
   games it is measured over.
 - **R7** An id that does not exist renders the 404 page, not an empty entity page.
+- **R8** *(Added in review.)* A search control in the header finds a player, team or
+  champion by any name it has ever had, and says which former name matched. Without
+  it the only way into an entity is to arrive from a game that contains it, which
+  leaves most of the corpus reachable only by guessing a URL.
+
+## Renames are data, not a special case
+
+The model already answers the review's example. `MAD Lions` (2020-09-25 to
+2023-10-26), `MAD Lions KOI`, `MKOI` and `Mad Lions` all resolve to Movistar KOI
+through the alias bridge, and `MAD Team` — the LMS team — stays separate. There are
+3,791 aliases: 2,872 players, 747 teams, 172 champions. The bridge is therefore a
+prefactor for this phase (ticket 01), not a detail of the team page.
 
 ## Non-goals
 
