@@ -40,9 +40,9 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
             </span>
           </Link>
 
-          <div className="hidden items-center gap-5 sm:flex">
-            <SearchBox />
+          <div className="hidden flex-1 items-center justify-between gap-6 sm:flex">
             <NavLinks />
+            <SearchBox />
           </div>
 
           <button
@@ -79,11 +79,20 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
             (CC BY-SA 3.0), via the <a className="text-fog-500 hover:text-fog-100" href={DATA_REPO}>lol-dataset</a>{' '}
             build.
           </p>
-          {meta ? (
-            <p className="font-mono">
-              {meta.source.tag} · {meta.source.commit.slice(0, 7)}
-            </p>
-          ) : null}
+          <p className="flex items-center gap-4">
+            <a
+              href={REPO_URL}
+              className="text-fog-500 hover:text-fog-100"
+              rel="noreferrer"
+            >
+              Source on GitHub
+            </a>
+            {meta ? (
+              <span className="font-mono">
+                {meta.source.tag} · {meta.source.commit.slice(0, 7)}
+              </span>
+            ) : null}
+          </p>
         </div>
       </footer>
     </div>
@@ -106,14 +115,6 @@ function NavLinks({ stacked = false, onNavigate }: { stacked?: boolean; onNaviga
           {link.label}
         </NavLink>
       ))}
-      <a
-        href={REPO_URL}
-        onClick={onNavigate}
-        className="text-fog-500 hover:text-fog-100 no-underline"
-        rel="noreferrer"
-      >
-        GitHub
-      </a>
     </nav>
   )
 }
