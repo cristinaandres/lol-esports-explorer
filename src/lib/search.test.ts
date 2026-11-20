@@ -4,15 +4,15 @@ import { buildSearchIndex, resultPath, search } from './search'
 import type { AliasRow, Champion, Player, Team } from './types'
 
 const players: Player[] = [
-  { player_key: 1, player_id: 'pl-apa', player_name: 'APA', overview_page: '' },
-  { player_key: 2, player_id: 'pl-frozen', player_name: 'Frozen', overview_page: '' },
+  { player_key: 1, player_id: 'pl-apa', player_name: 'APA', overview_page: '', games: 0 },
+  { player_key: 2, player_id: 'pl-frozen', player_name: 'Frozen', overview_page: '', games: 0 },
 ]
 const teams: Team[] = [
-  { team_key: 1, team_id: 'tm-koi', team_name: 'Movistar KOI', overview_page: '', region: 'EMEA' },
-  { team_key: 2, team_id: 'tm-mad', team_name: 'MAD Team', overview_page: '', region: 'LMS' },
+  { team_key: 1, team_id: 'tm-koi', team_name: 'Movistar KOI', overview_page: '', region: 'EMEA', games: 0 },
+  { team_key: 2, team_id: 'tm-mad', team_name: 'MAD Team', overview_page: '', region: 'LMS', games: 0 },
 ]
 const champions: Champion[] = [
-  { champion_key: 1, champion_id: 'ch-nunu', champion_name: 'Nunu & Willump', riot_key: 20 },
+  { champion_key: 1, champion_id: 'ch-nunu', champion_name: 'Nunu & Willump', riot_key: 20, games: 0 },
 ]
 
 const aliases: AliasRow[] = [

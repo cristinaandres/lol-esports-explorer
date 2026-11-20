@@ -77,6 +77,19 @@ export default function Home() {
           ))}
         </ol>
 
+        <div className="border-line mt-10 flex flex-wrap items-center gap-x-8 gap-y-3 border-t pt-6">
+          <span className="text-fog-600 text-[11px] tracking-[0.14em] uppercase">Or browse</span>
+          <Link to="/players" className="text-fog-300 hover:text-gold text-sm no-underline">
+            {count(totals.players)} players
+          </Link>
+          <Link to="/teams" className="text-fog-300 hover:text-gold text-sm no-underline">
+            {count(totals.teams_registered)} teams
+          </Link>
+          <Link to="/champions" className="text-fog-300 hover:text-gold text-sm no-underline">
+            every champion
+          </Link>
+        </div>
+
         {gaps.length > 0 ? (
           <p className="text-fog-600 border-line mt-6 border-t pt-5 text-xs leading-relaxed">
             <span className="text-fog-500">Also declared, but empty:</span>{' '}

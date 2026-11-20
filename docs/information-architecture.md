@@ -10,7 +10,9 @@ names.
 a best-of-one) → game. Chronological, narrowing.
 
 **Axis B — the entity: who did it.** Player, team, champion. These do not hang
-under an era; they cross every era and take the era as a filter.
+under an era; they cross every era and take the era as a filter. Each kind has an
+index of its own, and an entity page's breadcrumb starts there — `Players / Faker`,
+not `Eras / Faker`.
 
 The two axes meet at a game page, where every name is a link into Axis B that
 carries its context.
@@ -21,6 +23,9 @@ carries its context.
 /events/:id             teams, format, series list, leaders, draft pool
 /series/:id             only for best-of-three and above
 /games/:id              scoreboard, draft, player rows
+/players                index: every player, with the games they appear in
+/teams                  index: every team, grouped by region
+/champions              index: every champion, with the games it appears in
 /players/:id            context (if arrived from a game) + career with filters
 /teams/:id              same shape
 /champions/:id          pick and ban record across eras

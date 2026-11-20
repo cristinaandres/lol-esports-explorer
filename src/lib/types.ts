@@ -167,6 +167,8 @@ export type Team = {
   team_name: string
   overview_page: string
   region: string
+  /** Games the team appears in, for the index. Zero when the corpus carries none. */
+  games: number
 }
 
 export type Player = {
@@ -174,6 +176,7 @@ export type Player = {
   player_id: string
   player_name: string
   overview_page: string
+  games: number
 }
 
 export type Champion = {
@@ -181,6 +184,7 @@ export type Champion = {
   champion_id: string
   champion_name: string
   riot_key: number
+  games: number
 }
 
 export type Patch = {

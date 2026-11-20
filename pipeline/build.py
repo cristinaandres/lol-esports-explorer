@@ -51,9 +51,9 @@ ARTIFACTS: dict[str, str] = {
     "games.json": "select * from game_rows order by date_time_utc, game_key",
     "matches.json": "select * from match_rows order by match_key",
     # Names. Loaded eagerly because every page resolves a key to a name.
-    "teams.json": "select * from dim_team order by team_key",
-    "players.json": "select * from dim_player order by player_key",
-    "champions.json": "select * from dim_champion order by champion_key",
+    "teams.json": "select * from team_index order by team_key",
+    "players.json": "select * from player_index order by player_key",
+    "champions.json": "select * from champion_index order by champion_key",
     "patches.json": "select * from dim_patch order by patch_key",
     # Renames. Loaded by the entity pages and by search, not by the lists.
     "aliases.json": "select * from alias_rows order by kind, entity_id, alias_string, valid_from",

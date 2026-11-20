@@ -175,7 +175,7 @@ export default function PlayerDetail() {
 
   return (
     <>
-      <Breadcrumbs items={[{ label: player.player_name }]} />
+      <Breadcrumbs root={{ label: 'Players', to: '/players' }} items={[{ label: player.player_name }]} />
 
       <PageHeader
         eyebrow={roleLabel ? `player · ${roleLabel}` : 'player'}

@@ -106,7 +106,7 @@ export default function TeamDetail() {
 
   return (
     <>
-      <Breadcrumbs items={[{ label: team.team_name }]} />
+      <Breadcrumbs root={{ label: 'Teams', to: '/teams' }} items={[{ label: team.team_name }]} />
 
       <PageHeader
         eyebrow={team.region ? `team · ${team.region}` : 'team'}
