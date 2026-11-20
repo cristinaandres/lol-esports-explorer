@@ -74,7 +74,8 @@ ARTIFACTS: dict[str, str] = {
     # order depends on a default fails --check on a machine with a different one.
     "aliases.json": """
         select * from alias_all
-        order by kind, entity_id, alias_string, valid_from nulls last
+        order by kind, entity_id, alias_string,
+                 valid_from nulls last, valid_to nulls last, evidence
     """,
     # Lazy: fetched on the first game page and cached for the session.
     "sides.json": "select * from side_rows order by game_key, side",
