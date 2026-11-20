@@ -51,6 +51,15 @@ Spec: `docs/specs/2026-11-20-phase-4-head-to-head.md`
 `/compare`: two teams, the head-to-head record with its `n`, recent form, and a
 champion pool overlap. No prediction, by design.
 
+## 3b — Polish round
+
+Tickets: `docs/specs/tickets/2026-11-20-polish-round/` (fourteen, in dependency order)
+
+Review findings turned into work: the event selection audit, per-event coverage, a
+player's recent form and role split, the event's champion and teams, and eight
+consistency and accessibility fixes. Eleven can start immediately; three wait for the
+pages they touch.
+
 ## 4b — Structure before phase 4
 
 - `/eras` as a real index, so the breadcrumb can say `Home / Eras / …` without
