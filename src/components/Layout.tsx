@@ -31,12 +31,16 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
           <Link
             to="/"
             onClick={() => setMenu(false)}
-            className="group flex min-w-0 items-baseline gap-2.5 no-underline"
+            className="group flex min-w-0 items-center gap-2.5 no-underline"
           >
             <span className="bg-gold size-2 shrink-0 rounded-full" aria-hidden />
-            <span className="text-fog-100 truncate font-semibold tracking-tight">{SITE_NAME}</span>
-            <span className="text-fog-600 hidden text-xs tracking-widest uppercase sm:inline">
-              {SITE_TAGLINE}
+            <span className="flex min-w-0 flex-col">
+              <span className="text-fog-100 truncate leading-tight font-semibold tracking-tight">
+                {SITE_NAME}
+              </span>
+              <span className="text-fog-600 hidden text-[10px] leading-tight tracking-[0.18em] whitespace-nowrap uppercase lg:block">
+                {SITE_TAGLINE}
+              </span>
             </span>
           </Link>
 
