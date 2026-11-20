@@ -12,7 +12,7 @@ const teams: Team[] = [
   { team_key: 2, team_id: 'tm-mad', team_name: 'MAD Team', overview_page: '', region: 'LMS', games: 0 },
 ]
 const champions: Champion[] = [
-  { champion_key: 1, champion_id: 'ch-nunu', champion_name: 'Nunu & Willump', riot_key: 20, games: 0 },
+  { champion_key: 1, champion_id: 'ch-nunu', champion_name: 'Nunu & Willump', riot_key: 20, games: 0, release_date: '2009-02-21' },
 ]
 
 const aliases: AliasRow[] = [

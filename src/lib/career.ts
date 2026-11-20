@@ -43,6 +43,8 @@ export type ChampionStat = EntityStat & { role: string }
 
 export type RoleStat = { role: string; games: number }
 
+export type EventStat = { eventKey: number; games: number; wins: number; first: string }
+
 /** One game a player appeared in, with what a filter needs to narrow it. */
 export type Appearance = {
   game: Game
@@ -267,4 +269,31 @@ function bumpChampion(
 /** Most played first, then by key, so the order never depends on insertion. */
 function sortStats(stats: Map<number, EntityStat>): EntityStat[] {
   return [...stats.values()].sort((a, b) => b.games - a.games || a.key - b.key)
+}
+
+/**
+ * The events a career covers, newest first.
+ *
+ * An event is not a filter here but a unit the reader thinks in: "which
+ * competitions has this player been to" is a different question from "how many
+ * games", and the page answers both.
+ */
+export function eventsOf(appearances: Appearance[]): EventStat[] {
+  const events = new Map<number, EventStat>()
+
+  for (const appearance of appearances) {
+    const key = appearance.game.event_key
+    const when = appearance.game.date_time_utc
+    const won = appearance.row.side === 'blue' ? appearance.game.blue_win === 1 : appearance.game.blue_win === 0
+    const existing = events.get(key)
+    if (existing) {
+      existing.games += 1
+      if (won) existing.wins += 1
+      if (when < existing.first) existing.first = when
+      continue
+    }
+    events.set(key, { eventKey: key, games: 1, wins: won ? 1 : 0, first: when })
+  }
+
+  return [...events.values()].sort((a, b) => b.first.localeCompare(a.first))
 }

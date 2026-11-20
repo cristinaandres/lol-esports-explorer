@@ -169,11 +169,11 @@ export default function TeamDetail() {
       ) : (
         <>
           <StatRow>
+            <Stat label="Events" value={count(summary.events.length)} />
             <Stat label="Games" value={count(summary.games)} />
-            <Stat label="Win share" value={<Ratio part={summary.wins} total={summary.games} />} />
+            <Stat label="Win rate" value={<Ratio part={summary.wins} total={summary.games} />} />
             <Stat label="On blue" value={<Ratio part={summary.blue.wins} total={summary.blue.games} />} />
             <Stat label="On red" value={<Ratio part={summary.red.wins} total={summary.red.games} />} />
-            <Stat label="Events" value={count(summary.events.length)} />
             <Stat label="Players used" value={count(roster.length)} />
           </StatRow>
 

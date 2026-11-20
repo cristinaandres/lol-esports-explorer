@@ -10,7 +10,6 @@ const links = [
   { to: '/players', label: 'Players', end: false },
   { to: '/teams', label: 'Teams', end: false },
   { to: '/champions', label: 'Champions', end: false },
-  { to: '/glossary', label: 'Glossary', end: false },
 ]
 
 /**
@@ -87,6 +86,9 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
             build.
           </p>
           <p className="flex items-center gap-4">
+            <Link to="/glossary" className="text-fog-500 hover:text-fog-100">
+              Glossary
+            </Link>
             <a
               href={REPO_URL}
               className="text-fog-500 hover:text-fog-100"

@@ -2,7 +2,7 @@
   "artifacts": {
     "aliases.json": "f6523f291f8167f74a0a5780fa49052a374242ccf95d712503fdec2426576ee1",
     "bans.json": "aa015fb29b7eaa69b40dea485c386d9be0cc04c9addaeb3b7237ce041420742b",
-    "champions.json": "3a23ba45a1634ec1abb58a425c1eade214fec7ee5524fde5f7f0ad036b2078ad",
+    "champions.json": "6bdfac6de257022845e8711baa94c80158d094ad01bb5e5143ba56debc89676d",
     "eras.json": "756a66e41964b96be1bed0c23273a456037618df212fc80857572a84578a4adf",
     "events.json": "5770f86fce96b5c281efab4be23f6f6ff66bf0b8ac335933e7f9c85f2fab89fd",
     "games.json": "e8af139e00a462cd8b0d6808fadd542d8cbafa338753024e876ff238ac66a79b",
@@ -37,6 +37,7 @@
     "tag": "v1.1.0"
   },
   "upstreamFiles": {
+    "champion-releases.json": "1aa3673e0a11cc6817bb04fd45b8739ee2abc71043a3c0e4034d15c21d7e4f16",
     "game-eras.json": "a3758bccdb650792ab266b1100f41736c987c5a97b17e371dbdf03520ad4ab4c"
   }
 }

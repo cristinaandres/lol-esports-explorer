@@ -185,6 +185,8 @@ export type Champion = {
   champion_name: string
   riot_key: number
   games: number
+  /** The date the champion went live. Pinned from the wiki: the model has no such column. */
+  release_date: string | null
 }
 
 export type Patch = {

@@ -117,13 +117,15 @@ export default function ChampionDetail() {
           ) : undefined
         }
         aside={
-          record && record.firstPicked ? (
-            <p className="text-fog-600 text-right font-mono text-xs leading-relaxed">
-              first picked {dayMonthYear(record.firstPicked)}
-              <br />
-              {count(record.picked)} games
-            </p>
-          ) : null
+          <p className="text-fog-600 text-right font-mono text-xs leading-relaxed">
+            released {champion.release_date ? dayMonthYear(champion.release_date) : 'unknown'}
+            {record && record.firstPicked ? (
+              <>
+                <br />
+                first picked {dayMonthYear(record.firstPicked)}
+              </>
+            ) : null}
+          </p>
         }
       />
 
@@ -167,6 +169,11 @@ export default function ChampionDetail() {
       ) : (
         <>
           <StatRow>
+            <Stat
+              label="Released"
+              value={<span className="text-lg">{champion.release_date ? dayMonthYear(champion.release_date) : '—'}</span>}
+              hint={champion.release_date ? `${champion.release_date.slice(0, 4)} · source: Leaguepedia` : undefined}
+            />
             <Stat label="Games in scope" value={count(record.games)} />
             <Stat label="Picked" value={<Ratio part={record.picked} total={record.games} />} />
             <Stat label="Banned" value={<Ratio part={record.banned} total={record.games} />} />
@@ -178,7 +185,6 @@ export default function ChampionDetail() {
               label="Won when picked"
               value={<Ratio part={record.won} total={record.picked} />}
             />
-            <Stat label="Eras" value={count(record.eras.filter((era) => presenceOf(era) > 0).length)} />
           </StatRow>
 
           <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">

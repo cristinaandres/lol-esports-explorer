@@ -41,3 +41,16 @@ select
 from dim_champion c
 left join fact_player_game p on p.champion_key = c.champion_key
 group by c.champion_key, c.champion_id, c.champion_name, c.riot_key;
+
+
+-- Release dates live outside the model. They are joined on the champion's name,
+-- which is how the wiki keys them, and an unmatched champion keeps a null rather
+-- than a guessed date.
+create or replace view champion_releases as
+select entry.name, entry.releaseDate as release_date
+from read_json(
+  'data/upstream/champion-releases.json',
+  columns = { champions: 'STRUCT(name VARCHAR, releaseDate VARCHAR)[]' },
+  maximum_object_size = 10000000
+) as data,
+lateral unnest(data.champions) as t(entry);

@@ -22,12 +22,24 @@ data/upstream/game-eras.json
                           with the patch citation for each boundary
 data/upstream/manifest.json
                           the upstream build manifest, for cross-checking hashes
+data/upstream/champion-releases.json
+                          champion release dates, pinned from Leaguepedia because the
+                          dimensional model has no such column
+
 ```
 
 `public/data/meta.json` records the sha256 of every one of those files at build
 time, so a reader can walk from a figure on the site to the file it came from
 without trusting this document. If a pinned file is ever edited by hand, the
 artifact hashes change and `npm run data:check` fails.
+
+## The one file that is not from the model
+
+\`champion-releases.json\` is fetched from the same wiki the upstream dataset
+crawls, with the query recorded inside the file and the date it was pinned. It
+exists because a champion without a release date cannot be read: "picked in 21 of
+495 games" means one thing for a champion released in 2011 and another for one
+released in 2014. Refresh it with \`pipeline/refresh-releases.sh\` and read the diff.
 
 ## Refreshing the pin
 

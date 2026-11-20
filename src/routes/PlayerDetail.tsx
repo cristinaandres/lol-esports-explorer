@@ -12,6 +12,7 @@ import { namesFor } from '../lib/aliases'
 import {
   appearancesFor,
   careerFrom,
+  eventsOf,
   MIN_GAMES_FOR_RATE,
   rankByWinRate,
   type Appearance,
@@ -142,6 +143,7 @@ export default function PlayerDetail() {
   const { player, former, index } = prepared
   const all = prepared.appearances
   const titles = titlesForPlayer(prepared.champs, all)
+  const eventStats = eventsOf(all)
   const titleGroups = groupTitlesByCompetition(titles, (key) => prepared.events.get(key)?.competition)
   const visible = applyFilter(all, filter)
   const career = prepared.ready ? careerFrom(visible) : null
@@ -253,15 +255,23 @@ export default function PlayerDetail() {
         <>
           <StatRow>
             <Stat label="Games" value={count(career.games)} />
-            <Stat label="Win share" value={<Ratio part={career.wins} total={career.games} />} />
+            <Stat label="Events" value={count(eventStats.length)} />
+            <Stat label="Win rate" value={<Ratio part={career.wins} total={career.games} />} />
             <Stat
               label="KDA"
               value={career.kda === null ? '—' : career.kda.toFixed(2)}
               hint="summed, then divided"
             />
-            <Stat label="Kills / game" value={perGame(career.averages.kills)} />
-            <Stat label="Deaths / game" value={perGame(career.averages.deaths)} />
-            <Stat label="Assists / game" value={perGame(career.averages.assists)} />
+            <Stat
+              label="K / D / A per game"
+              value={
+                <span className="text-lg">
+                  {perGame(career.averages.kills)} / {perGame(career.averages.deaths)} /{' '}
+                  {perGame(career.averages.assists)}
+                </span>
+              }
+            />
+            <Stat label="Eras" value={count(career.eras.length)} />
           </StatRow>
 
           <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">
@@ -336,6 +346,52 @@ export default function PlayerDetail() {
                 <ChampionList champions={unranked} index={index} showRole={showRole} muted />
               </>
             ) : null}
+          </section>
+
+          <section className="mt-12">
+            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Events</h2>
+            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+              {count(eventStats.length)} events, newest first, with the games played in each. A
+              player&rsquo;s record is read event by event, not as one long run.
+            </p>
+
+            <div className="border-line overflow-x-auto rounded-xl border">
+              <table className="w-full min-w-[34rem] text-sm">
+                <thead>
+                  <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
+                    <th className="px-4 py-2.5 font-medium">Event</th>
+                    <th className="px-4 py-2.5 font-medium">Competition</th>
+                    <th className="px-4 py-2.5 text-right font-medium">Games</th>
+                    <th className="px-4 py-2.5 text-right font-medium">Win rate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-line divide-y">
+                  {eventStats.map((entry) => {
+                    const event = prepared.events.get(entry.eventKey)
+                    return (
+                      <tr key={entry.eventKey} className="hover:bg-ink-850/50">
+                        <td className="text-fog-100 px-4 py-2">
+                          {event ? (
+                            <Link to={`/events/${event.event_id}`} className="hover:text-gold">
+                              {event.event_name}
+                            </Link>
+                          ) : (
+                            'Unknown event'
+                          )}
+                        </td>
+                        <td className="text-fog-500 px-4 py-2">
+                          {event ? `${event.competition} · ${event.year}` : '—'}
+                        </td>
+                        <td className="px-4 py-2 text-right tabular-nums">{count(entry.games)}</td>
+                        <td className="px-4 py-2 text-right">
+                          <Ratio part={entry.wins} total={entry.games} />
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           <section className="mt-12">
