@@ -1,7 +1,7 @@
 # 12: A skeleton on every route, not the word Loading
 
 **Blocked by:** None for the routes that exist today; see the note on ordering
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -34,3 +34,12 @@ A browser check per route: capture the layout box during load and after, and com
 
 Do this after the tickets that add or move sections on these pages — 03, 04, 05 and 06
 — or the skeletons will describe a layout that no longer exists.
+
+## Built
+
+`PageSkeleton` replaces the word "Loading" on all eleven routes that fetch: a header
+bar, a lead, six figure cells and two blocks, announced with `role="status"` and
+`aria-busy` rather than read as content.
+
+Verified with the data requests delayed by 700 ms on seven routes: the skeleton appears
+on all of them and no route renders "Loading…" as text.

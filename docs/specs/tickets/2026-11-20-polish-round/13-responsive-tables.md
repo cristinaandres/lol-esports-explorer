@@ -1,7 +1,7 @@
 # 13: Stop making phones scroll tables sideways
 
 **Blocked by:** None for the tables that exist today; see the note on ordering
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -34,3 +34,21 @@ A browser check that measures scroll width against client width on every route a
 
 Blocked by the tickets that add columns or sections — 03, 04 and 06 — and worth doing
 with 12, which touches the same loading shells.
+
+## Built
+
+Verified at 390 px on sixteen routes: **no page scrolls horizontally, and no table
+inside a page does either**. Before this, eight tables did.
+
+Two changes, and the split is deliberate:
+
+  - The tables that could not fit — the ten-column player table, the era's event
+    table, a player's recent form and a champion's per-era table — render through a
+    shared `DataTable`: a real table from `sm` up, and one stacked block per row below
+    it, each value carrying its label. Both copies are in the DOM with one hidden, so
+    a screen reader reads the visible one and nothing is announced twice.
+  - The narrow numeric tables — four columns of short values — simply fit once the
+    minimum width is gone and the cells tighten on mobile. Stacking them would have
+    made a phone read like a spreadsheet printed on a till roll.
+
+Every value on desktop is visible on a phone; nothing is dropped or folded away.

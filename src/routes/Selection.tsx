@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { PageSkeleton } from '../components/PageSkeleton'
 import { PageHeader } from '../components/PageHeader'
 import { Stat, StatRow } from '../components/Stat'
 import { useSelection } from '../lib/data'
@@ -46,7 +47,7 @@ export default function Selection() {
     } as const
   }, [state])
 
-  if (state.status === 'loading') return <p className="text-fog-600">Loading…</p>
+  if (state.status === 'loading') return <PageSkeleton />
   if (state.status === 'failed')
     return <p className="text-side-red">Could not load the selection: {state.error.message}</p>
   if (!prepared) return null
@@ -79,20 +80,20 @@ export default function Selection() {
         </p>
 
         <div className="border-line overflow-x-auto rounded-xl border">
-          <table className="w-full min-w-[28rem] text-sm">
+          <table className="w-full text-xs sm:text-sm">
             <thead>
               <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-                <th className="px-4 py-2.5 font-medium">Rule</th>
-                <th className="px-4 py-2.5 text-right font-medium">Admitted</th>
-                <th className="px-4 py-2.5 text-right font-medium">Rejected</th>
+                <th className="px-2 py-2.5 font-medium sm:px-4">Rule</th>
+                <th className="px-2 py-2.5 text-right font-medium sm:px-4">Admitted</th>
+                <th className="px-2 py-2.5 text-right font-medium sm:px-4">Rejected</th>
               </tr>
             </thead>
             <tbody className="divide-line divide-y">
               {rules.map((rule) => (
                 <tr key={rule.rule} className="hover:bg-ink-850/50">
                   <td className="text-fog-100 px-4 py-2 font-mono text-xs">{rule.rule}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{count(rule.included)}</td>
-                  <td className="px-4 py-2 text-right tabular-nums">{count(rule.rejected)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums sm:px-4">{count(rule.included)}</td>
+                  <td className="px-2 py-2 text-right tabular-nums sm:px-4">{count(rule.rejected)}</td>
                 </tr>
               ))}
             </tbody>
@@ -119,19 +120,19 @@ export default function Selection() {
 function RejectedTable({ rows }: { rows: SelectionCandidate[] }) {
   return (
     <div className="border-line overflow-x-auto rounded-xl border">
-      <table className="w-full min-w-[34rem] text-sm">
+      <table className="w-full text-xs sm:text-sm">
         <thead>
           <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-            <th className="px-4 py-2.5 font-medium">Event</th>
-            <th className="px-4 py-2.5 font-medium">League</th>
-            <th className="px-4 py-2.5 font-medium">Rule</th>
+            <th className="px-2 py-2.5 font-medium sm:px-4">Event</th>
+            <th className="px-2 py-2.5 font-medium sm:px-4">League</th>
+            <th className="px-2 py-2.5 font-medium sm:px-4">Rule</th>
           </tr>
         </thead>
         <tbody className="divide-line divide-y">
           {rows.map((row) => (
             <tr key={row.id} className="hover:bg-ink-850/50">
-              <td className="text-fog-100 px-4 py-2">{row.name}</td>
-              <td className="text-fog-500 px-4 py-2 text-xs">{row.league || '—'}</td>
+              <td className="text-fog-100 px-2 py-2 sm:px-4">{row.name}</td>
+              <td className="text-fog-500 px-2 py-2 text-xs sm:px-4">{row.league || '—'}</td>
               <td className="text-fog-500 px-4 py-2 font-mono text-xs">{row.rule}</td>
             </tr>
           ))}

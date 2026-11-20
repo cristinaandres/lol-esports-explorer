@@ -1,19 +1,21 @@
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { PageSkeleton } from '../components/PageSkeleton'
+import { DataTable } from '../components/DataTable'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, duration, isoDate, monthYear } from '../lib/format'
-import type { Era, EventRow } from '../lib/types'
+import type { Era } from '../lib/types'
 
 export default function EraDetail() {
   const { era: id } = useParams()
   const { status, data } = useDataset()
 
-  if (status === 'loading') return <p className="text-fog-600">Loading…</p>
+  if (status === 'loading') return <PageSkeleton />
   if (status !== 'ready') return <p className="text-fog-600">Nothing to show.</p>
 
   // Empty declared eras are documented in the glossary but are not part of the
@@ -79,7 +81,10 @@ export default function EraDetail() {
                 What this era can be measured on
               </h2>
               <p className="text-fog-500 mb-5 text-sm leading-relaxed">
-                A <code className="text-fog-300">complete</code> game has every eligible field. The
+                <Link to="/glossary#coverage" className="text-fog-300 hover:text-gold">
+                  Coverage
+                </Link>{' '}
+                is per group. A <code className="text-fog-300">complete</code> game has every eligible field. The
                 rest are <code className="text-fog-300">partial</code>: the source recorded some of
                 them and answered <code className="text-fog-300">null</code> for others. Partial is
                 a fact about the source, not a defect in the data, so it is shown rather than
@@ -119,40 +124,39 @@ export default function EraDetail() {
               {count(events.length)} events admitted in this era.
             </p>
 
-            <div className="border-line overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[36rem] text-sm">
-                <thead>
-                  <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-                    <Th>Year</Th>
-                    <Th>Event</Th>
-                    <Th>Competition</Th>
-                    <Th right>Games</Th>
-                    <Th right>Teams</Th>
-                    <Th right>Blue won</Th>
-                  </tr>
-                </thead>
-                <tbody className="divide-line divide-y">
-                  {events.map((event: EventRow) => (
-                    <tr key={event.event_id} className="hover:bg-ink-850/60">
-                      <Td className="text-fog-600 font-mono">{event.year}</Td>
-                      <Td className="text-fog-100">
-                        <Link to={`/events/${event.event_id}`} className="hover:text-gold">
-                          {event.event_name}
-                        </Link>
-                      </Td>
-                      <Td className="text-fog-500">
-                        <span title={event.league || undefined}>{event.competition}</span>
-                      </Td>
-                      <Td right>{count(event.games)}</Td>
-                      <Td right>{count(event.teams)}</Td>
-                      <Td right>
-                        <Ratio part={event.blue_wins} total={event.games} />
-                      </Td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              minWidth="36rem"
+              rowKey={(event) => event.event_id}
+              rows={events}
+              columns={[
+                { key: 'year', label: 'Year', render: (event) => <span className="font-mono text-xs">{event.year}</span> },
+                {
+                  key: 'event',
+                  label: 'Event',
+                  primary: true,
+                  render: (event) => (
+                    <Link to={`/events/${event.event_id}`} className="hover:text-gold">
+                      {event.event_name}
+                    </Link>
+                  ),
+                },
+                {
+                  key: 'competition',
+                  label: 'Competition',
+                  render: (event) => (
+                    <span title={event.league || undefined}>{event.competition}</span>
+                  ),
+                },
+                { key: 'games', label: 'Games', align: 'right', render: (event) => count(event.games) },
+                { key: 'teams', label: 'Teams', align: 'right', render: (event) => count(event.teams) },
+                {
+                  key: 'blue',
+                  label: 'Blue won',
+                  align: 'right',
+                  render: (event) => <Ratio part={event.blue_wins} total={event.games} />,
+                },
+              ]}
+            />
           </section>
         </>
       )}
@@ -205,28 +209,6 @@ function EraStep({
       <div className="text-fog-100 group-hover:text-gold mt-1 font-semibold">{eraCopy(era.era).title}</div>
       <div className="text-fog-600 font-mono text-xs">{span(era)}</div>
     </Link>
-  )
-}
-
-function Th({ children, right }: { children?: React.ReactNode; right?: boolean }) {
-  return <th className={`px-4 py-2.5 font-medium ${right ? 'text-right' : ''}`}>{children}</th>
-}
-
-function Td({
-  children,
-  right,
-  className = '',
-}: {
-  children?: React.ReactNode
-  right?: boolean
-  className?: string
-}) {
-  return (
-    <td
-      className={`px-4 py-2.5 ${right ? 'text-right tabular-nums' : ''} ${className}`}
-    >
-      {children}
-    </td>
   )
 }
 

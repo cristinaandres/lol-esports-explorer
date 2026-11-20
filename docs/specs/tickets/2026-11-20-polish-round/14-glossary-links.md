@@ -1,7 +1,7 @@
 # 14: Let the technical words link to what they mean
 
 **Blocked by:** None for the text that exists today; see the note on ordering
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -36,3 +36,14 @@ the glossary renders, plus a browser check of one link per term.
 ## Note on ordering
 
 Blocked by 01, 03, 04, 05 and 06, whose captions introduce the text this links from.
+
+## Built
+
+The glossary became data (`src/lib/glossary.ts`) with a stable id per entry, which is
+what lets anything link to it. Four captions now do: coverage on an era page, presence
+on a champion, KDA on a player, side preference on a team.
+
+A test walks the source for every `/glossary#…` anchor and fails when one of them names
+an entry that does not exist — the failure mode being a dead link nobody notices until
+a reader clicks it. It also fails if nothing links at all, so the check cannot pass by
+being ignored.

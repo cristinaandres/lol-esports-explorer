@@ -2,6 +2,8 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { PageSkeleton } from '../components/PageSkeleton'
+import { DataTable } from '../components/DataTable'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
@@ -61,7 +63,7 @@ export default function ChampionDetail() {
     setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <p className="text-fog-600">Loading…</p>
+  if (dataset.status === 'loading') return <PageSkeleton />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
 
@@ -194,7 +196,10 @@ export default function ChampionDetail() {
           </StatRow>
 
           <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">
-            Every figure counts only the games played <em>after</em> the champion was released
+            <Link to="/glossary#presence" className="text-fog-300 hover:text-gold">
+              Presence
+            </Link>{' '}
+            counts only the games played <em>after</em> the champion was released
             {champion.release_date ? ` (${dayMonthYear(champion.release_date)})` : ''}, denominator
             included. A champion cannot be picked before it exists, so counting those games would
             report a presence rate it was never eligible for. The eras below are the ones in which
@@ -209,44 +214,48 @@ export default function ChampionDetail() {
               zeroes.
             </p>
 
-            <div className="border-line overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[34rem] text-sm">
-                <thead>
-                  <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-                    <th className="px-4 py-2.5 font-medium">Era</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Games</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Picked</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Banned</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Presence</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Won</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-line divide-y">
-                  {record.eras.map((era) => (
-                    <tr key={era.era} className="hover:bg-ink-850/50">
-                      <td className="text-fog-100 px-4 py-2">
-                        <Link to={`/eras/${era.era}`} className="hover:text-gold">
-                          {eraCopy(era.era).title}
-                        </Link>
-                      </td>
-                      <td className="px-4 py-2 text-right tabular-nums">{count(era.games)}</td>
-                      <td className="px-4 py-2 text-right tabular-nums">
-                        {presenceOf(era) === 0 ? '—' : count(era.picked)}
-                      </td>
-                      <td className="px-4 py-2 text-right tabular-nums">
-                        {presenceOf(era) === 0 ? '—' : count(era.banned)}
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <Ratio part={presenceOf(era)} total={era.games} empty="not present" />
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <Ratio part={era.won} total={era.picked} empty="—" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              minWidth="34rem"
+              rowKey={(era) => era.era}
+              rows={record.eras}
+              columns={[
+                {
+                  key: 'era',
+                  label: 'Era',
+                  primary: true,
+                  render: (era) => (
+                    <Link to={`/eras/${era.era}`} className="hover:text-gold">
+                      {eraCopy(era.era).title}
+                    </Link>
+                  ),
+                },
+                { key: 'games', label: 'Games', align: 'right', render: (era) => count(era.games) },
+                {
+                  key: 'picked',
+                  label: 'Picked',
+                  align: 'right',
+                  render: (era) => (presenceOf(era) === 0 ? '—' : count(era.picked)),
+                },
+                {
+                  key: 'banned',
+                  label: 'Banned',
+                  align: 'right',
+                  render: (era) => (presenceOf(era) === 0 ? '—' : count(era.banned)),
+                },
+                {
+                  key: 'presence',
+                  label: 'Presence',
+                  align: 'right',
+                  render: (era) => <Ratio part={presenceOf(era)} total={era.games} empty="not present" />,
+                },
+                {
+                  key: 'won',
+                  label: 'Won',
+                  align: 'right',
+                  render: (era) => <Ratio part={era.won} total={era.picked} empty="—" />,
+                },
+              ]}
+            />
           </section>
 
           {users && users.roles.length > 0 ? (

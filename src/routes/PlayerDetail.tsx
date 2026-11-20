@@ -2,7 +2,9 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { PageSkeleton } from '../components/PageSkeleton'
 import { CareerFilters } from '../components/CareerFilters'
+import { DataTable } from '../components/DataTable'
 import { EmptyFilter } from '../components/EmptyFilter'
 import { HoverNote } from '../components/HoverNote'
 import { PageHeader } from '../components/PageHeader'
@@ -122,7 +124,7 @@ export default function PlayerDetail() {
     setSearchParams(new URLSearchParams(filterSearch(filter)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <p className="text-fog-600">Loading…</p>
+  if (dataset.status === 'loading') return <PageSkeleton />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
 
@@ -280,7 +282,10 @@ export default function PlayerDetail() {
           </StatRow>
 
           <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">
-            KDA = (kills + assists) / max(1, deaths), summed over every game before dividing. The
+            <Link to="/glossary#kda" className="text-fog-300 hover:text-gold">
+              KDA
+            </Link>{' '}
+            = (kills + assists) / max(1, deaths), summed over every game before dividing. The
             totals sit beside each average for the same reason they do below: one death in four
             games and one in forty are not the same measurement.
           </p>
@@ -335,55 +340,60 @@ export default function PlayerDetail() {
           <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Recent form</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              The last {RECENT_FORM} games in this selection, newest first. A career average says
-              what a player is; this says how they are playing now, which is the question before an
-              event.
+              The last {RECENT_FORM} games in this selection, newest first. A career average says what
+              a player is; this says how they are playing now, which is the question before an event.
             </p>
 
-            <div className="border-line overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[36rem] text-sm">
-                <thead>
-                  <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-                    <th className="px-4 py-2.5 font-medium">Date</th>
-                    <th className="px-4 py-2.5 font-medium">Competition</th>
-                    <th className="px-4 py-2.5 font-medium">Opponent</th>
-                    <th className="px-4 py-2.5 font-medium">Champion</th>
-                    <th className="px-4 py-2.5 font-medium">Result</th>
-                    <th className="px-4 py-2.5 text-right font-medium">K / D / A</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-line divide-y">
-                  {form.map((entry) => {
-                    const won = entry.row.side === 'blue' ? entry.game.blue_win === 1 : entry.game.blue_win === 0
-                    const opponent = entry.row.side === 'blue' ? entry.game.red_team_key : entry.game.blue_team_key
-                    return (
-                      <tr key={entry.game.game_key} className="hover:bg-ink-850/50">
-                        <td className="text-fog-600 px-4 py-2 font-mono text-xs">
-                          {dayMonthYear(entry.game.date_time_utc)}
-                        </td>
-                        <td className="text-fog-500 px-4 py-2 text-xs">{entry.competition}</td>
-                        <td className="text-fog-300 px-4 py-2">{teamName(index, opponent)}</td>
-                        <td className="text-fog-300 px-4 py-2">
-                          {championPath(index, entry.row.champion_key) ? (
-                            <Link to={championPath(index, entry.row.champion_key)!} className="hover:text-gold">
-                              {championName(index, entry.row.champion_key)}
-                            </Link>
-                          ) : (
-                            championName(index, entry.row.champion_key)
-                          )}
-                        </td>
-                        <td className={`px-4 py-2 text-xs ${won ? 'text-gold' : 'text-fog-500'}`}>
-                          {won ? 'win' : 'loss'}
-                        </td>
-                        <td className="px-4 py-2 text-right font-mono text-xs tabular-nums">
-                          {entry.row.kills} / {entry.row.deaths} / {entry.row.assists}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              minWidth="36rem"
+              rowKey={(entry) => entry.game.game_key}
+              rows={form}
+              columns={[
+                {
+                  key: 'date',
+                  label: 'Date',
+                  primary: true,
+                  render: (entry) => (
+                    <span className="font-mono text-xs">{dayMonthYear(entry.game.date_time_utc)}</span>
+                  ),
+                },
+                { key: 'competition', label: 'Competition', render: (entry) => entry.competition },
+                {
+                  key: 'opponent',
+                  label: 'Opponent',
+                  render: (entry) =>
+                    teamName(index, entry.row.side === 'blue' ? entry.game.red_team_key : entry.game.blue_team_key),
+                },
+                {
+                  key: 'champion',
+                  label: 'Champion',
+                  render: (entry) =>
+                    championPath(index, entry.row.champion_key) ? (
+                      <Link to={championPath(index, entry.row.champion_key)!} className="hover:text-gold">
+                        {championName(index, entry.row.champion_key)}
+                      </Link>
+                    ) : (
+                      championName(index, entry.row.champion_key)
+                    ),
+                },
+                {
+                  key: 'result',
+                  label: 'Result',
+                  render: (entry) =>
+                    (entry.row.side === 'blue' ? entry.game.blue_win === 1 : entry.game.blue_win === 0) ? (
+                      <span className="text-gold">win</span>
+                    ) : (
+                      <span className="text-fog-500">loss</span>
+                    ),
+                },
+                {
+                  key: 'kda',
+                  label: 'K / D / A',
+                  align: 'right',
+                  render: (entry) => `${entry.row.kills} / ${entry.row.deaths} / ${entry.row.assists}`,
+                },
+              ]}
+            />
           </section>
 
           {roleSplits.length > 1 ? (
@@ -395,24 +405,24 @@ export default function PlayerDetail() {
               </p>
 
               <div className="border-line overflow-x-auto rounded-xl border">
-                <table className="w-full min-w-[28rem] text-sm">
+                <table className="w-full text-xs sm:text-sm">
                   <thead>
                     <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-                      <th className="px-4 py-2.5 font-medium">Role</th>
-                      <th className="px-4 py-2.5 text-right font-medium">Games</th>
-                      <th className="px-4 py-2.5 text-right font-medium">Win rate</th>
-                      <th className="px-4 py-2.5 text-right font-medium">KDA</th>
+                      <th className="px-2 py-2.5 font-medium sm:px-4">Role</th>
+                      <th className="px-2 py-2.5 text-right font-medium sm:px-4">Games</th>
+                      <th className="px-2 py-2.5 text-right font-medium sm:px-4">Win rate</th>
+                      <th className="px-2 py-2.5 text-right font-medium sm:px-4">KDA</th>
                     </tr>
                   </thead>
                   <tbody className="divide-line divide-y">
                     {roleSplits.map((split) => (
                       <tr key={split.role} className="hover:bg-ink-850/50">
-                        <td className="text-fog-100 px-4 py-2">{split.role}</td>
-                        <td className="px-4 py-2 text-right tabular-nums">{count(split.career.games)}</td>
-                        <td className="px-4 py-2 text-right">
+                        <td className="text-fog-100 px-2 py-2 sm:px-4">{split.role}</td>
+                        <td className="px-2 py-2 text-right tabular-nums sm:px-4">{count(split.career.games)}</td>
+                        <td className="px-2 py-2 text-right sm:px-4">
                           <Ratio part={split.career.wins} total={split.career.games} />
                         </td>
-                        <td className="px-4 py-2 text-right tabular-nums">
+                        <td className="px-2 py-2 text-right tabular-nums sm:px-4">
                           {split.career.kda === null ? '—' : split.career.kda.toFixed(2)}
                         </td>
                       </tr>
@@ -432,13 +442,13 @@ export default function PlayerDetail() {
             </p>
 
             <div className="border-line overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[32rem] text-sm">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-                    <th className="px-4 py-2.5 font-medium">Measure</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Total</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Per game</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Games measured</th>
+                    <th className="px-2 py-2.5 font-medium sm:px-4">Measure</th>
+                    <th className="px-2 py-2.5 text-right font-medium sm:px-4">Total</th>
+                    <th className="px-2 py-2.5 text-right font-medium sm:px-4">Per game</th>
+                    <th className="px-2 py-2.5 text-right font-medium sm:px-4">Games measured</th>
                   </tr>
                 </thead>
                 <tbody className="divide-line divide-y">
@@ -499,13 +509,13 @@ export default function PlayerDetail() {
             </p>
 
             <div className="border-line overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[34rem] text-sm">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-                    <th className="px-4 py-2.5 font-medium">Event</th>
-                    <th className="px-4 py-2.5 font-medium">Competition</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Games</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Win rate</th>
+                    <th className="px-2 py-2.5 font-medium sm:px-4">Event</th>
+                    <th className="px-2 py-2.5 font-medium sm:px-4">Competition</th>
+                    <th className="px-2 py-2.5 text-right font-medium sm:px-4">Games</th>
+                    <th className="px-2 py-2.5 text-right font-medium sm:px-4">Win rate</th>
                   </tr>
                 </thead>
                 <tbody className="divide-line divide-y">
@@ -513,7 +523,7 @@ export default function PlayerDetail() {
                     const event = prepared.events.get(entry.eventKey)
                     return (
                       <tr key={entry.eventKey} className="hover:bg-ink-850/50">
-                        <td className="text-fog-100 px-4 py-2">
+                        <td className="text-fog-100 px-2 py-2 sm:px-4">
                           {event ? (
                             <Link to={`/events/${event.event_id}`} className="hover:text-gold">
                               {event.event_name}
@@ -522,11 +532,11 @@ export default function PlayerDetail() {
                             'Unknown event'
                           )}
                         </td>
-                        <td className="text-fog-500 px-4 py-2">
+                        <td className="text-fog-500 px-2 py-2 sm:px-4">
                           {event ? `${event.competition} · ${event.year}` : '—'}
                         </td>
-                        <td className="px-4 py-2 text-right tabular-nums">{count(entry.games)}</td>
-                        <td className="px-4 py-2 text-right">
+                        <td className="px-2 py-2 text-right tabular-nums sm:px-4">{count(entry.games)}</td>
+                        <td className="px-2 py-2 text-right sm:px-4">
                           <Ratio part={entry.wins} total={entry.games} />
                         </td>
                       </tr>
@@ -716,11 +726,11 @@ function MeasureRow({
 
   return (
     <tr className="hover:bg-ink-850/50">
-      <td className="text-fog-100 px-4 py-2">{label}</td>
-      <td className="px-4 py-2 text-right tabular-nums">
+      <td className="text-fog-100 px-2 py-2 sm:px-4">{label}</td>
+      <td className="px-2 py-2 text-right tabular-nums sm:px-4">
         {summary.measured === 0 ? '—' : count(summary.sum)}
       </td>
-      <td className="px-4 py-2 text-right tabular-nums">{perGame(summary.average)}</td>
+      <td className="px-2 py-2 text-right tabular-nums sm:px-4">{perGame(summary.average)}</td>
       <td className="text-fog-600 px-4 py-2 text-right font-mono text-xs tabular-nums">
         {note ? <HoverNote note={note}>{coverage}</HoverNote> : coverage}
       </td>

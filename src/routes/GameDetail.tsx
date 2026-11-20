@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { PageSkeleton } from '../components/PageSkeleton'
 import { CoverageBadge } from '../components/CoverageBadge'
 import { DraftBoard } from '../components/DraftBoard'
 import { PageHeader } from '../components/PageHeader'
@@ -48,7 +49,7 @@ export default function GameDetail() {
     } as const
   }, [dataset, id])
 
-  if (dataset.status === 'loading') return <p className="text-fog-600">Loading…</p>
+  if (dataset.status === 'loading') return <PageSkeleton />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
 

@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { PageSkeleton } from '../components/PageSkeleton'
 import { PageHeader } from '../components/PageHeader'
 import { SeriesList } from '../components/SeriesList'
 import { useDataset } from '../lib/data'
@@ -47,7 +48,7 @@ export default function PhaseDetail() {
     } as const
   }, [status, data, eventId, phase])
 
-  if (status === 'loading') return <p className="text-fog-600">Loading…</p>
+  if (status === 'loading') return <PageSkeleton />
   if (status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {status === 'failed' ? '' : ''}</p>
 

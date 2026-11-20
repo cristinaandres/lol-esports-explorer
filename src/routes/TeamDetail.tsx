@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { PageSkeleton } from '../components/PageSkeleton'
 import { CareerFilters } from '../components/CareerFilters'
 import { EmptyFilter } from '../components/EmptyFilter'
 import { PageHeader } from '../components/PageHeader'
@@ -72,7 +73,7 @@ export default function TeamDetail() {
     setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <p className="text-fog-600">Loading…</p>
+  if (dataset.status === 'loading') return <PageSkeleton />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
 
@@ -178,8 +179,10 @@ export default function TeamDetail() {
           </StatRow>
 
           <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">
-            Side preference is reported per view because it belongs to the era as much as to the
-            team: the map favours a side differently from one season to the next.
+            <Link to="/glossary#blue-side" className="text-fog-300 hover:text-gold">
+              Side preference
+            </Link>{' '}
+            is reported per view because it belongs to the era as much as to the team: the map favours a side differently from one season to the next.
           </p>
 
           <section className="mt-12">
@@ -260,13 +263,13 @@ export default function TeamDetail() {
             </div>
 
             <div className="border-line overflow-x-auto rounded-xl border">
-              <table className="w-full min-w-[32rem] text-sm">
+              <table className="w-full text-xs sm:text-sm">
                 <thead>
                   <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
-                    <th className="px-4 py-2.5 font-medium">Event</th>
-                    <th className="px-4 py-2.5 font-medium">Competition</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Games</th>
-                    <th className="px-4 py-2.5 text-right font-medium">Won</th>
+                    <th className="px-2 py-2.5 font-medium sm:px-4">Event</th>
+                    <th className="px-2 py-2.5 font-medium sm:px-4">Competition</th>
+                    <th className="px-2 py-2.5 text-right font-medium sm:px-4">Games</th>
+                    <th className="px-2 py-2.5 text-right font-medium sm:px-4">Won</th>
                   </tr>
                 </thead>
                 <tbody className="divide-line divide-y">
@@ -274,7 +277,7 @@ export default function TeamDetail() {
                     const event = events.get(entry.eventKey)
                     return (
                       <tr key={entry.eventKey} className="hover:bg-ink-850/50">
-                        <td className="text-fog-100 px-4 py-2">
+                        <td className="text-fog-100 px-2 py-2 sm:px-4">
                           {event ? (
                             <Link to={`/events/${event.event_id}`} className="hover:text-gold">
                               {event.event_name}
@@ -308,8 +311,8 @@ export default function TeamDetail() {
                             '—'
                           )}
                         </td>
-                        <td className="px-4 py-2 text-right tabular-nums">{count(entry.games)}</td>
-                        <td className="px-4 py-2 text-right">
+                        <td className="px-2 py-2 text-right tabular-nums sm:px-4">{count(entry.games)}</td>
+                        <td className="px-2 py-2 text-right sm:px-4">
                           <Ratio part={entry.wins} total={entry.games} />
                         </td>
                       </tr>
