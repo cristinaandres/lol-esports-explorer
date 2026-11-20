@@ -34,14 +34,22 @@ export type EntityStat = { key: number; games: number; wins: number }
 /**
  * A champion, in the role it was played in.
  *
- * 58 player-champion pairs in the corpus were played in two roles — Perkz on
- * Kai'Sa mid and bot, Bwipo on Ornn bot and top — so a champion is keyed by role
+ * 58 player-champion pairs in the corpus were played in two roles -- Perkz on
+ * Kai'Sa mid and bot, Bwipo on Ornn bot and top -- so a champion is keyed by role
  * as well as by itself. Collapsing the two would merge two different jobs into one
  * win rate.
  */
 export type ChampionStat = EntityStat & { role: string }
 
 export type RoleStat = { role: string; games: number }
+
+/** One game a player appeared in, with what a filter needs to narrow it. */
+export type Appearance = {
+  game: Game
+  row: PlayerGame
+  /** The canonical competition of the game's event: 'Worlds', 'MSI', ... */
+  competition: string
+}
 
 export type Career = {
   games: number
@@ -88,17 +96,32 @@ const EMPTY: Career = {
   lastGame: null,
 }
 
-export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number): Career {
+/**
+ * The games a player appeared in, oldest first, each with its competition.
+ *
+ * Splitting this out from the summary is what makes filtering honest: a filter
+ * narrows this list, and the summary is then computed over what is left, so no
+ * figure can be reported over a set the page is not showing.
+ */
+export function appearancesFor(
+  games: Game[],
+  rows: PlayerGame[],
+  playerKey: number,
+  competitions: Map<number, string> = new Map(),
+): Appearance[] {
   const byKey = new Map(games.map((game) => [game.game_key, game]))
 
-  const appearances = rows
+  return rows
     .filter((row) => row.player_key === playerKey)
     .flatMap((row) => {
       const game = byKey.get(row.game_key)
-      return game ? [{ row, game }] : []
+      if (!game) return []
+      return [{ game, row, competition: competitions.get(game.event_key) ?? 'Unknown' }]
     })
     .sort((a, b) => a.game.date_time_utc.localeCompare(b.game.date_time_utc))
+}
 
+export function careerFrom(appearances: Appearance[]): Career {
   if (appearances.length === 0) return EMPTY
 
   let kills = 0
@@ -119,10 +142,12 @@ export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number):
   const eraFirst = new Map<string, string>()
 
   for (const { row, game } of appearances) {
+    const victory = won(game, row)
+
     kills += row.kills
     deaths += row.deaths
     assists += row.assists
-    if (won(game, row)) wins += 1
+    if (victory) wins += 1
 
     for (const key of ['cs', 'gold', 'damage', 'vision'] as const) {
       const value = row[key]
@@ -133,8 +158,8 @@ export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number):
       measures[key].firstMeasured ??= game.date_time_utc
     }
 
-    bumpChampion(champions, row.role, row.champion_key, won(game, row))
-    bump(teams, row.team_key, won(game, row))
+    bumpChampion(champions, row.role, row.champion_key, victory)
+    bump(teams, row.team_key, victory)
     roles.set(row.role, (roles.get(row.role) ?? 0) + 1)
 
     const seen = eraFirst.get(game.era)
@@ -175,6 +200,39 @@ export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number):
   }
 }
 
+/** The whole career of one player, for callers that need no filtering. */
+export function careerFor(
+  games: Game[],
+  rows: PlayerGame[],
+  playerKey: number,
+  competitions: Map<number, string> = new Map(),
+): Career {
+  return careerFrom(appearancesFor(games, rows, playerKey, competitions))
+}
+
+/**
+ * How many games a champion needs before its win rate may rank it.
+ *
+ * Below this the page still lists the champion, in its own group, because the
+ * win rate of one game is not a rate: it is that game. The same threshold that
+ * phase 4 applies to a head-to-head applies here.
+ */
+export const MIN_GAMES_FOR_RATE = 5
+
+/**
+ * Win rate first, then games played, then key so the order is total.
+ *
+ * The rate is compared as the whole percentage the page prints, not as the raw
+ * fraction. Two champions shown as "83%" must not be ordered by a difference the
+ * reader cannot see: 5/6 is 83.3% and 34/41 is 82.9%, so ranking on the second
+ * decimal would put the smaller sample first while both read "83%".
+ */
+export function rankByWinRate<T extends EntityStat>(stats: T[]): T[] {
+  const rate = (stat: EntityStat) =>
+    stat.games === 0 ? 0 : Math.round((stat.wins / stat.games) * 100)
+  return [...stats].sort((a, b) => rate(b) - rate(a) || b.games - a.games || a.key - b.key)
+}
+
 /** A win is the player's side matching the side the game records as winning. */
 function won(game: Game, row: PlayerGame): boolean {
   return row.side === 'blue' ? game.blue_win === 1 : game.blue_win === 0
@@ -204,29 +262,6 @@ function bumpChampion(
     return
   }
   target.set(id, { key, role, games: 1, wins: victory ? 1 : 0 })
-}
-
-/**
- * How many games a champion needs before its win rate may rank it.
- *
- * Below this the page still lists the champion, in its own group, because the
- * win rate of one game is not a rate: it is that game. The same threshold that
- * phase 4 applies to a head-to-head applies here.
- */
-export const MIN_GAMES_FOR_RATE = 5
-
-/**
- * Win rate first, then games played, then key so the order is total.
- *
- * The rate is compared as the whole percentage the page prints, not as the raw
- * fraction. Two champions shown as "83%" must not be ordered by a difference the
- * reader cannot see: 5/6 is 83.3% and 34/41 is 82.9%, so ranking on the second
- * decimal would put the smaller sample first while both read "83%".
- */
-export function rankByWinRate<T extends EntityStat>(stats: T[]): T[] {
-  const rate = (stat: EntityStat) =>
-    stat.games === 0 ? 0 : Math.round((stat.wins / stat.games) * 100)
-  return [...stats].sort((a, b) => rate(b) - rate(a) || b.games - a.games || a.key - b.key)
 }
 
 /** Most played first, then by key, so the order never depends on insertion. */

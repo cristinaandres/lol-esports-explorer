@@ -1,14 +1,32 @@
 import { useMemo } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { CareerFilters } from '../components/CareerFilters'
 import { HoverNote } from '../components/HoverNote'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { careerFor, MIN_GAMES_FOR_RATE, rankByWinRate, type ChampionStat, type MeasureSummary } from '../lib/career'
+import {
+  appearancesFor,
+  careerFrom,
+  MIN_GAMES_FOR_RATE,
+  rankByWinRate,
+  type ChampionStat,
+  type MeasureSummary,
+} from '../lib/career'
 import { useAliases, useDataset, usePlayerGames } from '../lib/data'
+import { eraCopy } from '../lib/eras'
+import {
+  applyFilter,
+  emptyReason,
+  filterSearch,
+  NO_FILTER,
+  optionsFor,
+  parseFilter,
+  recoverFilter,
+} from '../lib/filters'
 import { count, monthYear, perGame } from '../lib/format'
 import { buildIndexes, championName, teamName } from '../lib/indexes'
 
@@ -28,15 +46,25 @@ export default function PlayerDetail() {
   const dataset = useDataset()
   const rows = usePlayerGames()
   const aliases = useAliases()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter = parseFilter(searchParams)
 
   const prepared = useMemo(() => {
     if (dataset.status !== 'ready') return null
     const player = dataset.data.players.find((row) => row.player_id === id)
     if (!player) return { player: undefined } as const
 
+    const competitions = new Map(
+      dataset.data.events.map((event) => [event.event_key, event.competition]),
+    )
+
     return {
       player,
-      career: rows.status === 'ready' ? careerFor(dataset.data.games, rows.data, player.player_key) : null,
+      ready: rows.status === 'ready',
+      appearances:
+        rows.status === 'ready'
+          ? appearancesFor(dataset.data.games, rows.data, player.player_key, competitions)
+          : [],
       former:
         aliases.status === 'ready'
           ? namesFor(aliases.data, 'player', player.player_id).map((row) => ({
@@ -48,6 +76,10 @@ export default function PlayerDetail() {
       index: buildIndexes(dataset.data),
     } as const
   }, [dataset, rows, aliases, id])
+
+  const applyFilters = (next: typeof filter) => {
+    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
+  }
 
   if (dataset.status === 'loading') return <p className="text-fog-600">Loading…</p>
   if (dataset.status === 'failed')
@@ -70,7 +102,19 @@ export default function PlayerDetail() {
     )
   }
 
-  const { player, career, former, index } = prepared
+  const { player, former, index } = prepared
+  const all = prepared.appearances
+  const visible = applyFilter(all, filter)
+  const career = prepared.ready ? careerFrom(visible) : null
+  const options = optionsFor(all)
+  const reason = emptyReason(all, filter)
+  const eraLabel =
+    career && career.eras.length > 0
+      ? career.eras.length === 1
+        ? eraCopy(career.eras[0]!).title
+        : 'mixed'
+      : null
+
   const roleLabel = career
     ? career.roles.map((role) => role.role.toLowerCase()).join(', ')
     : null
@@ -124,10 +168,42 @@ export default function PlayerDetail() {
         }
       />
 
+      {prepared.ready ? (
+        <CareerFilters
+          filter={filter}
+          options={options}
+          eraLabel={eraLabel}
+          onChange={applyFilters}
+          onClear={() => applyFilters(NO_FILTER)}
+        />
+      ) : null}
+
       {career === null ? (
         <div className="space-y-3">
           <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
           <div className="bg-ink-900 border-line h-48 animate-pulse rounded-xl border" />
+        </div>
+      ) : career.games === 0 && all.length > 0 ? (
+        <div className="border-line bg-ink-900 rounded-xl border p-6">
+          <h2 className="text-fog-100 text-base font-semibold">
+            {reason === 'year'
+              ? `No games at ${filter.competition} in ${filter.year}.`
+              : reason === 'competition'
+                ? `No games in ${filter.competition}.`
+                : 'No games match both filters.'}
+          </h2>
+          <p className="text-fog-300 mt-2 max-w-xl text-sm leading-relaxed">
+            {reason === 'year'
+              ? `${player.player_name} played at ${filter.competition}, just not in ${filter.year}. The year is what emptied this view.`
+              : `${player.player_name} has no game in that competition. The competition is what emptied this view.`}
+          </p>
+          <button
+            type="button"
+            onClick={() => applyFilters(recoverFilter(all, filter))}
+            className="border-line hover:border-line-bright text-gold mt-4 rounded-lg border px-3 py-1.5 text-sm"
+          >
+            {reason === 'year' ? `Show every ${filter.competition} game` : 'Show every game'}
+          </button>
         </div>
       ) : career.games === 0 ? (
         <p className="border-line bg-ink-900 text-fog-300 rounded-xl border p-6 text-sm">

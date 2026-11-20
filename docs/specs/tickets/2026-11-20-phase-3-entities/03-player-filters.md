@@ -1,7 +1,7 @@
 # 03: Narrow a career by competition, then by year
 
 **Blocked by:** 02 (the page this narrows)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -50,3 +50,25 @@ offers the one action that undoes it.
 A round-trip test on the query-string module, unit tests on the derived era (one
 era, several eras, a year inside no era), and a test that an empty selection
 renders the empty state naming the filter. Covers spec R3 and R4.
+
+## Built
+
+- **The career was split into appearances and a summary.** A filter now narrows the
+  appearance list first, and the summary is computed over what is left, so no
+  figure can be reported over a set the page is not showing. `careerFor()` remains
+  for callers that need no filtering.
+- **The empty state's button is tested, not asserted.** It drops the half that
+  emptied the view and, if that still leaves nothing, drops both; a test walks
+  every competition × year combination and proves the recovered filter always has
+  games in it. An empty state whose button lands on another empty state is worse
+  than no button.
+- **The options do not cascade.** Narrowing to a year must not shrink the
+  competition list to one entry, or the reader loses the way back. Both lists are
+  always the player's whole range, and a test pins that.
+- **Filter changes replace the history entry** rather than pushing one, so Back
+  returns to the previous page instead of walking through every dropdown change.
+- **A malformed `?year=last` falls back to the unfiltered view** but the URL keeps
+  the parameter. Cleaning it would be a second navigation for no benefit; the page
+  shows the honest default and the reader can see what they typed.
+- Measured on Faker: 410 games overall, 184 at Worlds, 24 at Worlds in 2025. The era
+  chip reads `mixed` unfiltered and `Atakhan` for 2025.
