@@ -9,9 +9,11 @@ import { Stat, StatRow } from '../components/Stat'
 import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, duration, dayMonthYear } from '../lib/format'
-import { buildIndexes, teamName } from '../lib/indexes'
+import { buildIndexes, teamName, teamPath } from '../lib/indexes'
 import { groupGamesBySeries } from '../lib/series'
 import { groupByPhase, phasePath } from '../lib/phases'
+import { championships } from '../lib/titles'
+import { teamsOfGames } from '../lib/team'
 
 export default function EventDetail() {
   const { event: id } = useParams()
@@ -34,6 +36,8 @@ export default function EventDetail() {
       matches,
       grouped,
       phases: groupByPhase(grouped.series, matches),
+      champs: championships(data.games, data.matches),
+      teams: teamsOfGames(games),
       index: buildIndexes(data),
     } as const
   }, [state, id])
@@ -53,7 +57,8 @@ export default function EventDetail() {
     )
   }
 
-  const { event, matches, grouped, phases, index } = prepared
+  const { event, matches, grouped, phases, index, teams } = prepared
+  const champion = prepared.champs.get(event.event_key)
   const eraId = event.eras?.split(', ')[0] ?? ''
   const eraTitle = eraId ? eraCopy(eraId).title : '—'
 
@@ -72,12 +77,29 @@ export default function EventDetail() {
         title={event.event_name}
         lead={undefined}
         aside={
-          <p className="text-fog-600 text-right font-mono text-xs leading-relaxed">
-            {dayMonthYear(event.first_date)} → {dayMonthYear(event.last_date)}
-            <br />
-            {eraTitle}
-            {event.eras && event.eras.includes(',') ? ' (spans more than one era)' : ''}
-          </p>
+          <div className="text-right">
+            {champion ? (
+              <p className="text-fog-300 mb-2 text-sm">
+                won by{' '}
+                {teamPath(index, champion.teamKey) ? (
+                  <Link to={teamPath(index, champion.teamKey)!} className="text-gold hover:underline">
+                    {teamName(index, champion.teamKey)}
+                  </Link>
+                ) : (
+                  <span className="text-gold">{teamName(index, champion.teamKey)}</span>
+                )}{' '}
+                <span className="text-fog-600 font-mono text-xs">
+                  {champion.wins} – {champion.losses} in the final
+                </span>
+              </p>
+            ) : null}
+            <p className="text-fog-600 font-mono text-xs leading-relaxed">
+              {dayMonthYear(event.first_date)} → {dayMonthYear(event.last_date)}
+              <br />
+              {eraTitle}
+              {event.eras && event.eras.includes(',') ? ' (spans more than one era)' : ''}
+            </p>
+          </div>
         }
       />
 
@@ -92,6 +114,32 @@ export default function EventDetail() {
         />
         <Stat label="Blue side won" value={<Ratio part={event.blue_wins} total={event.games} />} />
       </StatRow>
+
+      {event.coverage_games && event.coverage_games > 0 ? (
+        <section className="mt-10">
+          <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">
+            What this event can be measured on
+          </h2>
+          <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+            Coverage is not uniform inside an era: an event can carry every game and still record no
+            team statistics. These are this event&rsquo;s own counts, not its era&rsquo;s.
+          </p>
+
+          <dl className="divide-line border-line max-w-2xl divide-y border-y">
+            <CoverageLine label="Draft" part={event.draft_complete ?? 0} total={event.coverage_games} />
+            <CoverageLine
+              label="Player statistics"
+              part={event.player_complete ?? 0}
+              total={event.coverage_games}
+            />
+            <CoverageLine
+              label="Team statistics"
+              part={event.team_complete ?? 0}
+              total={event.coverage_games}
+            />
+          </dl>
+        </section>
+      ) : null}
 
       {grouped.series.length > 0 ? (
         <section className="mt-12">
@@ -126,6 +174,42 @@ export default function EventDetail() {
         </section>
       ) : null}
 
+      {teams.length > 0 ? (
+        <section className="mt-12">
+          <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Teams</h2>
+          <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+            Every team the event&rsquo;s games name, with the games it played. The games column adds
+            up to twice the event&rsquo;s game count, because every game has two sides.
+          </p>
+
+          <ul className="divide-line border-line divide-y border-y">
+            {teams.map((team) => (
+              <li key={team.teamKey} className="flex items-baseline justify-between gap-3 py-2.5">
+                <span className="text-fog-200 text-sm">
+                  {teamPath(index, team.teamKey) ? (
+                    <Link to={teamPath(index, team.teamKey)!} className="hover:text-gold">
+                      {teamName(index, team.teamKey)}
+                    </Link>
+                  ) : (
+                    teamName(index, team.teamKey)
+                  )}
+                </span>
+                <span className="flex items-baseline gap-4 text-xs">
+                  <span className="text-fog-600 tabular-nums">{count(team.games)} games</span>
+                  <Ratio part={team.wins} total={team.games} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <p className="text-fog-600 mt-12 border-line border-t pt-5 text-xs">
+        <Link to="/selection" className="text-fog-500 hover:text-fog-100">
+          Why these events, and not others →
+        </Link>
+      </p>
+
       {grouped.orphans.length > 0 ? (
         <section className="mt-12">
           <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">
@@ -154,5 +238,16 @@ export default function EventDetail() {
         </section>
       ) : null}
     </>
+  )
+}
+
+function CoverageLine({ label, part, total }: { label: string; part: number; total: number }) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 py-3">
+      <dt className="text-fog-300 text-sm">{label}</dt>
+      <dd>
+        <Ratio part={part} total={total} />
+      </dd>
+    </div>
   )
 }

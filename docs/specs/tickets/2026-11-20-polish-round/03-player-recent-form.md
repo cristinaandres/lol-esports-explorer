@@ -1,7 +1,7 @@
 # 03: A player's recent form
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -32,3 +32,9 @@ filters already narrow the pool it draws from.
 
 Unit tests over the slice: fewer games than the limit, exactly the limit, and an
 empty selection.
+
+## Built
+
+A "Recent form" block above the per-game table: the last ten games of the current
+selection, newest first, with competition, opponent, champion, result and the player's
+line. `RECENT_FORM` is a named constant, and the slice respects the active filters.

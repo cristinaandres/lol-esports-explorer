@@ -13,6 +13,7 @@ import Home from './routes/Home'
 import NotFound from './routes/NotFound'
 import PhaseDetail from './routes/PhaseDetail'
 import PlayerDetail from './routes/PlayerDetail'
+import Selection from './routes/Selection'
 import SeriesDetail from './routes/SeriesDetail'
 import TeamDetail from './routes/TeamDetail'
 
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/champions" element={<EntityIndex kind="champion" />} />
         <Route path="/champions/:champion" element={<ChampionDetail />} />
         <Route path="/glossary" element={<Glossary />} />
+        <Route path="/selection" element={<Selection />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Layout>

@@ -154,3 +154,34 @@ export function rosterOfGame(
     }))
     .sort((a, b) => a.playerKey - b.playerKey)
 }
+
+export type GameTeamStat = { teamKey: number; games: number; wins: number }
+
+/**
+ * Every team in a set of games, with its record.
+ *
+ * Both sides of every game count, so the games column sums to twice the number of
+ * games — which is what makes the event page's team list reconcile with the series
+ * below it instead of being a separate claim.
+ */
+export function teamsOfGames(games: Game[]): GameTeamStat[] {
+  const teams = new Map<number, GameTeamStat>()
+
+  const add = (teamKey: number, won: boolean) => {
+    if (teamKey === 0) return
+    const existing = teams.get(teamKey)
+    if (existing) {
+      existing.games += 1
+      if (won) existing.wins += 1
+      return
+    }
+    teams.set(teamKey, { teamKey, games: 1, wins: won ? 1 : 0 })
+  }
+
+  for (const game of games) {
+    add(game.blue_team_key, game.blue_win === 1)
+    add(game.red_team_key, game.blue_win === 0)
+  }
+
+  return [...teams.values()].sort((a, b) => b.games - a.games || a.teamKey - b.teamKey)
+}

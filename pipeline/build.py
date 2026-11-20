@@ -47,7 +47,15 @@ OUT_DIR = ROOT / "public" / "data"
 ARTIFACTS: dict[str, str] = {
     # Eager: loaded by every page.
     "totals.json": "select * from corpus_totals",
-    "events.json": "select * from event_summary",
+    "events.json": """
+        select e.*, c.coverage_games, c.team_complete, c.draft_complete, c.player_complete
+        from event_summary e
+        left join event_coverage_report c using (event_id)
+        order by e.date_start, e.event_name
+    """,
+    "selection.json": """
+        select * from selection_candidates order by decision, rule, name
+    """,
     "games.json": "select * from game_rows order by date_time_utc, game_key",
     "matches.json": "select * from match_rows order by match_key",
     # Names. Loaded eagerly because every page resolves a key to a name.

@@ -1,7 +1,7 @@
 # 06: List the teams that played an event
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -31,3 +31,9 @@ it cannot drift from the series below it.
 
 A data test asserting the sum of the listed teams' games equals twice the event's
 games, for every event.
+
+## Built
+
+A Teams section listing every team the event's games name, with games and win rate. The
+games column sums to twice the event's game count, which is what makes it reconcile
+with the phases above rather than being a separate claim.

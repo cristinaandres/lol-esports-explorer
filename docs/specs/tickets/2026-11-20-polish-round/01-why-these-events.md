@@ -1,7 +1,7 @@
 # 01: Say which events were left out, and why
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -37,3 +37,12 @@ difference between a rule the reader has to trust and one they can check.
 
 A data test over the pinned artifact: the decisions partition the 235 rows, and the
 admitted set matches the events the site renders. Covers the corpus's own R1 claim.
+
+## Built
+
+`/selection` — 235 candidates, 54 admitted, 181 rejected, grouped by the six rules that
+decided them, with every rejected event and the rule that excluded it. Linked from the
+footer and from the foot of every event page.
+
+The artifact is pinned as `data/upstream/event-selection.json`, with its source, the
+pin date and a note explaining why it is here; `meta.json` hashes it with the rest.

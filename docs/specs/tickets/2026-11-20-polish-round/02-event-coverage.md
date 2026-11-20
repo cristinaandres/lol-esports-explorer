@@ -1,7 +1,7 @@
 # 02: Show one event's coverage, not just its era's
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -32,3 +32,10 @@ event page gets the same coverage panel the era page has, measured on one event.
 ## Validation
 
 A data test comparing the folded values against the pinned report for every event.
+
+## Built
+
+Coverage is folded into the events artifact, so the event page states it without a
+second fetch. Verified on the case that proves the panel is real: IEM Season 6 reports
+0 of 44 for draft, player and team statistics, while the era it belongs to is largely
+complete.

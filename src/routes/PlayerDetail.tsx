@@ -11,8 +11,11 @@ import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
 import {
   appearancesFor,
+  byRole,
   careerFrom,
   eventsOf,
+  RECENT_FORM,
+  recentForm,
   MIN_GAMES_FOR_RATE,
   rankByWinRate,
   type Appearance,
@@ -146,6 +149,8 @@ export default function PlayerDetail() {
   const eventStats = eventsOf(all)
   const titleGroups = groupTitlesByCompetition(titles, (key) => prepared.events.get(key)?.competition)
   const visible = applyFilter(all, filter)
+  const form = recentForm(visible)
+  const roleSplits = byRole(visible)
   const career = prepared.ready ? careerFrom(visible) : null
   const options = optionsFor(all)
   const reason = emptyReason(all, filter)
@@ -328,6 +333,97 @@ export default function PlayerDetail() {
           </section>
 
           <section className="mt-12">
+            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Recent form</h2>
+            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+              The last {RECENT_FORM} games in this selection, newest first. A career average says
+              what a player is; this says how they are playing now, which is the question before an
+              event.
+            </p>
+
+            <div className="border-line overflow-x-auto rounded-xl border">
+              <table className="w-full min-w-[36rem] text-sm">
+                <thead>
+                  <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
+                    <th className="px-4 py-2.5 font-medium">Date</th>
+                    <th className="px-4 py-2.5 font-medium">Competition</th>
+                    <th className="px-4 py-2.5 font-medium">Opponent</th>
+                    <th className="px-4 py-2.5 font-medium">Champion</th>
+                    <th className="px-4 py-2.5 font-medium">Result</th>
+                    <th className="px-4 py-2.5 text-right font-medium">K / D / A</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-line divide-y">
+                  {form.map((entry) => {
+                    const won = entry.row.side === 'blue' ? entry.game.blue_win === 1 : entry.game.blue_win === 0
+                    const opponent = entry.row.side === 'blue' ? entry.game.red_team_key : entry.game.blue_team_key
+                    return (
+                      <tr key={entry.game.game_key} className="hover:bg-ink-850/50">
+                        <td className="text-fog-600 px-4 py-2 font-mono text-xs">
+                          {dayMonthYear(entry.game.date_time_utc)}
+                        </td>
+                        <td className="text-fog-500 px-4 py-2 text-xs">{entry.competition}</td>
+                        <td className="text-fog-300 px-4 py-2">{teamName(index, opponent)}</td>
+                        <td className="text-fog-300 px-4 py-2">
+                          {championPath(index, entry.row.champion_key) ? (
+                            <Link to={championPath(index, entry.row.champion_key)!} className="hover:text-gold">
+                              {championName(index, entry.row.champion_key)}
+                            </Link>
+                          ) : (
+                            championName(index, entry.row.champion_key)
+                          )}
+                        </td>
+                        <td className={`px-4 py-2 text-xs ${won ? 'text-gold' : 'text-fog-500'}`}>
+                          {won ? 'win' : 'loss'}
+                        </td>
+                        <td className="px-4 py-2 text-right font-mono text-xs tabular-nums">
+                          {entry.row.kills} / {entry.row.deaths} / {entry.row.assists}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          {roleSplits.length > 1 ? (
+            <section className="mt-12">
+              <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">By role</h2>
+              <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+                {roleSplits.length} roles over {count(career.games)} games. Averaging them together
+                would describe nobody, so each is measured on its own.
+              </p>
+
+              <div className="border-line overflow-x-auto rounded-xl border">
+                <table className="w-full min-w-[28rem] text-sm">
+                  <thead>
+                    <tr className="text-fog-600 border-line border-b text-left text-[11px] tracking-wider uppercase">
+                      <th className="px-4 py-2.5 font-medium">Role</th>
+                      <th className="px-4 py-2.5 text-right font-medium">Games</th>
+                      <th className="px-4 py-2.5 text-right font-medium">Win rate</th>
+                      <th className="px-4 py-2.5 text-right font-medium">KDA</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-line divide-y">
+                    {roleSplits.map((split) => (
+                      <tr key={split.role} className="hover:bg-ink-850/50">
+                        <td className="text-fog-100 px-4 py-2">{split.role}</td>
+                        <td className="px-4 py-2 text-right tabular-nums">{count(split.career.games)}</td>
+                        <td className="px-4 py-2 text-right">
+                          <Ratio part={split.career.wins} total={split.career.games} />
+                        </td>
+                        <td className="px-4 py-2 text-right tabular-nums">
+                          {split.career.kda === null ? '—' : split.career.kda.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
+
+          <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Per game</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
               Each average is divided by the rows that state the measure, never by games. Where that
@@ -441,9 +537,8 @@ export default function PlayerDetail() {
             </div>
           </section>
 
-          <section className="mt-12 grid gap-10 sm:grid-cols-2">
-            <div>
-              <h2 className="text-fog-100 mb-3 text-lg font-semibold tracking-tight">Teams</h2>
+          <section className="mt-12">
+            <h2 className="text-fog-100 mb-3 text-lg font-semibold tracking-tight">Teams</h2>
               <ul className="divide-line border-line divide-y border-y">
                 {career.teams.map((team) => (
                   <li key={team.key} className="flex items-baseline justify-between gap-3 py-2.5">
@@ -463,22 +558,6 @@ export default function PlayerDetail() {
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div>
-              <h2 className="text-fog-100 mb-3 text-lg font-semibold tracking-tight">Roles</h2>
-              <ul className="flex flex-wrap gap-2">
-                {career.roles.map((role) => (
-                  <li
-                    key={role.role}
-                    className="border-line text-fog-300 rounded-lg border px-3 py-1.5 text-sm"
-                  >
-                    {role.role}
-                    <span className="text-fog-600 ml-2 font-mono text-xs">{count(role.games)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </section>
         </>
       )}

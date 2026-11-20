@@ -1,7 +1,7 @@
 # 04: Split a career by role when there is more than one
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -31,3 +31,9 @@ section, because the label would repeat what the eyebrow already says.
 
 Unit tests with a two-role career and a one-role career, plus a data test that the
 per-role games add up to the career games for every player with more than one role.
+
+## Built
+
+A "By role" section that appears only when a player has more than one, with games, win
+rate and KDA per role. Perkz: mid 119 at 45% and 2.92 KDA, bot 54 at 59% and 3.62. The
+old role chips at the bottom are gone — the table says the same thing and more.

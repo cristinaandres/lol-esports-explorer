@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { careerFor, MIN_GAMES_FOR_RATE, rankByWinRate } from './career'
+import { byRole, careerFor, MIN_GAMES_FOR_RATE, rankByWinRate, recentForm, RECENT_FORM } from './career'
+import type { Appearance } from './career'
 import type { Game, PlayerGame } from './types'
 
 function game(overrides: Partial<Game> = {}): Game {
@@ -242,5 +243,117 @@ describe('careerFor', () => {
   it('ignores a row whose game is not in the corpus', () => {
     const career = careerFor([game({ game_key: 1 })], [row({ game_key: 99 })], 7)
     expect(career.games).toBe(0)
+  })
+})
+
+describe('recentForm', () => {
+  const appearances: Appearance[] = Array.from({ length: 15 }, (_, i) => ({
+    competition: 'Worlds',
+    game: {
+      game_key: i + 1,
+      game_id: `gm-${i + 1}`,
+      event_key: 1,
+      match_key: 1,
+      date_time_utc: `2024-01-${String(i + 1).padStart(2, '0')}T00:00:00Z`,
+      era: 'voidgrubs',
+      patch_key: 1,
+      duration_seconds: 1800,
+      blue_win: 1,
+      blue_team_key: 10,
+      red_team_key: 20,
+      draft_fidelity: 'ordered',
+      draft_switched_sides: 0,
+      team_stats_coverage: 'complete',
+      draft_coverage: 'complete',
+      player_stats_coverage: 'complete',
+    },
+    row: {
+      game_key: i + 1,
+      player_key: 7,
+      team_key: 10,
+      champion_key: 100,
+      side: 'blue',
+      role: 'Mid',
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+      cs: 0,
+      gold: 0,
+      damage: 0,
+      vision: 0,
+    },
+  }))
+
+  it('returns the last games, newest first', () => {
+    const form = recentForm(appearances)
+    expect(form).toHaveLength(RECENT_FORM)
+    expect(form[0]?.game.game_key).toBe(15)
+    expect(form[form.length - 1]?.game.game_key).toBe(6)
+  })
+
+  it('returns everything when the career is shorter than the window', () => {
+    expect(recentForm(appearances.slice(0, 3))).toHaveLength(3)
+  })
+
+  it('returns nothing for an empty selection', () => {
+    expect(recentForm([])).toEqual([])
+  })
+})
+
+describe('byRole', () => {
+  function appearance(role: string, won: boolean): Appearance {
+    return {
+      competition: 'Worlds',
+      game: {
+        game_key: 1,
+        game_id: 'gm-1',
+        event_key: 1,
+        match_key: 1,
+        date_time_utc: '2024-01-01T00:00:00Z',
+        era: 'voidgrubs',
+        patch_key: 1,
+        duration_seconds: 1800,
+        blue_win: won ? 1 : 0,
+        blue_team_key: 10,
+        red_team_key: 20,
+        draft_fidelity: 'ordered',
+        draft_switched_sides: 0,
+        team_stats_coverage: 'complete',
+        draft_coverage: 'complete',
+        player_stats_coverage: 'complete',
+      },
+      row: {
+        game_key: 1,
+        player_key: 7,
+        team_key: 10,
+        champion_key: 100,
+        side: 'blue',
+        role,
+        kills: 0,
+        deaths: 0,
+        assists: 0,
+        cs: 0,
+        gold: 0,
+        damage: 0,
+        vision: 0,
+      },
+    }
+  }
+
+  it('splits by role, most games first', () => {
+    const splits = byRole([appearance('Mid', true), appearance('Mid', false), appearance('Bot', true)])
+    expect(splits.map((split) => split.role)).toEqual(['Mid', 'Bot'])
+    expect(splits[0]?.career.games).toBe(2)
+    expect(splits[1]?.career.wins).toBe(1)
+  })
+
+  it('adds up to the whole career', () => {
+    const rows = [appearance('Mid', true), appearance('Bot', false), appearance('Bot', true)]
+    const total = byRole(rows).reduce((sum, split) => sum + split.career.games, 0)
+    expect(total).toBe(rows.length)
+  })
+
+  it('returns nothing for an empty selection', () => {
+    expect(byRole([])).toEqual([])
   })
 })

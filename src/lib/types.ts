@@ -45,6 +45,24 @@ export type EventRow = {
   blue_wins: number
   avg_duration_seconds: number | null
   eras: string | null
+  /** Coverage as the dataset measured it, null for an event with no game. */
+  coverage_games: number | null
+  team_complete: number | null
+  draft_complete: number | null
+  player_complete: number | null
+}
+
+/** One candidate event the inclusion rule considered, and what it decided. */
+export type SelectionCandidate = {
+  id: string
+  name: string
+  league: string
+  region: string
+  /** 'included' or 'rejected'. */
+  decision: string
+  /** The rule key that produced the decision. */
+  rule: string
+  key: string | null
 }
 
 /** public/data/totals.json: one row, the whole corpus. The hero strip reads it. */

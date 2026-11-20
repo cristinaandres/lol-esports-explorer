@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { rosterFrom, teamAppearancesFor, teamSummaryFrom, type TeamAppearance } from './team'
+import { rosterFrom, teamAppearancesFor, teamSummaryFrom, teamsOfGames, type TeamAppearance } from './team'
 import type { Game, PlayerGame } from './types'
 
 function game(overrides: Partial<Game> = {}): Game {
@@ -197,5 +197,31 @@ describe('rosterFrom', () => {
   it('ignores rows for games outside the filtered set', () => {
     const roster = rosterFrom([row({ game_key: 99, player_key: 7 })], appearances)
     expect(roster).toEqual([])
+  })
+})
+
+describe('teamsOfGames', () => {
+  it('counts both sides of every game', () => {
+    const teams = teamsOfGames([
+      game({ game_key: 1, blue_team_key: 10, red_team_key: 20, blue_win: 1 }),
+      game({ game_key: 2, blue_team_key: 20, red_team_key: 10, blue_win: 0, date_time_utc: '2020-02-01T00:00:00Z' }),
+    ])
+
+    expect(teams.find((team) => team.teamKey === 10)).toEqual({ teamKey: 10, games: 2, wins: 2 })
+    expect(teams.find((team) => team.teamKey === 20)).toEqual({ teamKey: 20, games: 2, wins: 0 })
+    expect(teams.reduce((sum, team) => sum + team.games, 0)).toBe(4)
+  })
+
+  it('orders by games played', () => {
+    const teams = teamsOfGames([
+      game({ game_key: 1, blue_team_key: 10, red_team_key: 20 }),
+      game({ game_key: 2, blue_team_key: 10, red_team_key: 30, date_time_utc: '2020-02-01T00:00:00Z' }),
+    ])
+    expect(teams[0]?.teamKey).toBe(10)
+  })
+
+  it('ignores the unknown team', () => {
+    const teams = teamsOfGames([game({ blue_team_key: 0 })])
+    expect(teams.map((team) => team.teamKey)).toEqual([20])
   })
 })

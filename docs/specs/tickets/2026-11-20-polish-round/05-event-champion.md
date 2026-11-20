@@ -1,7 +1,7 @@
 # 05: Name the winner on the event page
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -31,3 +31,9 @@ rest of the site does not tell.
 
 Unit test reusing the titles fixtures, plus a data test asserting the event page's
 champion equals the team page's matching title for every derived title.
+
+## Built
+
+The event header states the winner with the final's score — "won by Hanwha Life Esports
+3 – 1 in the final" — reusing the titles derivation, linked to the team's page. An
+event whose final cannot be named shows nothing rather than naming the top team.

@@ -297,3 +297,43 @@ export function eventsOf(appearances: Appearance[]): EventStat[] {
 
   return [...events.values()].sort((a, b) => b.first.localeCompare(a.first))
 }
+
+/**
+ * How many games "recent form" looks at.
+ *
+ * A reading habit, not a query: ten is about how much a viewer remembers of a team
+ * they watch weekly. It is a constant so the page cannot quietly disagree with
+ * itself about what recent means.
+ */
+export const RECENT_FORM = 10
+
+/** The last N appearances in the current selection, newest first. */
+export function recentForm(appearances: Appearance[], limit = RECENT_FORM): Appearance[] {
+  return appearances.slice(-limit).reverse()
+}
+
+export type RoleSplit = {
+  role: string
+  career: Career
+}
+
+/**
+ * A career split by role, ordered by games.
+ *
+ * 68 of the 1,140 players in the corpus played in more than one role, and averaging
+ * them together describes nobody: Perkz reads as one 173-game career instead of 119
+ * mid and 54 bot.
+ */
+export function byRole(appearances: Appearance[]): RoleSplit[] {
+  const groups = new Map<string, Appearance[]>()
+
+  for (const appearance of appearances) {
+    const bucket = groups.get(appearance.row.role)
+    if (bucket) bucket.push(appearance)
+    else groups.set(appearance.row.role, [appearance])
+  }
+
+  return [...groups.entries()]
+    .map(([role, rows]) => ({ role, career: careerFrom(rows) }))
+    .sort((a, b) => b.career.games - a.career.games || a.role.localeCompare(b.role))
+}

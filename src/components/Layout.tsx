@@ -89,6 +89,9 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
             <Link to="/glossary" className="text-fog-500 hover:text-fog-100">
               Glossary
             </Link>
+            <Link to="/selection" className="text-fog-500 hover:text-fog-100">
+              Why these events
+            </Link>
             <a
               href={REPO_URL}
               className="text-fog-500 hover:text-fog-100"

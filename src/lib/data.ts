@@ -12,6 +12,7 @@ import type {
   Patch,
   Player,
   PlayerGame,
+  SelectionCandidate,
   Side,
   Team,
   Totals,
@@ -102,6 +103,14 @@ export function loadPlayerGames(): Promise<PlayerGame[]> {
   return playerRows
 }
 
+let selectionRows: Promise<SelectionCandidate[]> | null = null
+
+/** The candidate events the rule considered, fetched only by the selection page. */
+export function loadSelection(): Promise<SelectionCandidate[]> {
+  selectionRows ??= getJson<SelectionCandidate[]>('selection.json')
+  return selectionRows
+}
+
 let aliasRows: Promise<AliasRow[]> | null = null
 
 /** The alias bridge, fetched by entity pages and by search, never by a list. */
@@ -158,4 +167,8 @@ export function usePlayerGames(): Async<PlayerGame[]> {
 
 export function useAliases(): Async<AliasRow[]> {
   return useAsync(loadAliases)
+}
+
+export function useSelection(): Async<SelectionCandidate[]> {
+  return useAsync(loadSelection)
 }
