@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { careerFor } from './career'
+import { careerFor, MIN_GAMES_FOR_RATE, rankByWinRate } from './career'
 import type { Game, PlayerGame } from './types'
 
 function game(overrides: Partial<Game> = {}): Game {
@@ -43,6 +43,43 @@ function row(overrides: Partial<PlayerGame> = {}): PlayerGame {
     ...overrides,
   }
 }
+
+describe('rankByWinRate', () => {
+  const stat = (key: number, games: number, wins: number) => ({ key, games, wins })
+
+  it('puts a winning record above a losing one', () => {
+    const ranked = rankByWinRate([stat(1, 10, 4), stat(2, 10, 7)])
+    expect(ranked.map((row) => row.key)).toEqual([2, 1])
+  })
+
+  it('breaks a tie on games, so the bigger sample comes first', () => {
+    const ranked = rankByWinRate([stat(1, 2, 2), stat(2, 40, 40)])
+    expect(ranked.map((row) => row.key)).toEqual([2, 1])
+  })
+
+  it('orders by the percentage it prints, then by games', () => {
+    // 5/6 is 83.3% and 34/41 is 82.9%. Both read "83%", and the bigger sample wins.
+    const ranked = rankByWinRate([stat(1, 6, 5), stat(2, 41, 34)])
+    expect(ranked.map((row) => row.key)).toEqual([2, 1])
+    expect(Math.round((5 / 6) * 100)).toBe(Math.round((34 / 41) * 100))
+  })
+
+  it('breaks a full tie on the key, so the order never depends on insertion', () => {
+    const ranked = rankByWinRate([stat(9, 5, 3), stat(3, 5, 3)])
+    expect(ranked.map((row) => row.key)).toEqual([3, 9])
+  })
+
+  /**
+   * Why the caller splits at this threshold before ranking: honouring the same
+   * ordering without it would put a single lucky game above a career.
+   */
+  it('would rank one win above 34 wins in 41, which is why the threshold exists', () => {
+    const ranked = rankByWinRate([stat(1, 41, 34), stat(2, 1, 1)])
+    expect(ranked[0]?.key).toBe(2)
+    expect(MIN_GAMES_FOR_RATE).toBeGreaterThan(1)
+    expect(2).toBeLessThan(MIN_GAMES_FOR_RATE)
+  })
+})
 
 describe('careerFor', () => {
   it('adds up a career and divides once, at the end', () => {
@@ -104,7 +141,7 @@ describe('careerFor', () => {
     expect(career.games).toBe(0)
     expect(career.kda).toBeNull()
     expect(career.averages.kills).toBeNull()
-    expect(career.measures.damage).toEqual({ sum: 0, measured: 0, average: null })
+    expect(career.measures.damage).toEqual({ sum: 0, measured: 0, average: null, firstMeasured: null })
     expect(career.champions).toEqual([])
     expect(career.firstGame).toBeNull()
   })
@@ -122,7 +159,12 @@ describe('careerFor', () => {
     )
 
     expect(career.games).toBe(2)
-    expect(career.measures.damage).toEqual({ sum: 10000, measured: 1, average: 10000 })
+    expect(career.measures.damage).toEqual({
+      sum: 10000,
+      measured: 1,
+      average: 10000,
+      firstMeasured: '2020-01-01T00:00:00Z',
+    })
   })
 
   it('keeps the request for the player being asked about', () => {
@@ -163,6 +205,19 @@ describe('careerFor', () => {
     expect(career.eras).toEqual(['pre-herald', 'atakhan'])
     expect(career.firstGame).toBe('2013-09-15T00:00:00Z')
     expect(career.lastGame).toBe('2026-01-01T00:00:00Z')
+  })
+
+  it('records when a measure starts being stated', () => {
+    const career = careerFor(
+      [
+        game({ game_key: 1, date_time_utc: '2020-01-01T00:00:00Z' }),
+        game({ game_key: 2, date_time_utc: '2021-01-01T00:00:00Z' }),
+      ],
+      [row({ game_key: 1, damage: null }), row({ game_key: 2, damage: 9000 })],
+      7,
+    )
+
+    expect(career.measures.damage.firstMeasured).toBe('2021-01-01T00:00:00Z')
   })
 
   it('ignores a row whose game is not in the corpus', () => {

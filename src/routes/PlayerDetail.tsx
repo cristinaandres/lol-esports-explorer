@@ -6,9 +6,9 @@ import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { careerFor, type MeasureSummary } from '../lib/career'
+import { careerFor, MIN_GAMES_FOR_RATE, rankByWinRate, type MeasureSummary } from '../lib/career'
 import { useAliases, useDataset, usePlayerGames } from '../lib/data'
-import { count, perGame } from '../lib/format'
+import { count, monthYear, perGame } from '../lib/format'
 import { buildIndexes, championName, teamName } from '../lib/indexes'
 
 /**
@@ -71,6 +71,16 @@ export default function PlayerDetail() {
 
   const { player, career, former, index } = prepared
   const mainRole = career?.roles[0]?.role
+
+  // Win rate first, but only among champions with enough games for a rate to mean
+  // something. A single win is 100%, and ranking it above 34 wins in 41 games
+  // would make the top of the list the least reliable part of it.
+  const ranked = career
+    ? rankByWinRate(career.champions.filter((champion) => champion.games >= MIN_GAMES_FOR_RATE))
+    : []
+  const unranked = career
+    ? rankByWinRate(career.champions.filter((champion) => champion.games < MIN_GAMES_FOR_RATE))
+    : []
 
   return (
     <>
@@ -143,9 +153,12 @@ export default function PlayerDetail() {
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
               Each average is divided by the rows that state the measure, never by games. Damage is
               recorded on {count(career.measures.damage.measured)} of this player&rsquo;s{' '}
-              {count(career.games)} games; the other{' '}
-              {count(career.games - career.measures.damage.measured)} state nothing and are not
-              counted as zero.
+              {count(career.games)} games
+              {career.measures.damage.firstMeasured
+                ? ` — from ${monthYear(career.measures.damage.firstMeasured)} onwards. The ${count(
+                    career.games - career.measures.damage.measured,
+                  )} games before that state nothing, and are not counted as zero.`
+                : '.'}
             </p>
 
             <div className="border-line overflow-x-auto rounded-xl border">
@@ -162,17 +175,17 @@ export default function PlayerDetail() {
                   <MeasureRow
                     label="Kills"
                     games={career.games}
-                    summary={{ sum: career.kills, measured: career.games, average: career.averages.kills }}
+                    summary={{ sum: career.kills, measured: career.games, average: career.averages.kills, firstMeasured: null }}
                   />
                   <MeasureRow
                     label="Deaths"
                     games={career.games}
-                    summary={{ sum: career.deaths, measured: career.games, average: career.averages.deaths }}
+                    summary={{ sum: career.deaths, measured: career.games, average: career.averages.deaths, firstMeasured: null }}
                   />
                   <MeasureRow
                     label="Assists"
                     games={career.games}
-                    summary={{ sum: career.assists, measured: career.games, average: career.averages.assists }}
+                    summary={{ sum: career.assists, measured: career.games, average: career.averages.assists, firstMeasured: null }}
                   />
                   <MeasureRow label="CS" games={career.games} summary={career.measures.cs} />
                   <MeasureRow label="Gold" games={career.games} summary={career.measures.gold} />
@@ -186,26 +199,23 @@ export default function PlayerDetail() {
           <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Champions</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              {count(career.champions.length)} champions over {count(career.games)} games, ordered by
-              games played. The corpus does not record a pick order for every draft, so this list
-              claims none.
+              {count(career.champions.length)} champions over {count(career.games)} games, ranked by
+              win rate and then by games played. A champion needs at least{' '}
+              {MIN_GAMES_FOR_RATE} games to be ranked: one win in one game is 100%, and 100% of one
+              game is not a rate. The ones below the threshold are listed separately rather than
+              hidden.
             </p>
 
-            <ul className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
-              {career.champions.map((champion) => (
-                <li
-                  key={champion.key}
-                  className="border-line/60 flex items-baseline justify-between gap-3 border-b py-1.5"
-                >
-                  <span className="text-fog-300 truncate text-sm">
-                    {championName(index, champion.key)}
-                  </span>
-                  <span className="shrink-0 text-xs">
-                    <Ratio part={champion.wins} total={champion.games} />
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <ChampionList champions={ranked} index={index} />
+
+            {unranked.length > 0 ? (
+              <>
+                <h3 className="text-fog-600 mt-8 mb-3 text-[11px] tracking-[0.14em] uppercase">
+                  Fewer than {MIN_GAMES_FOR_RATE} games
+                </h3>
+                <ChampionList champions={unranked} index={index} muted />
+              </>
+            ) : null}
           </section>
 
           <section className="mt-12 grid gap-10 sm:grid-cols-2">
@@ -242,6 +252,34 @@ export default function PlayerDetail() {
         </>
       )}
     </>
+  )
+}
+
+function ChampionList({
+  champions,
+  index,
+  muted = false,
+}: {
+  champions: { key: number; games: number; wins: number }[]
+  index: ReturnType<typeof buildIndexes>
+  muted?: boolean
+}) {
+  return (
+    <ul className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
+      {champions.map((champion) => (
+        <li
+          key={champion.key}
+          className="border-line/60 flex items-baseline justify-between gap-3 border-b py-1.5"
+        >
+          <span className={`truncate text-sm ${muted ? 'text-fog-500' : 'text-fog-300'}`}>
+            {championName(index, champion.key)}
+          </span>
+          <span className="shrink-0 text-xs">
+            <Ratio part={champion.wins} total={champion.games} />
+          </span>
+        </li>
+      ))}
+    </ul>
   )
 }
 

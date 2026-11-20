@@ -44,6 +44,17 @@ export function championName(index: Indexes, key: number): string {
   return index.champions.get(key)?.champion_name || UNKNOWN
 }
 
+/**
+ * The route for a player, or null when the key names nobody.
+ *
+ * The route uses the natural id, never the surrogate key: surrogate keys are
+ * build-local and would break every shared link on the next rebuild.
+ */
+export function playerPath(index: Indexes, key: number): string | null {
+  const player = index.players.get(key)
+  return player ? `/players/${player.player_id}` : null
+}
+
 /** The patch string, or an em dash when the source stated none. */
 export function patchLabel(index: Indexes, key: number): string {
   if (key === 0) return '—'

@@ -1,6 +1,8 @@
+import { Link } from 'react-router'
+
 import { ROLE_ORDER } from '../lib/draft'
 import { count, orDash } from '../lib/format'
-import { championName, playerName, teamName, type Indexes } from '../lib/indexes'
+import { championName, playerName, playerPath, teamName, type Indexes } from '../lib/indexes'
 import type { PlayerGame } from '../lib/types'
 
 /**
@@ -91,7 +93,15 @@ function SideRows({
         {rows.map((row) => (
           <tr key={row.player_key} className="hover:bg-ink-850/50">
             <td className="text-fog-600 px-4 py-2 text-xs tracking-wider uppercase">{row.role}</td>
-            <td className="text-fog-100 px-4 py-2">{playerName(index, row.player_key)}</td>
+            <td className="text-fog-100 px-4 py-2">
+              {playerPath(index, row.player_key) ? (
+                <Link to={playerPath(index, row.player_key)!} className="hover:text-gold">
+                  {playerName(index, row.player_key)}
+                </Link>
+              ) : (
+                playerName(index, row.player_key)
+              )}
+            </td>
             <td className="text-fog-300 px-4 py-2">{championName(index, row.champion_key)}</td>
             <td className="px-4 py-2 text-right tabular-nums">{count(row.kills)}</td>
             <td className="px-4 py-2 text-right tabular-nums">{count(row.deaths)}</td>

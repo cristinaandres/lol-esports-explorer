@@ -17,8 +17,16 @@ export type MeasureSummary = {
   sum: number
   /** How many appearances state this measure. Never assume it equals games. */
   measured: number
-  /** Sum divided by `measured`, or null when nothing was measured. */
+  /** Sum divided by measured, or null when nothing was measured. */
   average: number | null
+  /**
+   * The earliest game on which this measure is stated, or null.
+   *
+   * Damage is recorded on 0% of the corpus before 2020 and on 100% from 2021, so
+   * a career average is measured over a window, not over the whole career. The
+   * page says which window instead of leaving the reader to wonder.
+   */
+  firstMeasured: string | null
 }
 
 export type EntityStat = { key: number; games: number; wins: number }
@@ -56,10 +64,10 @@ const EMPTY: Career = {
   kda: null,
   averages: { kills: null, deaths: null, assists: null },
   measures: {
-    cs: { sum: 0, measured: 0, average: null },
-    gold: { sum: 0, measured: 0, average: null },
-    damage: { sum: 0, measured: 0, average: null },
-    vision: { sum: 0, measured: 0, average: null },
+    cs: { sum: 0, measured: 0, average: null, firstMeasured: null },
+    gold: { sum: 0, measured: 0, average: null, firstMeasured: null },
+    damage: { sum: 0, measured: 0, average: null, firstMeasured: null },
+    vision: { sum: 0, measured: 0, average: null, firstMeasured: null },
   },
   champions: [],
   teams: [],
@@ -88,10 +96,10 @@ export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number):
   let wins = 0
 
   const measures = {
-    cs: { sum: 0, measured: 0, average: null as number | null },
-    gold: { sum: 0, measured: 0, average: null as number | null },
-    damage: { sum: 0, measured: 0, average: null as number | null },
-    vision: { sum: 0, measured: 0, average: null as number | null },
+    cs: { sum: 0, measured: 0, average: null as number | null, firstMeasured: null as string | null },
+    gold: { sum: 0, measured: 0, average: null as number | null, firstMeasured: null as string | null },
+    damage: { sum: 0, measured: 0, average: null as number | null, firstMeasured: null as string | null },
+    vision: { sum: 0, measured: 0, average: null as number | null, firstMeasured: null as string | null },
   }
 
   const champions = new Map<number, EntityStat>()
@@ -110,6 +118,8 @@ export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number):
       if (value === null) continue
       measures[key].sum += value
       measures[key].measured += 1
+      // Appearances are sorted by date, so the first stated value is the earliest.
+      measures[key].firstMeasured ??= game.date_time_utc
     }
 
     bump(champions, row.champion_key, won(game, row))
@@ -165,6 +175,29 @@ function bump(target: Map<number, EntityStat>, key: number, victory: boolean): v
     return
   }
   target.set(key, { key, games: 1, wins: victory ? 1 : 0 })
+}
+
+/**
+ * How many games a champion needs before its win rate may rank it.
+ *
+ * Below this the page still lists the champion, in its own group, because the
+ * win rate of one game is not a rate: it is that game. The same threshold that
+ * phase 4 applies to a head-to-head applies here.
+ */
+export const MIN_GAMES_FOR_RATE = 5
+
+/**
+ * Win rate first, then games played, then key so the order is total.
+ *
+ * The rate is compared as the whole percentage the page prints, not as the raw
+ * fraction. Two champions shown as "83%" must not be ordered by a difference the
+ * reader cannot see: 5/6 is 83.3% and 34/41 is 82.9%, so ranking on the second
+ * decimal would put the smaller sample first while both read "83%".
+ */
+export function rankByWinRate(stats: EntityStat[]): EntityStat[] {
+  const rate = (stat: EntityStat) =>
+    stat.games === 0 ? 0 : Math.round((stat.wins / stat.games) * 100)
+  return [...stats].sort((a, b) => rate(b) - rate(a) || b.games - a.games || a.key - b.key)
 }
 
 /** Most played first, then by key, so the order never depends on insertion. */
