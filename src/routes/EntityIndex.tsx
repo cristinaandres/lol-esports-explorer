@@ -21,7 +21,7 @@ import { count } from '../lib/format'
 
 type Kind = 'player' | 'team' | 'champion'
 
-type Entry = { id: string; name: string; meta: string; games: number }
+type Entry = { id: string; name: string; meta: string; games: number; short?: string }
 
 const COPY: Record<Kind, { title: string; blurb: string; groupLabel: string }> = {
   player: {
@@ -61,6 +61,7 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
           name: row.team_name,
           meta: row.region || 'Unknown region',
           games: row.games,
+          short: row.short_name ?? undefined,
         }))
     }
     return data.champions
@@ -70,8 +71,14 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
 
   const groups = useMemo(() => {
     const needle = query.trim().toLowerCase()
+    // A team is looked up by its abbreviation as often as by its name: someone who
+    // watches the client types KC, not Karmine Corp.
     const visible = needle
-      ? entries.filter((entry) => entry.name.toLowerCase().includes(needle))
+      ? entries.filter(
+          (entry) =>
+            entry.name.toLowerCase().includes(needle) ||
+            (entry.short ?? '').toLowerCase().includes(needle),
+        )
       : entries
 
     const grouped = new Map<string, Entry[]>()
@@ -142,12 +149,16 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
                   >
                     <Link
                       to={`/${kind}s/${entry.id}`}
-                      className="text-fog-300 hover:text-gold truncate text-sm no-underline"
+                      className="text-fog-300 hover:text-gold flex min-w-0 items-baseline gap-2 truncate text-sm no-underline"
                     >
-                      {entry.name}
+                      <span className="truncate">{entry.name}</span>
+                      {entry.short ? (
+                        <span className="text-fog-600 shrink-0 font-mono text-[10px]">
+                          {entry.short}
+                        </span>
+                      ) : null}
                     </Link>
                     <span className="text-fog-600 flex shrink-0 items-baseline gap-2 text-xs tabular-nums">
-                      {entry.meta && kind === 'team' ? null : null}
                       {count(entry.games)}
                     </span>
                   </li>

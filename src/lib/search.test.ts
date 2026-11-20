@@ -8,8 +8,8 @@ const players: Player[] = [
   { player_key: 2, player_id: 'pl-frozen', player_name: 'Frozen', overview_page: '', games: 0 },
 ]
 const teams: Team[] = [
-  { team_key: 1, team_id: 'tm-koi', team_name: 'Movistar KOI', overview_page: '', region: 'EMEA', games: 0 },
-  { team_key: 2, team_id: 'tm-mad', team_name: 'MAD Team', overview_page: '', region: 'LMS', games: 0 },
+  { team_key: 1, team_id: 'tm-koi', team_name: 'Movistar KOI', overview_page: '', region: 'EMEA', games: 0, short_name: 'KOI' },
+  { team_key: 2, team_id: 'tm-mad', team_name: 'MAD Team', overview_page: '', region: 'LMS', games: 0, short_name: null },
 ]
 const champions: Champion[] = [
   { champion_key: 1, champion_id: 'ch-nunu', champion_name: 'Nunu & Willump', riot_key: 20, games: 0, release_date: '2009-02-21' },
@@ -33,6 +33,15 @@ const aliases: AliasRow[] = [
     valid_from: null,
     valid_to: null,
     evidence: 'redirect',
+  },
+  {
+    kind: 'team',
+    alias_string: 'KC',
+    entity_id: 'tm-koi',
+    entity_name: 'Movistar KOI',
+    valid_from: null,
+    valid_to: null,
+    evidence: 'shortname',
   },
   {
     kind: 'player',
@@ -94,6 +103,16 @@ describe('search', () => {
     expect(search(index, 'zzzz')).toEqual([])
   })
 
+  it('marks a short name as an abbreviation, not a former name', () => {
+    const [result] = search(index, 'KC')
+    expect(result).toMatchObject({ id: 'tm-koi', matched: 'KC', abbreviation: true, current: false })
+  })
+
+  it('does not mark a rename as an abbreviation', () => {
+    const [result] = search(index, 'mad lions')
+    expect(result?.abbreviation).toBe(false)
+  })
+
   it('honours the limit', () => {
     expect(search(index, 'a', 2)).toHaveLength(2)
   })
@@ -101,8 +120,8 @@ describe('search', () => {
 
 describe('resultPath', () => {
   it('routes each kind to its page', () => {
-    expect(resultPath({ kind: 'player', id: 'pl-1', name: '', matched: '', current: true })).toBe('/players/pl-1')
-    expect(resultPath({ kind: 'team', id: 'tm-1', name: '', matched: '', current: true })).toBe('/teams/tm-1')
-    expect(resultPath({ kind: 'champion', id: 'ch-1', name: '', matched: '', current: true })).toBe('/champions/ch-1')
+    expect(resultPath({ kind: 'player', id: 'pl-1', name: '', matched: '', current: true, abbreviation: false })).toBe('/players/pl-1')
+    expect(resultPath({ kind: 'team', id: 'tm-1', name: '', matched: '', current: true, abbreviation: false })).toBe('/teams/tm-1')
+    expect(resultPath({ kind: 'champion', id: 'ch-1', name: '', matched: '', current: true, abbreviation: false })).toBe('/champions/ch-1')
   })
 })

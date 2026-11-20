@@ -187,6 +187,8 @@ export type Team = {
   region: string
   /** Games the team appears in, for the index. Zero when the corpus carries none. */
   games: number
+  /** The abbreviation the game client shows, pinned from the wiki. Not a former name. */
+  short_name: string | null
 }
 
 export type Player = {

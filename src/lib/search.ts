@@ -20,6 +20,12 @@ export type SearchEntry = {
   term: string
   /** False when the term is an alias rather than the current name. */
   current: boolean
+  /**
+   * True when the term is the abbreviation the game client shows, not a name the
+   * entity used to have. "KC" is not a former name of Karmine Corp; it is the same
+   * name, shortened, so a result must not say "formerly KC".
+   */
+  abbreviation: boolean
 }
 
 export type SearchResult = {
@@ -29,6 +35,7 @@ export type SearchResult = {
   /** The alias that matched, when it was not the current name. */
   matched: string
   current: boolean
+  abbreviation: boolean
 }
 
 export function buildSearchIndex(
@@ -41,11 +48,11 @@ export function buildSearchIndex(
 
   for (const player of players) {
     if (!player.player_id) continue
-    index.push({ kind: 'player', id: player.player_id, name: player.player_name, term: player.player_name, current: true })
+    index.push({ kind: 'player', id: player.player_id, name: player.player_name, term: player.player_name, current: true, abbreviation: false })
   }
   for (const team of teams) {
     if (!team.team_id) continue
-    index.push({ kind: 'team', id: team.team_id, name: team.team_name, term: team.team_name, current: true })
+    index.push({ kind: 'team', id: team.team_id, name: team.team_name, term: team.team_name, current: true, abbreviation: false })
   }
   for (const champion of champions) {
     if (!champion.champion_id) continue
@@ -55,6 +62,7 @@ export function buildSearchIndex(
       name: champion.champion_name,
       term: champion.champion_name,
       current: true,
+      abbreviation: false,
     })
   }
 
@@ -65,6 +73,7 @@ export function buildSearchIndex(
       name: alias.entity_name,
       term: alias.alias_string,
       current: false,
+      abbreviation: alias.evidence === 'shortname',
     })
   }
 
@@ -122,6 +131,7 @@ export function search(index: SearchEntry[], query: string, limit = 10): SearchR
       name: entry.name,
       matched: entry.term,
       current: entry.current,
+      abbreviation: entry.abbreviation,
     }))
 }
 

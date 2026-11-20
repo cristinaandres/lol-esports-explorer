@@ -150,9 +150,13 @@ export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
                         }`}
                       >
                         {result.name}
-                        {!result.current ? (
+                        {!result.current && !result.abbreviation ? (
                           <span className="text-fog-600 ml-2 text-[11px]">
                             formerly {result.matched}
+                          </span>
+                        ) : result.abbreviation ? (
+                          <span className="text-fog-600 ml-2 font-mono text-[10px]">
+                            {result.matched}
                           </span>
                         ) : null}
                       </button>

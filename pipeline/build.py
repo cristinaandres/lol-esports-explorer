@@ -59,7 +59,12 @@ ARTIFACTS: dict[str, str] = {
     "games.json": "select * from game_rows order by date_time_utc, game_key",
     "matches.json": "select * from match_rows order by match_key",
     # Names. Loaded eagerly because every page resolves a key to a name.
-    "teams.json": "select * from team_index order by team_key",
+    "teams.json": """
+        select t.*, s.short as short_name
+        from team_index t
+        left join team_shortnames s on s.name = t.team_name
+        order by t.team_key
+    """,
     "players.json": "select * from player_index order by player_key",
     "champions.json": """
         select c.*, r.release_date
