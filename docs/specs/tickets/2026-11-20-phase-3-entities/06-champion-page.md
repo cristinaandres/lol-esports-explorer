@@ -11,8 +11,11 @@ champion is never penalised for not existing: Azir has no games before 2014
 because Azir did not exist, which is the same distinction the scoreboard already
 makes for objectives.
 
-Champions also get renamed and retired — 172 aliases in the bridge — so the page
-shows the display names it had, with their windows.
+Champions get renamed too, though far less than teams. Measured on the bridge: of
+its 172 champion rows, 170 repeat the current name and **two** are real renames
+(Nunu → Nunu & Willump). So the page shows a former name when there is one and says
+nothing when there is not, rather than reserving a section for a case that occurs
+twice in sixteen years.
 
 ## Scope
 
@@ -30,7 +33,8 @@ shows the display names it had, with their windows.
       the page says why rather than showing zero.
 - [ ] An era the champion never appeared in is stated as such, not rendered as an
       empty chart.
-- [ ] Retired or former display names are listed with their windows.
+- [ ] A champion with a former display name lists it with its window — Nunu is the
+      case that exists — and a champion without one has no empty section.
 - [ ] Champion names in the draft board and the player table link here.
 - [ ] An unknown id renders the 404 page.
 

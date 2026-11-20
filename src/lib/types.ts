@@ -189,6 +189,26 @@ export type Patch = {
   patch_name: string
 }
 
+/** The three kinds of entity the alias bridge covers. */
+export type AliasKind = 'player' | 'team' | 'champion'
+
+/**
+ * One row of public/data/aliases.json: a name an entity has been known by.
+ *
+ * `valid_from` is the difference between a rename and a redirect. A stated window
+ * means the name was in use in that period and may be shown to a reader; a row
+ * with no window is a wiki redirect, which is worth matching but not printing.
+ */
+export type AliasRow = {
+  kind: AliasKind
+  alias_string: string
+  entity_id: string
+  entity_name: string
+  valid_from: string | null
+  valid_to: string | null
+  evidence: string
+}
+
 /** public/data/meta.json: the pin from a number on the site back to its payload. */
 export type Meta = {
   source: {

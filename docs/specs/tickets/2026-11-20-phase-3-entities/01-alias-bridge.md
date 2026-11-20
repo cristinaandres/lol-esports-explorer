@@ -1,7 +1,7 @@
 # 01: Publish the alias bridge, so a name from 2020 finds the team it is today
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -51,3 +51,17 @@ Unit tests over the module for the four cases above, and a data test over the
 committed artifact asserting the alias count and the Movistar KOI / MAD Team
 separation. This ticket covers no numbered behaviour in the phase 3 spec on its
 own; it is the ground R5 and R6 stand on.
+
+## Built
+
+- The artifact is 632 KB raw, 63 KB gzip, and stays **out of the eager payload**: it
+  is fetched by the entity pages and by search, not by a list page.
+- Measured on the bridge, and worth knowing before tickets 05 and 06: 1,495 rows are
+  the entity's own name, 1,816 are dated, and 689 are undated redirects that search
+  matches but no page prints.
+- Ambiguity is not hypothetical: `APA` resolves to both the player APA and the
+  player Frozen, and the data test asserts that so the list-returning signature
+  cannot be "simplified" back to a single match.
+- Movistar KOI's dated names turned out to reach further back than the review
+  example: **Splyce** (2016–2019), **MAD Lions** (2020–2023), **MAD Lions KOI**
+  (2024). The page will show all three.

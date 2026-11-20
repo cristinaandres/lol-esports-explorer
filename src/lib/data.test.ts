@@ -3,8 +3,9 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { namesFor, resolve } from './aliases'
 import { slotSide } from './draft'
-import type { DraftSlot, EventRow, Game, Match, PlayerGame } from './types'
+import type { AliasRow, DraftSlot, EventRow, Game, Match, PlayerGame } from './types'
 
 /**
  * Invariants over the committed artifacts, not over a fixture.
@@ -23,6 +24,7 @@ const matches = read<Match[]>('matches.json')
 const playerGames = read<PlayerGame[]>('player-games.json')
 const picks = read<DraftSlot[]>('picks.json')
 const bans = read<DraftSlot[]>('bans.json')
+const aliases = read<AliasRow[]>('aliases.json')
 
 describe('games.json', () => {
   it('carries every game exactly once', () => {
@@ -116,6 +118,51 @@ describe('draft artifacts', () => {
 
   it('records bans for 3,088 of the 3,091 games', () => {
     expect(new Set(bans.map((slot) => slot.game_key)).size).toBe(3_088)
+  })
+})
+
+describe('aliases.json', () => {
+  it('carries every alias the model recorded', () => {
+    expect(aliases).toHaveLength(3_791)
+    const byKind = new Map<string, number>()
+    for (const row of aliases) byKind.set(row.kind, (byKind.get(row.kind) ?? 0) + 1)
+    expect(Object.fromEntries(byKind)).toEqual({ player: 2_872, team: 747, champion: 172 })
+  })
+
+  it('points every alias at an entity', () => {
+    expect(aliases.filter((row) => !row.entity_id)).toEqual([])
+  })
+
+  /**
+   * The case the review named, against the real bridge rather than a fixture:
+   * four spellings of one organisation, and a fifth team that only rhymes.
+   */
+  it('resolves every name Movistar KOI played under to one team', () => {
+    for (const name of ['MAD Lions', 'MAD Lions KOI', 'Mad Lions', 'MKOI', 'Movistar KOI']) {
+      const matches = resolve(aliases, name).filter((match) => match.kind === 'team')
+      expect(matches.map((match) => match.entityId), name).toEqual(['tm-d0d4a4d767cd'])
+      expect(matches[0]?.entityName, name).toBe('Movistar KOI')
+    }
+  })
+
+  it('keeps MAD Team a different organisation', () => {
+    const matches = resolve(aliases, 'MAD Team').filter((match) => match.kind === 'team')
+    expect(matches.map((match) => match.entityId)).toEqual(['tm-017ed54b4572'])
+    expect(matches[0]?.entityName).toBe('MAD Team')
+  })
+
+  it('lists the dated names it played under, and no redirects', () => {
+    expect(namesFor(aliases, 'team', 'tm-d0d4a4d767cd').map((row) => row.alias_string)).toEqual([
+      'Splyce',
+      'MAD Lions',
+      'MAD Lions KOI',
+    ])
+  })
+
+  it('really does contain names two entities share', () => {
+    // Not a defect: short handles collide. It is why resolve returns a list.
+    const matches = resolve(aliases, 'APA').filter((match) => match.kind === 'player')
+    expect(matches.length).toBeGreaterThan(1)
   })
 })
 
