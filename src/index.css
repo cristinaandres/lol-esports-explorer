@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. These are the single source of truth for colour and type: the
+ * Figma variables should be named after them, and nothing in a component should
+ * hard-code a hex value.
+ *
+ * The palette is deliberately small. Blue and red appear only where a side is
+ * meant (a scoreboard, a win-share bar); gold is the one accent, used for the
+ * current selection and for emphasis on a number.
+ */
+@theme {
+  --color-ink-950: #080b10;
+  --color-ink-900: #0d1218;
+  --color-ink-850: #111823;
+  --color-ink-800: #151f2b;
+  --color-line: #1e2b39;
+  --color-line-bright: #2b3c4f;
+  --color-fog-100: #e8eef6;
+  --color-fog-300: #b3c2d1;
+  --color-fog-500: #7f92a6;
+  --color-fog-600: #5d6f83;
+  --color-side-blue: #4aa3ff;
+  --color-side-red: #ff6b6b;
+  --color-gold: #e3b664;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, monospace;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-ink-950 text-fog-100 font-sans antialiased;
+    background-image: radial-gradient(
+      120% 80% at 50% -20%,
+      color-mix(in oklab, var(--color-side-blue) 8%, transparent),
+      transparent 60%
+    );
+    background-repeat: no-repeat;
+  }
+
+  ::selection {
+    @apply bg-gold/30 text-fog-100;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-gold;
+  }
+
+  a {
+    @apply underline-offset-4;
+  }
+}

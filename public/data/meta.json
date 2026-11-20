@@ -1,0 +1,31 @@
+{
+  "artifacts": {
+    "eras.json": "cfdcb4c7f283963a88815a8fcdad35b32c1ddf811eeb7cf64f0a7f61c379342e",
+    "events.json": "3aa08a68dfb4c323a1386fe91baa308642a8734fac4f7d0bbcc1cef97e5bbdf8",
+    "totals.json": "972e129c13f94df7d75c058481f475ee32a22958e1cfa54a49cf4673e780cf33"
+  },
+  "modelFiles": {
+    "bridge_alias.csv": "6320c2f2561da6ebb9b5803f1f492ec30ae0e900d189bf8ec489627de867ca23",
+    "dim_champion.csv": "ae11e10eb5a5f278456c96115d7360ede866354923825de4af09fc998e9b0b96",
+    "dim_date.csv": "67bc1db3de2bef236f1089afdf027178d68812ce2bf7000ae2930d569a41c22c",
+    "dim_event.csv": "1e80c68ce55a59fcbd2094abc702f217ab961c49eec6699294083363bd3dc75e",
+    "dim_game.csv": "189f14d369e4d79c779a35fb0ef835091a079c1b8fbb52ea0c3c6beee0434b38",
+    "dim_match.csv": "e8616109d1a53b604946642e44f72600d633472bba83b0939f261429dd12f9de",
+    "dim_patch.csv": "39f5ac736597f38778ebc5aa32cb7f9319e1c41f2dd06048f4c8f026ecd33dca",
+    "dim_player.csv": "d61e75673ca85d2715b2bfa675342ccb26be5860e0e510b5e5d46297edf61d53",
+    "dim_team.csv": "a5d92968c66921332947637febff67cab7a8c5cdd42e8b2e72535cb08ae7756b",
+    "fact_draft_slot.csv": "57d9838384cc6bf15eebfe02792bef5187179f4138bb3182c1a030cf876b5cf7",
+    "fact_game_side.csv": "90551c13efbdbe3e6e03f98c647eec5929a370cdaab21e5b141d44dffcf0f9f8",
+    "fact_player_game.csv": "84d75fb4c0b7effb7dc6f0521f5ae536d55b748b4aacee5e04de3386c862c1db"
+  },
+  "source": {
+    "commit": "714ce6fd0812a69e649c9bf77fb510fb079a71b6",
+    "manifestSha256": "872b43cff39683cca16cf84e8af42d9d2cf658932acb75c1f50a963130a968f0",
+    "note": "The model CSVs in data/model/ are a byte-for-byte copy of the pinned tag's build output. Refresh with pipeline/refresh-data.sh.",
+    "repository": "RRiboulet/lol-dataset",
+    "tag": "v1.1.0"
+  },
+  "upstreamFiles": {
+    "game-eras.json": "a3758bccdb650792ab266b1100f41736c987c5a97b17e371dbdf03520ad4ab4c"
+  }
+}

@@ -1,0 +1,6 @@
+[project]
+name = "lol-esports-explorer-pipeline"
+version = "0.1.0"
+description = "Build the browser artifacts from the pinned dimensional model."
+requires-python = ">=3.11"
+dependencies = ["duckdb>=2.0.0"]

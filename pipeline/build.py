@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""Build the browser artifacts the site reads from the pinned dimensional model.
+
+The site never queries a server: every view is answered from a handful of JSON
+files loaded once. Those files are generated here, from the DuckDB SQL in
+pipeline/sql/, and committed, so a clone renders without running Python.
+
+Two properties matter more than speed:
+
+  * Determinism. The same input yields the same bytes -- no timestamps, no set
+    ordering, no float formatting drift -- so --check can prove a committed
+    artifact is current, the same way the upstream dataset proves its own build.
+  * Provenance. meta.json pins the upstream tag, commit and model-file hashes,
+    so a reader can walk from a number on the site back to the payload it came
+    from.
+
+Usage:
+    uv run python pipeline/build.py          # write public/data/*.json
+    uv run python pipeline/build.py --check  # fail if the committed files differ
+"""
+
+from __future__ import annotations
+
+import argparse
+import decimal
+import hashlib
+import json
+import pathlib
+import sys
+
+import duckdb
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+SQL_DIR = ROOT / "pipeline" / "sql"
+SOURCE_FILE = ROOT / "pipeline" / "source.json"
+MODEL_DIR = ROOT / "data" / "model"
+UPSTREAM_DIR = ROOT / "data" / "upstream"
+ERA_TABLE = UPSTREAM_DIR / "game-eras.json"
+OUT_DIR = ROOT / "public" / "data"
+
+# Artifact name -> the view it serialises. One file per level of the site, so a
+# page loads its level and nothing else. The era artifact is the exception: it is
+# assembled in build_eras(), because its spine is declared upstream, not derived.
+ARTIFACTS: dict[str, str] = {
+    "totals.json": "select * from corpus_totals",
+    "events.json": "select * from event_summary",
+}
+
+# Era-level fields the site reads; zero when the era governs no game.
+ERA_FIELDS = (
+    "first_date", "last_date", "games", "series", "events", "teams", "players",
+    "blue_wins", "red_wins", "games_draft_complete", "games_player_complete",
+    "games_team_complete", "avg_duration_seconds", "patches",
+)
+
+
+def sha256(path: pathlib.Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def plain(value: object) -> object:
+    """Coerce DuckDB's decimal/date values into JSON-native ones."""
+    if isinstance(value, decimal.Decimal):
+        return float(value)
+    if hasattr(value, "isoformat"):
+        return value.isoformat()
+    return value
+
+
+def connect() -> duckdb.DuckDBPyConnection:
+    con = duckdb.connect()
+    for path in sorted(SQL_DIR.glob("*.sql")):
+        con.execute(path.read_text(encoding="utf-8"))
+    return con
+
+
+def build_eras(con: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
+    """The era spine: declared eras joined to what the corpus actually contains.
+
+    The spine comes from data/upstream/game-eras.json -- the upstream rule that
+    says which fields could exist when -- not from the games. Two declared eras
+    ('herald' and 'hextech-chemtech') govern no game at all, because no
+    international event was played in their window; the site shows them as gaps
+    rather than pretending the game did not change.
+    """
+    declared = json.loads(ERA_TABLE.read_text(encoding="utf-8"))
+    eras = declared["groups"]["team-stats"]
+
+    cursor = con.execute("select * from era_summary")
+    columns = [column[0] for column in cursor.description]
+    measured = {
+        row[columns.index("era")]: dict(zip(columns, row)) for row in cursor.fetchall()
+    }
+
+    spine: list[dict[str, object]] = []
+    for era in eras:
+        facts = measured.get(era["id"], {})
+        entry: dict[str, object] = {
+            "era": era["id"],
+            "from": era["from"],
+            "cites": era["cites"],
+            "eligible_fields": len(era["eligible"]),
+        }
+        for field in ERA_FIELDS:
+            entry[field] = plain(facts.get(field, 0))
+        for field in ("first_date", "last_date", "avg_duration_seconds"):
+            entry[field] = plain(facts.get(field))
+        spine.append(entry)
+    return spine
+
+
+def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
+    """Return artifact name -> serialised UTF-8 JSON text."""
+    rendered: dict[str, str] = {
+        "eras.json": json.dumps(build_eras(con), ensure_ascii=False, indent=2) + "\n"
+    }
+    for name, query in ARTIFACTS.items():
+        cursor = con.execute(query)
+        columns = [column[0] for column in cursor.description]
+        rows = [
+            {column: plain(value) for column, value in zip(columns, row)}
+            for row in cursor.fetchall()
+        ]
+        rendered[name] = json.dumps(rows, ensure_ascii=False, indent=2) + "\n"
+
+    source = json.loads(SOURCE_FILE.read_text(encoding="utf-8"))
+    meta = {
+        "source": source,
+        "modelFiles": {path.name: sha256(path) for path in sorted(MODEL_DIR.glob("*.csv"))},
+        "upstreamFiles": {path.name: sha256(path) for path in sorted(UPSTREAM_DIR.glob("*.json"))},
+        "artifacts": {
+            name: hashlib.sha256(text.encode("utf-8")).hexdigest()
+            for name, text in rendered.items()
+        },
+    }
+    rendered["meta.json"] = json.dumps(meta, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    return rendered
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true", help="fail if the committed artifacts are stale")
+    args = parser.parse_args(argv)
+
+    if not MODEL_DIR.is_dir():
+        print(f"error: {MODEL_DIR} is missing; run pipeline/refresh-data.sh", file=sys.stderr)
+        return 2
+
+    # read_csv() resolves paths relative to the process working directory, and
+    # the SQL files spell them relative to the repository root on purpose, so the
+    # same file works from the CLI and from here.
+    import os
+
+    os.chdir(ROOT)
+    rendered = render(connect())
+
+    if args.check:
+        stale = [
+            name
+            for name, text in rendered.items()
+            if not (OUT_DIR / name).is_file() or (OUT_DIR / name).read_text(encoding="utf-8") != text
+        ]
+        extra = sorted(p.name for p in OUT_DIR.glob("*.json") if p.name not in rendered) if OUT_DIR.is_dir() else []
+        if stale or extra:
+            for name in stale:
+                print(f"stale: public/data/{name}", file=sys.stderr)
+            for name in extra:
+                print(f"unexpected: public/data/{name}", file=sys.stderr)
+            return 1
+        print(f"public/data is current ({len(rendered)} files)")
+        return 0
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    for path in OUT_DIR.glob("*.json"):
+        if path.name not in rendered:
+            path.unlink()
+            print(f"removed public/data/{path.name}")
+    for name, text in rendered.items():
+        (OUT_DIR / name).write_text(text, encoding="utf-8")
+    print(f"wrote {len(rendered)} files to public/data/")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

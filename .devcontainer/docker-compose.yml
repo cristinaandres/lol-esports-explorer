@@ -1,0 +1,19 @@
+services:
+  devcontainer:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      # Private to this project. It used to be the shared `pi-agent-config`
+      # volume; the explicit name below keeps this container's state separate
+      # from every other one and survives a rename or move of the checkout.
+      - pi-config:/home/vscode/.pi
+    command: sleep infinity
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    user: vscode
+
+volumes:
+  pi-config:
+    name: lol-dataset-pi-config
