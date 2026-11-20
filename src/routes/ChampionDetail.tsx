@@ -12,7 +12,7 @@ import { eraCopy } from '../lib/eras'
 import { CareerFilters } from '../components/CareerFilters'
 import { applyFilter, emptyReason, filterSearch, NO_FILTER, optionsFor, parseFilter, recoverFilter } from '../lib/filters'
 import { count, dayMonthYear } from '../lib/format'
-import { buildIndexes, playerName } from '../lib/indexes'
+import { buildIndexes, playerName, playerPath } from '../lib/indexes'
 
 /**
  * One champion, era by era.
@@ -262,7 +262,15 @@ export default function ChampionDetail() {
                 <ul className="divide-line border-line divide-y border-y">
                   {users.players.slice(0, 8).map((entry) => (
                     <li key={entry.key} className="flex items-baseline justify-between gap-3 py-2">
-                      <span className="text-fog-300 text-sm">{playerName(index, entry.key)}</span>
+                      <span className="text-fog-300 text-sm">
+                        {playerPath(index, entry.key) ? (
+                          <Link to={playerPath(index, entry.key)!} className="hover:text-gold">
+                            {playerName(index, entry.key)}
+                          </Link>
+                        ) : (
+                          playerName(index, entry.key)
+                        )}
+                      </span>
                       <span className="flex items-baseline gap-3 text-xs">
                         <span className="text-fog-600 tabular-nums">{count(entry.games)} games</span>
                         <Ratio part={entry.wins} total={entry.games} />

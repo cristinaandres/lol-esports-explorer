@@ -32,7 +32,7 @@ import {
 } from '../lib/filters'
 import { championships, titlesForPlayer } from '../lib/titles'
 import { count, dayMonthYear, duration, monthYear, perGame, stripDateSuffix } from '../lib/format'
-import { buildIndexes, championName, teamName } from '../lib/indexes'
+import { buildIndexes, championName, championPath, teamName, teamPath } from '../lib/indexes'
 import type { EventRow, Match } from '../lib/types'
 
 /**
@@ -375,7 +375,15 @@ export default function PlayerDetail() {
               <ul className="divide-line border-line divide-y border-y">
                 {career.teams.map((team) => (
                   <li key={team.key} className="flex items-baseline justify-between gap-3 py-2.5">
-                    <span className="text-fog-300 text-sm">{teamName(index, team.key)}</span>
+                    <span className="text-fog-300 text-sm">
+                      {teamPath(index, team.key) ? (
+                        <Link to={teamPath(index, team.key)!} className="hover:text-gold">
+                          {teamName(index, team.key)}
+                        </Link>
+                      ) : (
+                        teamName(index, team.key)
+                      )}
+                    </span>
                     <span className="flex items-baseline gap-3 text-xs">
                       <span className="text-fog-600 tabular-nums">{count(team.games)} games</span>
                       <Ratio part={team.wins} total={team.games} />
@@ -453,7 +461,15 @@ function ContextCard({
         </div>
 
         <div className="text-right">
-          <p className="text-fog-100 text-sm">{championName(index, row.champion_key)}</p>
+          <p className="text-fog-100 text-sm">
+            {championPath(index, row.champion_key) ? (
+              <Link to={championPath(index, row.champion_key)!} className="hover:text-gold">
+                {championName(index, row.champion_key)}
+              </Link>
+            ) : (
+              championName(index, row.champion_key)
+            )}
+          </p>
           <p className="text-fog-500 mt-1 font-mono text-xs">
             {row.kills} / {row.deaths} / {row.assists}
             <span className="text-fog-600"> · {row.cs} CS · {count(row.gold ?? 0)} gold</span>
@@ -491,7 +507,13 @@ function ChampionList({
           className="border-line/60 flex items-baseline justify-between gap-3 border-b py-1.5"
         >
           <span className={`truncate text-sm ${muted ? 'text-fog-500' : 'text-fog-300'}`}>
-            {championName(index, champion.key)}
+            {championPath(index, champion.key) ? (
+              <Link to={championPath(index, champion.key)!} className="hover:text-gold">
+                {championName(index, champion.key)}
+              </Link>
+            ) : (
+              championName(index, champion.key)
+            )}
             {showRole ? (
               <span className="text-fog-600 ml-2 text-[10px] tracking-wider uppercase">
                 {champion.role}
