@@ -16,6 +16,8 @@ is done when its acceptance criteria are ticked, not when the code exists.
 
 ## 1 — Era detail, complete *(done)*
 
+Spec: `docs/specs/2026-11-20-phase-1-era-detail.md`
+
 Coverage panel, boundary citation, event table, previous/next era.
 
 Empty declared eras are kept in the data but removed from the navigation: they are

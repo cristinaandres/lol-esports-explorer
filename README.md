@@ -1,9 +1,10 @@
-# Herald Lens
+# Rift Lens
 
 An explorer for **3,091 international League of Legends games** played between
 2011 and 2026 — from the era, to the event, to the series, to the game and its
-draft. The repository is `lol-esports-explorer`; the site it builds is Herald
-Lens.
+draft. The repository is `lol-esports-explorer`; the site it builds is Rift Lens.
+A *rift lens* is the glass you read the record through: it does not change what
+happened, it decides how closely you are allowed to look.
 
 **Live:** <https://cristinaandres.github.io/lol-esports-explorer/>
 

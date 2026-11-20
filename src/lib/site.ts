@@ -6,7 +6,7 @@
  * name is a brand decision, and they change for different reasons -- so the
  * brand lives here and nowhere else.
  */
-export const SITE_NAME = 'Herald Lens'
+export const SITE_NAME = 'Rift Lens'
 export const SITE_TAGLINE = 'every international game, 2011–2026'
 export const REPO_URL = 'https://github.com/cristinaandres/lol-esports-explorer'
 export const DATA_REPO = 'https://github.com/RRiboulet/lol-dataset'
