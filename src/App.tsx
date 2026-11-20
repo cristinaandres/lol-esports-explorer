@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { useDataset } from './lib/data'
 import ChampionDetail from './routes/ChampionDetail'
 import EntityIndex from './routes/EntityIndex'
+import EventsIndex from './routes/EventsIndex'
 import EraDetail from './routes/EraDetail'
 import ErasIndex from './routes/ErasIndex'
 import EventDetail from './routes/EventDetail'
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/eras" element={<ErasIndex />} />
         <Route path="/eras/:era" element={<EraDetail />} />
+        <Route path="/events" element={<EventsIndex />} />
         <Route path="/events/:event" element={<EventDetail />} />
         <Route path="/events/:event/phases/:phase" element={<PhaseDetail />} />
         <Route path="/series/:series" element={<SeriesDetail />} />
