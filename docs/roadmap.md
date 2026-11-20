@@ -3,6 +3,9 @@
 Each phase ends with something visible on the deployed site and green in
 `npm run check`. No phase links to a route that does not exist yet.
 
+Phases 2 to 5 each have a spec under `docs/specs/`. A spec is the plan; the phase
+is done when its acceptance criteria are ticked, not when the code exists.
+
 ## 0 — Foundation *(done)*
 
 - Repository, licence, attribution, provenance pin.
@@ -13,42 +16,50 @@ Each phase ends with something visible on the deployed site and green in
 
 ## 1 — Era detail, complete *(done)*
 
-Coverage panel, boundary citation, event table, previous/next era including gaps.
+Coverage panel, boundary citation, event table, previous/next era.
+
+Empty declared eras are kept in the data but removed from the navigation: they are
+documented below the era grid and in the glossary, and their pages remain
+reachable by URL for citation. A card that opens onto nothing is not a level.
 
 ## 2 — Event and game
 
-- `/events/:id`: format, teams, the series and game list, leaders per role, draft
-  pool with pick and ban counts.
-- `/series/:id`: only for best-of-three and above.
-- `/games/:id`: scoreboard, draft board with fidelity, player rows.
-- New artifacts: `games.json`, `player-games.json`, `bans.json`. Bans are lazily
-  loaded on the game page; picks come from the player rows already, because every
-  player row states the champion.
+Spec: `docs/specs/2026-11-20-phase-2-event-and-game.md`
+
+`/events/:id`, `/series/:id` (best-of-three and above only), `/games/:id` with the
+draft board, and the 42 series-less games reachable from their event.
 
 ## 3 — Entities
 
-- `/players/:id` with the context/career split and the competition → year filters.
-- `/teams/:id`: roster over time, side preference, event record.
-- `/champions/:id`: pick and ban record across eras and patches.
+Spec: `docs/specs/2026-11-20-phase-3-entities.md`
+
+`/players/:id` with the context/career split and the competition → year filters,
+`/teams/:id` with a derived roster, `/champions/:id` across eras.
 
 ## 4 — The pick'em view
 
-- `/compare`: two teams, their record with `n`, head-to-head with `n`, side
-  preference, champion pool overlap, and recent form marked as recent.
+Spec: `docs/specs/2026-11-20-phase-4-head-to-head.md`
+
+`/compare`: two teams, the head-to-head record with its `n`, recent form, and a
+champion pool overlap. No prediction, by design.
 
 ## 5 — Design and polish
 
-- Figma file matching `docs/information-architecture.md`, tokens exported to
-  `@theme`.
-- Empty, partial and error states designed rather than defaulted.
-- Accessibility pass: focus order, contrast, landmark regions.
+Spec: `docs/specs/2026-11-20-phase-5-design-pass.md`
+
+Figma frames named after the IA document, tokens kept in parity with `@theme`,
+the five states designed, and an accessibility pass.
 
 ## Known follow-ups
 
+- **Deep links return HTTP 404 on GitHub Pages.** The single-page fallback serves
+  the app for any path, so `/eras/atakhan` renders correctly, but the status code
+  is 404. Fixing it means a static host that rewrites, or pre-rendering each route.
 - `.devcontainer/docker-compose.yml` still names its volume `lol-dataset-pi-config`.
   Renaming it would create a new empty volume and drop the container's gh
   credentials, so it is left alone deliberately.
-- `public/data/events.json` is 24 KB and is loaded on every page. If a later
-  artifact pushes the payload past ~150 KB, split it per era.
+- `public/data/events.json` is 24 KB and is loaded on every page. The phase 2 spec
+  keeps the total first-load payload under ~200 KB gzip; if a later artifact
+  pushes past it, split by level.
 - `data/model/` is committed as a pinned snapshot. If it grows past ~20 MB, move to
   a release artifact and keep only the hashes.

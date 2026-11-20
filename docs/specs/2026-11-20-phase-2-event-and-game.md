@@ -1,0 +1,134 @@
+# Phase 2 — Event and game
+
+Status: proposed. Depends on nothing; phase 3 depends on it.
+
+## Objective
+
+The era page currently lists events as inert rows. A spectator who wants to know
+who played what in one game has nowhere to go. This phase builds the three levels
+between an era and a specific game — event, series, game — so that the draft of a
+real match is two clicks from the era that contains it.
+
+## Current behavior
+
+- `/eras/:era` renders the event table with no `<a>` in the body; the page says
+  "Event pages open in the next phase".
+- The committed artifacts are `eras.json`, `events.json`, `totals.json`,
+  `meta.json` — 37 KB total. There is no game-level artifact.
+- Measured on the real model (2026-11-20), the artifacts this phase needs:
+
+  | Artifact | Rows | JSON | gzip |
+  |---|---|---|---|
+  | `games.json` | 3,091 | 1,718 KB | 140 KB |
+  | `player-games.json` | 30,910 | 7,886 KB | 661 KB |
+  | `bans.json` | 28,306 | 3,065 KB | 134 KB |
+
+- Played series by format: best-of-one 1,455, best-of-three 289, best-of-five 324,
+  one unknown. Games with no series: 42. Drafts with unknown pick order: 641 of
+  3,091.
+
+## Required behavior
+
+- **R1** `/events/:id` renders the event header — name, competition, year, era
+  or eras it spans, dates, teams, games — and its games ordered by date.
+- **R2** A best-of-one row links directly to its game. A best-of-three or
+  best-of-five row links to the series. The level that exists for one third of
+  the corpus is not imposed on the other two thirds.
+- **R3** `/series/:id` renders the games of one series with its score. A typed URL
+  for a best-of-one redirects to its single game rather than rendering a list of
+  one.
+- **R4** `/games/:id` renders both sides with team, side, winner, kills, gold,
+  towers, inhibitors, dragons by type, barons, duration, patch and era, plus the
+  coverage markers for that game.
+- **R5** The draft board renders picks in slot order when the draft fidelity is
+  `ordered` (2,450 games) and without an order when it is `unordered` (641),
+  labelled with which of the two it is. An unordered draft is not sorted into a
+  fake order.
+- **R6** A game that declares no pick-ban phase renders "no draft", with the
+  format reason from the upstream format table. It does not render an empty
+  board.
+- **R7** The 42 games with no series appear on their event page in their own
+  group, reachable, not hidden behind a series that does not exist.
+- **R8** Player and team names are text in this phase, not links: the entity
+  routes arrive with phase 3, and a link to a page that 404s is worse than plain
+  text.
+
+## Non-goals
+
+Search, filters, entity pages, comparisons, charts over time, and any timeline or
+per-minute visual. The model carries per-game totals only; a gold curve cannot be
+drawn from it and must not be faked from the final gold.
+
+## Constraints
+
+- No server. The artifacts are static files, fetched once and held in memory.
+- Payload budget: the four existing artifacts plus `games.json` stay under
+  ~200 KB gzip for a first visit. `player-games.json` (661 KB) and `bans.json`
+  (134 KB) load lazily on the first game page and are cached for the session, so
+  an era page never pays for them.
+- Every game in the corpus must be reachable from its event; none may become
+  unreachable because it lacks a series, a patch or a draft.
+
+## Design decisions
+
+- **`games.json` is eager, `player-games.json` is lazy.** The event page needs the
+  game list to draw its table, and 140 KB is affordable on top of the existing
+  37 KB; 661 KB is not affordable for a visitor who only reads an era page, and a
+  game page is a deliberate navigation.
+- **Picks are not in `bans.json`.** Every player row already states the champion
+  that player played, so picks come from `fact_player_game` and only bans come
+  from `fact_draft_slot` — 28,306 rows instead of 59,214 slots. One artifact and
+  one join saved, with no loss: the pick slot number is still needed for R5 and
+  comes from the draft slots for ordered drafts only.
+- **`draft_switched_sides` reorders the display, not the picks.** Four games in
+  the corpus (2020 Mid-Season Cup) state the draft with the sides swapped; the
+  champion list is correct either way and only the column placement flips.
+- **Series stays a real route rather than a tab** because it has its own identity:
+  a best-of-five has a score, and the score is what the event table reports.
+
+## Test seams
+
+- **Pipeline** — `pipeline/build.py --check` already proves the artifacts are
+  current; the new queries are covered by the same gate.
+- **`src/lib/draft.ts`** — pure functions `groupPicks`, `groupBans`,
+  `readDraftState` tested with three fixtures: ordered, unordered, no draft.
+- **`src/lib/series.ts`** — `groupGamesBySeries` tested with a best-of-one event, a
+  best-of-five event, and the 42-game orphan case.
+- **Data test** — reading the committed `public/data/games.json`: exactly 3,091
+  games; every `event_key` resolves in `events.json`; every game has a blue and a
+  red side; 42 games carry `match_key = 0`; 641 carry `draft_fidelity =
+  'unordered'`.
+
+## Acceptance criteria
+
+- [ ] Every one of the 3,091 games is reachable by clicking from its era, and a
+      data test proves the count rather than a spot check.
+- [ ] An era page loads no game-level artifact: its network tab shows only the
+      four existing files.
+- [ ] A best-of-one event shows no series level anywhere in its pages.
+- [ ] An unordered draft never renders an implied pick order.
+- [ ] A game with no pick-ban phase says so and shows no champion.
+- [ ] The 42 series-less games are reachable from their event page.
+- [ ] `npm run check` passes, and the deployed site serves every new route from a
+      cold deep link.
+
+## Verification
+
+```bash
+npm run data:build && npm run check
+# then, in the browser, one full walk:
+#   /eras/atakhan → Esports World Cup 2026 → a best-of-five series → game 3
+#   /eras/pre-herald → a best-of-one event → a game with no draft
+```
+
+Observed, not assumed: the walk above must reach a draft in under four clicks and
+must show a coverage marker on every game that is not complete.
+
+## Open assumptions
+
+- **That a game page is worth its own artifact.** If the event page can draw every
+  row it needs from `games.json` alone, that artifact stays. If a per-game
+  breakdown proves heavier than 200 KB gzip, it gets split per event instead.
+- **That no reader needs the ban list before opening a game.** If a later phase
+  shows a champion's ban rate, `bans.json` becomes eager and the budget is
+  revisited.
