@@ -30,6 +30,7 @@ import {
   parseFilter,
   recoverFilter,
 } from '../lib/filters'
+import { championships, titlesForPlayer } from '../lib/titles'
 import { count, dayMonthYear, duration, monthYear, perGame, stripDateSuffix } from '../lib/format'
 import { buildIndexes, championName, teamName } from '../lib/indexes'
 import type { EventRow, Match } from '../lib/types'
@@ -100,6 +101,8 @@ export default function PlayerDetail() {
             }))
           : [],
       index: buildIndexes(dataset.data),
+      champs: championships(dataset.data.games, dataset.data.matches),
+      events: new Map(dataset.data.events.map((event) => [event.event_key, event])),
     } as const
   }, [dataset, rows, aliases, id, from])
 
@@ -138,6 +141,7 @@ export default function PlayerDetail() {
 
   const { player, former, index } = prepared
   const all = prepared.appearances
+  const titles = titlesForPlayer(prepared.champs, all)
   const visible = applyFilter(all, filter)
   const career = prepared.ready ? careerFrom(visible) : null
   const options = optionsFor(all)
@@ -331,6 +335,38 @@ export default function PlayerDetail() {
                 <ChampionList champions={unranked} index={index} showRole={showRole} muted />
               </>
             ) : null}
+          </section>
+
+          <section className="mt-12">
+            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Titles</h2>
+            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+              Events where this player&rsquo;s team won the final and they appeared in it. Derived
+              from the final series, so an event whose final cannot be identified awards nothing.
+            </p>
+
+            {titles.length === 0 ? (
+              <p className="text-fog-600 text-sm">No title this player can be named for.</p>
+            ) : (
+              <ul className="divide-line border-line divide-y border-y">
+                {titles.map((title) => (
+                  <li key={title.eventKey} className="flex flex-wrap items-baseline justify-between gap-3 py-2.5">
+                    <span className="text-fog-100 text-sm">
+                      {prepared.events.get(title.eventKey) ? (
+                        <Link
+                          to={`/events/${prepared.events.get(title.eventKey)!.event_id}`}
+                          className="hover:text-gold"
+                        >
+                          {prepared.events.get(title.eventKey)!.event_name}
+                        </Link>
+                      ) : (
+                        'Unknown event'
+                      )}
+                    </span>
+                    <span className="text-fog-600 font-mono text-xs">{dayMonthYear(title.date)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           <section className="mt-12 grid gap-10 sm:grid-cols-2">

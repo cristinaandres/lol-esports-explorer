@@ -10,7 +10,7 @@ import { Scoreboard } from '../components/Scoreboard'
 import { useDataset, useGameDetail, type Dataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { dayMonthYear, duration, stripDateSuffix } from '../lib/format'
-import { buildIndexes, patchLabel, teamName } from '../lib/indexes'
+import { buildIndexes, patchLabel, teamName, teamPath } from '../lib/indexes'
 
 /** The era's declared eligible fields, or an empty list when the era is unknown. */
 function eraEligible(data: Dataset, eraId: string): string[] {
@@ -96,9 +96,9 @@ export default function GameDetail() {
         eyebrow={`${event?.competition ?? '—'} · ${dayMonthYear(game.date_time_utc)}`}
         title={
           <>
-            {teamName(index, game.blue_team_key)}{' '}
-            <span className="text-fog-600 font-normal">vs</span>{' '}
-            {teamName(index, game.red_team_key)}
+            <TeamTitle index={index} teamKey={game.blue_team_key} />
+            <span className="text-fog-600 font-normal"> vs </span>
+            <TeamTitle index={index} teamKey={game.red_team_key} />
           </>
         }
         aside={
@@ -164,5 +164,24 @@ export default function GameDetail() {
         </nav>
       ) : null}
     </>
+  )
+}
+
+/** A team name in the page title, linked to its page when it has one. */
+function TeamTitle({
+  index,
+  teamKey,
+}: {
+  index: ReturnType<typeof buildIndexes>
+  teamKey: number
+}) {
+  const href = teamPath(index, teamKey)
+  const name = teamName(index, teamKey)
+  return href ? (
+    <Link to={href} className="hover:text-gold">
+      {name}
+    </Link>
+  ) : (
+    <>{name}</>
   )
 }

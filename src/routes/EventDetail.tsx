@@ -8,7 +8,7 @@ import { Stat, StatRow } from '../components/Stat'
 import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, duration, dayMonthYear } from '../lib/format'
-import { buildIndexes, teamName, teamPath } from '../lib/indexes'
+import { buildIndexes, teamName } from '../lib/indexes'
 import { groupGamesBySeries } from '../lib/series'
 
 export default function EventDetail() {
@@ -110,25 +110,18 @@ export default function EventDetail() {
                     {dayMonthYear(series.firstDate)}
                   </span>
 
-                  <span className="flex flex-wrap items-baseline gap-2">
-                    <Link
-                      to={teamPath(index, a) ?? href}
-                      className="text-fog-100 hover:text-gold font-medium"
-                    >
-                      {teamName(index, a)}
-                    </Link>
-                    <Link to={href} className="text-fog-300 hover:text-gold no-underline tabular-nums">
+                  <Link
+                    to={href}
+                    className="text-fog-100 hover:text-gold flex flex-wrap items-baseline gap-2 font-medium"
+                  >
+                    <span>{teamName(index, a)}</span>
+                    <span className="text-fog-300 font-normal tabular-nums">
                       {single ? 'vs' : `${scoreA} – ${scoreB}`}
-                    </Link>
-                    <Link
-                      to={teamPath(index, b) ?? href}
-                      className="text-fog-100 hover:text-gold font-medium"
-                    >
-                      {teamName(index, b)}
-                    </Link>
-                    <span className="text-fog-600 text-xs">
-                      {match?.best_of ? `best of ${match.best_of}` : 'format not stated'}
                     </span>
+                    <span>{teamName(index, b)}</span>
+                  </Link>
+                  <span className="text-fog-600 text-xs">
+                    {match?.best_of ? `best of ${match.best_of}` : 'format not stated'}
                   </span>
 
                   <span className="flex flex-wrap items-center gap-1.5">

@@ -1,15 +1,18 @@
 import { useMemo } from 'react'
-import { Link, useParams } from 'react-router'
+import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { championRecord, presenceOf } from '../lib/champion'
+import { championRecord, championUsers, presenceOf } from '../lib/champion'
 import { useAliases, useDataset, useGameDetail } from '../lib/data'
 import { eraCopy } from '../lib/eras'
+import { CareerFilters } from '../components/CareerFilters'
+import { applyFilter, emptyReason, filterSearch, NO_FILTER, optionsFor, parseFilter, recoverFilter } from '../lib/filters'
 import { count, dayMonthYear } from '../lib/format'
+import { buildIndexes, playerName, teamName } from '../lib/indexes'
 
 /**
  * One champion, era by era.
@@ -24,25 +27,25 @@ export default function ChampionDetail() {
   const dataset = useDataset()
   const detail = useGameDetail()
   const aliases = useAliases()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter = parseFilter(searchParams)
 
   const prepared = useMemo(() => {
     if (dataset.status !== 'ready') return null
     const champion = dataset.data.champions.find((row) => row.champion_id === id)
     if (!champion) return { champion: undefined } as const
 
-    const record =
-      detail.status === 'ready'
-        ? championRecord(
-            dataset.data.games,
-            detail.data.playerGames,
-            detail.data.bans,
-            champion.champion_key,
-          )
-        : null
+    const competitions = new Map(
+      dataset.data.events.map((event) => [event.event_key, event.competition]),
+    )
+    const scoped = dataset.data.games.map((game) => ({
+      game,
+      competition: competitions.get(game.event_key) ?? 'Unknown',
+    }))
 
     return {
       champion,
-      record,
+      scoped,
       former:
         aliases.status === 'ready'
           ? namesFor(aliases.data, 'champion', champion.champion_id).map((row) => ({
@@ -53,6 +56,10 @@ export default function ChampionDetail() {
           : [],
     } as const
   }, [dataset, detail, aliases, id])
+
+  const applyFilters = (next: typeof filter) => {
+    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
+  }
 
   if (dataset.status === 'loading') return <p className="text-fog-600">Loading…</p>
   if (dataset.status === 'failed')
@@ -77,7 +84,18 @@ export default function ChampionDetail() {
     )
   }
 
-  const { champion, record, former } = prepared
+  const { champion, former, scoped } = prepared
+  const visibleGames = applyFilter(scoped, filter).map((entry) => entry.game)
+  const record =
+    detail.status === 'ready'
+      ? championRecord(visibleGames, detail.data.playerGames, detail.data.bans, champion.champion_key)
+      : null
+  const users =
+    detail.status === 'ready'
+      ? championUsers(visibleGames, detail.data.playerGames, champion.champion_key)
+      : null
+  const reason = emptyReason(scoped, filter)
+  const index = buildIndexes(dataset.data)
 
   return (
     <>
@@ -109,10 +127,37 @@ export default function ChampionDetail() {
         }
       />
 
+      <CareerFilters
+        filter={filter}
+        options={optionsFor(scoped)}
+        eraLabel={null}
+        onChange={applyFilters}
+        onClear={() => applyFilters(NO_FILTER)}
+      />
+
       {record === null ? (
         <div className="space-y-3">
           <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
           <div className="bg-ink-900 border-line h-56 animate-pulse rounded-xl border" />
+        </div>
+      ) : record.picked === 0 && record.banned === 0 && visibleGames.length !== scoped.length ? (
+        <div className="border-line bg-ink-900 rounded-xl border p-6">
+          <h2 className="text-fog-100 text-base font-semibold">
+            {reason === 'year'
+              ? `No draft with ${champion.champion_name} at ${filter.competition} in ${filter.year}.`
+              : `No draft with ${champion.champion_name} in ${filter.competition}.`}
+          </h2>
+          <p className="text-fog-300 mt-2 max-w-xl text-sm leading-relaxed">
+            The champion is in the corpus, just not in this selection. The filter is what emptied
+            this view.
+          </p>
+          <button
+            type="button"
+            onClick={() => applyFilters(recoverFilter(scoped, filter))}
+            className="border-line hover:border-line-bright text-gold mt-4 rounded-lg border px-3 py-1.5 text-sm"
+          >
+            Show every game
+          </button>
         </div>
       ) : record.picked === 0 && record.banned === 0 ? (
         <p className="border-line bg-ink-900 text-fog-300 rounded-xl border p-6 text-sm">
@@ -122,7 +167,7 @@ export default function ChampionDetail() {
       ) : (
         <>
           <StatRow>
-            <Stat label="Games in corpus" value={count(record.games)} />
+            <Stat label="Games in scope" value={count(record.games)} />
             <Stat label="Picked" value={<Ratio part={record.picked} total={record.games} />} />
             <Stat label="Banned" value={<Ratio part={record.banned} total={record.games} />} />
             <Stat
@@ -187,6 +232,67 @@ export default function ChampionDetail() {
               </table>
             </div>
           </section>
+
+          {users && users.roles.length > 0 ? (
+            <section className="mt-12 grid gap-10 sm:grid-cols-2">
+              <div>
+                <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Roles</h2>
+                <p className="text-fog-500 mb-4 text-sm leading-relaxed">
+                  Where it is played. A champion played in two roles is two answers to where it
+                  fits, not one.
+                </p>
+                <ul className="flex flex-wrap gap-2">
+                  {users.roles.map((role) => (
+                    <li
+                      key={role.role}
+                      className="border-line text-fog-300 rounded-lg border px-3 py-1.5 text-sm"
+                    >
+                      {role.role}
+                      <span className="text-fog-600 ml-2 font-mono text-xs">{count(role.games)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Picked most</h2>
+                <p className="text-fog-500 mb-4 text-sm leading-relaxed">
+                  Players who picked it, with the games they are measured on.
+                </p>
+                <ul className="divide-line border-line divide-y border-y">
+                  {users.players.slice(0, 8).map((entry) => (
+                    <li key={entry.key} className="flex items-baseline justify-between gap-3 py-2">
+                      <span className="text-fog-300 text-sm">{playerName(index, entry.key)}</span>
+                      <span className="flex items-baseline gap-3 text-xs">
+                        <span className="text-fog-600 tabular-nums">{count(entry.games)} games</span>
+                        <Ratio part={entry.wins} total={entry.games} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </section>
+          ) : null}
+
+          {users && users.teams.length > 0 ? (
+            <section className="mt-10">
+              <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Teams</h2>
+              <p className="text-fog-500 mb-4 text-sm leading-relaxed">
+                Teams that played it most in this selection.
+              </p>
+              <ul className="divide-line border-line divide-y border-y">
+                {users.teams.slice(0, 8).map((entry) => (
+                  <li key={entry.key} className="flex items-baseline justify-between gap-3 py-2">
+                    <span className="text-fog-300 text-sm">{teamName(index, entry.key)}</span>
+                    <span className="flex items-baseline gap-3 text-xs">
+                      <span className="text-fog-600 tabular-nums">{count(entry.games)} games</span>
+                      <Ratio part={entry.wins} total={entry.games} />
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
         </>
       )}
     </>

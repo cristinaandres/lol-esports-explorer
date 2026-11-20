@@ -51,3 +51,5 @@ two pages from computing the same name two ways.
 | Gold per minute | `sum(gold) / (sum(duration_seconds) / 60)` | 3 |
 | Pick rate | `games with champion / games in scope`; bans reported separately | 2 |
 | Head-to-head | Games where the two teams are the two sides of one game; the denominator is those games, nothing wider | 4 |
+| Title | An event whose final is the single series named Finals, won by the team with more game wins in it. Events with several such series award nothing | phase 3 review |
+| Presence (champion) | Pick plus ban over the games played in the scope. A game where both sides played the champion counts once | phase 3 review |

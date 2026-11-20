@@ -147,3 +147,29 @@ duckdb -c ".read pipeline/sql/01_semantic_views.sql" \
 - **That rosters can be derived.** The model has no roster table, so a team's
   roster is inferred from who appears in its games. That is a fact about who
   played, not who was signed, and the page must say so.
+
+## Post-review changes
+
+Five changes asked for after the phase shipped, and what each settled.
+
+1. **A series row is one link again.** Making the two team names separately
+   clickable inside an event's series row split one destination into three. The row
+   links to the series or the game; the page it opens is where a team name becomes a
+   link, because that is the level where the team is the subject.
+2. **The team page separates the current roster from everyone.** "Current" is the
+   players who appeared in the team's most recent game in the selection: the corpus
+   has no roster table and no contract dates, so the last game is the only evidence
+   of who is on the team now.
+3. **The champion page got filters and a breakdown.** Competition → year now narrow
+   it like the other entity pages, and the page answers *where* the champion is
+   played (roles) and *who* plays it (players, teams) instead of a single table.
+4. **A competition in the team's event table is a control.** Clicking it applies the
+   visible filter rather than opening a hidden one: the bar updates, the URL shows
+   it, and the reader can undo it. A filter nobody can see is a filter nobody can
+   trust.
+5. **Titles are derived, and the rule is stated on the page.** The model has no
+   champion column, so a title is inferred: an event's final is the single series
+   named Finals, and the title goes to the team that won more games in it. The rule
+   reproduces eleven known results (Worlds 2015–2024, MSI 2016–2024) and awards
+   nothing where it cannot name one team — twelve events, mostly the Rift Rivals
+   relays, where a region wins.

@@ -128,3 +128,29 @@ function teamOf(appearance: TeamAppearance): number {
     ? appearance.game.blue_team_key
     : appearance.game.red_team_key
 }
+
+/**
+ * The players who appeared in one game for this team.
+ *
+ * "Current" is defined as the team's most recent game in the current selection:
+ * the corpus has no roster table and no contract dates, so the last game is the
+ * only evidence of who is on the team right now. A substitution appears as two
+ * players in the same role, which is a fact about that game, not an error.
+ */
+export function rosterOfGame(
+  playerGames: PlayerGame[],
+  appearance: TeamAppearance | undefined,
+): RosterEntry[] {
+  if (!appearance) return []
+  const team = teamOf(appearance)
+
+  return playerGames
+    .filter((row) => row.game_key === appearance.game.game_key && row.team_key === team)
+    .map((row) => ({
+      playerKey: row.player_key,
+      games: 1,
+      first: appearance.game.date_time_utc,
+      last: appearance.game.date_time_utc,
+    }))
+    .sort((a, b) => a.playerKey - b.playerKey)
+}

@@ -20,7 +20,8 @@ import {
 } from '../lib/filters'
 import { count, dayMonthYear } from '../lib/format'
 import { buildIndexes, playerName, playerPath } from '../lib/indexes'
-import { rosterFrom, teamAppearancesFor, teamSummaryFrom } from '../lib/team'
+import { rosterFrom, rosterOfGame, teamAppearancesFor, teamSummaryFrom } from '../lib/team'
+import { championships, titlesForTeam } from '../lib/titles'
 
 /**
  * One team's record.
@@ -61,6 +62,7 @@ export default function TeamDetail() {
             }))
           : [],
       events: new Map(dataset.data.events.map((event) => [event.event_key, event])),
+      champs: championships(dataset.data.games, dataset.data.matches),
       index: buildIndexes(dataset.data),
     } as const
   }, [dataset, rows, aliases, id])
@@ -91,10 +93,12 @@ export default function TeamDetail() {
   }
 
   const { team, index, events, playerGames } = prepared
+  const titles = titlesForTeam(prepared.champs, team.team_key)
   const all = prepared.appearances
   const visible = applyFilter(all, filter)
   const summary = teamSummaryFrom(visible)
   const roster = rosterFrom(playerGames, visible)
+  const current = rosterOfGame(playerGames, visible[visible.length - 1])
   const options = optionsFor(all)
   const reason = emptyReason(all, filter)
 
@@ -177,6 +181,42 @@ export default function TeamDetail() {
           </p>
 
           <section className="mt-12">
+            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Titles</h2>
+            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+              Derived, not stored: an event&rsquo;s final is the single series named Finals, and the
+              title goes to the team that won more games in it. Events whose final cannot be
+              identified as one series — the Rift Rivals relays, where a region wins — award nothing
+              here rather than guess a team.
+            </p>
+
+            {titles.length === 0 ? (
+              <p className="text-fog-600 text-sm">No title this team can be named for.</p>
+            ) : (
+              <ul className="divide-line border-line divide-y border-y">
+                {titles.map((title) => (
+                  <li key={title.eventKey} className="flex flex-wrap items-baseline justify-between gap-3 py-2.5">
+                    <span className="text-fog-100 text-sm">
+                      {events.get(title.eventKey) ? (
+                        <Link to={`/events/${events.get(title.eventKey)!.event_id}`} className="hover:text-gold">
+                          {events.get(title.eventKey)!.event_name}
+                        </Link>
+                      ) : (
+                        'Unknown event'
+                      )}
+                    </span>
+                    <span className="text-fog-600 flex items-baseline gap-4 text-xs">
+                      <span className="font-mono tabular-nums">
+                        {title.wins} – {title.losses} in the final
+                      </span>
+                      <span className="font-mono">{dayMonthYear(title.date)}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Events</h2>
             <p className="text-fog-500 mb-5 text-sm leading-relaxed">
               {count(summary.events.length)} events in this selection.
@@ -206,8 +246,30 @@ export default function TeamDetail() {
                             'Unknown event'
                           )}
                         </td>
-                        <td className="text-fog-500 px-4 py-2">
-                          {event ? `${event.competition} · ${event.year}` : '—'}
+                        <td className="px-4 py-2">
+                          {event ? (
+                            <span className="text-fog-500 flex items-center gap-1 text-xs">
+                              <button
+                                type="button"
+                                onClick={() => applyFilters({ ...filter, competition: event.competition })}
+                                className="hover:text-gold hover:underline"
+                                title={`Show only this team's ${event.competition} games`}
+                              >
+                                {event.competition}
+                              </button>
+                              <span className="text-fog-600">·</span>
+                              <button
+                                type="button"
+                                onClick={() => applyFilters({ ...filter, year: event.year })}
+                                className="hover:text-gold hover:underline"
+                                title={`Show only this team's ${event.year} games`}
+                              >
+                                {event.year}
+                              </button>
+                            </span>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                         <td className="px-4 py-2 text-right tabular-nums">{count(entry.games)}</td>
                         <td className="px-4 py-2 text-right">
@@ -222,11 +284,37 @@ export default function TeamDetail() {
           </section>
 
           <section className="mt-12">
-            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Roster</h2>
+            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Current roster</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Derived from who appeared in these games, not from a contract table: the model records
-              who played, not who was signed. A player who joined and never played does not appear,
-              and one who left mid-season appears for the games they played.
+              The players who appeared in the most recent game of this selection
+              {visible.length > 0 ? ` (${dayMonthYear(visible[visible.length - 1]!.game.date_time_utc)})` : ''}
+              . The corpus records who played, not who is signed, so the last game is the only
+              evidence of who is on the team today.
+            </p>
+
+            {!prepared.ready ? (
+              <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
+            ) : current.length === 0 ? (
+              <p className="text-fog-600 text-sm">No player rows for that game.</p>
+            ) : (
+              <ul className="flex flex-wrap gap-2">
+                {current.map((entry) => (
+                  <li key={entry.playerKey}>
+                    <PlayerChip index={index} entry={entry} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="mt-10">
+            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">
+              Everyone who played
+            </h2>
+            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+              Derived from the player rows of every game in this selection. A player who joined and
+              never played does not appear; one who left mid-season appears for the games they
+              played.
             </p>
 
             {!prepared.ready ? (
@@ -245,10 +333,7 @@ export default function TeamDetail() {
                   >
                     <span className="text-fog-200 text-sm">
                       {playerPath(index, entry.playerKey) ? (
-                        <Link
-                          to={playerPath(index, entry.playerKey)!}
-                          className="hover:text-gold"
-                        >
+                        <Link to={playerPath(index, entry.playerKey)!} className="hover:text-gold">
                           {playerName(index, entry.playerKey)}
                         </Link>
                       ) : (
@@ -269,5 +354,25 @@ export default function TeamDetail() {
         </>
       )}
     </>
+  )
+}
+
+/** One player in the current roster, as a link when the player has a page. */
+function PlayerChip({
+  index,
+  entry,
+}: {
+  index: ReturnType<typeof buildIndexes>
+  entry: { playerKey: number }
+}) {
+  const href = playerPath(index, entry.playerKey)
+  const name = playerName(index, entry.playerKey)
+  const chip = 'border-line bg-ink-850 text-fog-200 rounded-lg border px-3 py-1.5 text-sm'
+  return href ? (
+    <Link to={href} className={`${chip} hover:border-line-bright hover:text-gold block no-underline`}>
+      {name}
+    </Link>
+  ) : (
+    <span className={chip}>{name}</span>
   )
 }
