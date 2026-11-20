@@ -17,7 +17,8 @@ export default function Home() {
       </p>
     )
 
-  const { eras, totals } = data
+  const { eras, totals, champions } = data
+  const championsPlayed = champions.filter((champion) => champion.games > 0).length
 
   return (
     <>
@@ -68,7 +69,60 @@ export default function Home() {
 
         <EraGrid eras={eras} />
       </section>
+
+      <section className="mt-14">
+        <div className="mb-5 flex items-baseline justify-between gap-4">
+          <h2 className="text-fog-100 text-lg font-semibold tracking-tight">Or come in by entity</h2>
+          <p className="text-fog-600 text-xs">every name the corpus carries</p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <BrowseCard
+            to="/players"
+            label="Players"
+            value={count(totals.players)}
+            blurb="everyone who appears in at least one game"
+          />
+          <BrowseCard
+            to="/teams"
+            label="Teams"
+            value={count(totals.teams)}
+            blurb="every organisation a game names"
+          />
+          <BrowseCard
+            to="/champions"
+            label="Champions"
+            value={count(championsPlayed)}
+            blurb="every champion a draft contains"
+          />
+        </div>
+      </section>
     </>
+  )
+}
+
+function BrowseCard({
+  to,
+  label,
+  value,
+  blurb,
+}: {
+  to: string
+  label: string
+  value: string
+  blurb: string
+}) {
+  return (
+    <Link
+      to={to}
+      className="border-line bg-ink-900 hover:border-line-bright hover:bg-ink-850 group block rounded-xl border p-5 no-underline transition-colors"
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-fog-100 text-base font-semibold tracking-tight">{label}</span>
+        <span className="text-fog-600 group-hover:text-gold font-mono text-xs">{value} →</span>
+      </div>
+      <p className="text-fog-500 mt-2 text-sm leading-relaxed">{blurb}</p>
+    </Link>
   )
 }
 

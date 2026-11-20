@@ -7,6 +7,9 @@ import type { Meta } from '../lib/types'
 
 const links = [
   { to: '/eras', label: 'Eras', end: false },
+  { to: '/players', label: 'Players', end: false },
+  { to: '/teams', label: 'Teams', end: false },
+  { to: '/champions', label: 'Champions', end: false },
   { to: '/glossary', label: 'Glossary', end: false },
 ]
 
