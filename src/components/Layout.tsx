@@ -27,7 +27,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="border-line/70 bg-ink-950/80 sticky top-0 z-20 border-b backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-4 px-5 py-4 md:grid-cols-[1fr_auto_1fr]">
           <Link
             to="/"
             onClick={() => setMenu(false)}
@@ -38,14 +38,17 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
               <span className="text-fog-100 truncate leading-tight font-semibold tracking-tight">
                 {SITE_NAME}
               </span>
-              <span className="text-fog-600 hidden text-[10px] leading-tight tracking-[0.18em] whitespace-nowrap uppercase lg:block">
+              <span className="text-fog-600 hidden text-[10px] leading-tight tracking-[0.18em] whitespace-nowrap uppercase xl:block">
                 {SITE_TAGLINE}
               </span>
             </span>
           </Link>
 
-          <div className="hidden flex-1 items-center justify-between gap-6 sm:flex">
+          <div className="hidden md:flex">
             <NavLinks />
+          </div>
+
+          <div className="hidden justify-self-end md:flex">
             <SearchBox />
           </div>
 
@@ -55,14 +58,14 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
             aria-expanded={menu}
             aria-controls="mobile-nav"
             aria-label={menu ? 'Close menu' : 'Open menu'}
-            className="border-line text-fog-300 hover:text-fog-100 hover:border-line-bright flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs sm:hidden"
+            className="border-line text-fog-300 hover:text-fog-100 hover:border-line-bright flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs md:hidden"
           >
             {menu ? 'Close' : 'Menu'}
           </button>
         </div>
 
         {menu ? (
-          <div id="mobile-nav" className="border-line/70 space-y-4 border-t px-5 py-4 sm:hidden">
+          <div id="mobile-nav" className="border-line/70 space-y-4 border-t px-5 py-4 md:hidden">
             {/* Links first, search second: the search dropdown opens downward and
                 would cover anything placed below it. */}
             <NavLinks stacked onNavigate={() => setMenu(false)} />
@@ -105,7 +108,7 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
 
 function NavLinks({ stacked = false, onNavigate }: { stacked?: boolean; onNavigate?: () => void }) {
   return (
-    <nav className={stacked ? 'flex flex-col gap-3 text-sm' : 'flex items-center gap-5 text-sm'}>
+    <nav className={stacked ? 'flex flex-col gap-3 text-sm' : 'flex items-center gap-3 text-sm lg:gap-5'}>
       {links.map((link) => (
         <NavLink
           key={link.to}
