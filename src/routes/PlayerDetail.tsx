@@ -71,7 +71,6 @@ export default function PlayerDetail() {
   }
 
   const { player, career, former, index } = prepared
-  const mainRole = career?.roles[0]?.role
   const roleLabel = career
     ? career.roles.map((role) => role.role.toLowerCase()).join(', ')
     : null
