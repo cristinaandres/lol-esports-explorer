@@ -9,7 +9,7 @@ import { PlayerTable } from '../components/PlayerTable'
 import { Scoreboard } from '../components/Scoreboard'
 import { useDataset, useGameDetail, type Dataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
-import { dayMonthYear, duration } from '../lib/format'
+import { dayMonthYear, duration, stripDateSuffix } from '../lib/format'
 import { buildIndexes, patchLabel, teamName } from '../lib/indexes'
 
 /** The era's declared eligible fields, or an empty list when the era is unknown. */
@@ -81,7 +81,12 @@ export default function GameDetail() {
             to: event ? `/events/${event.event_id}` : undefined,
           },
           ...(match && siblings.length > 1
-            ? [{ label: match.match_name || 'Series', to: `/series/${match.match_id}` }]
+            ? [
+                {
+                  label: stripDateSuffix(match.match_name) || 'Series',
+                  to: `/series/${match.match_id}`,
+                },
+              ]
             : []),
           { label: position >= 0 && siblings.length > 1 ? `Game ${position + 1}` : 'Game' },
         ]}

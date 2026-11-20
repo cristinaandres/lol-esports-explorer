@@ -114,6 +114,14 @@ counts. Nothing is shown when the sample is zero — the page says so instead.
 - Numbers are tabular; alignment carries comparison.
 - A number that is absent renders as `—`, never `0`.
 - Colour never carries meaning alone; every coloured state has a label.
+- **The date is stated once per page.** A list row carries its own date, because
+  a list is many days at once. A detail page states the date in the header and
+  nowhere else: repeating it per game row makes it look like two competing dates,
+  and 1,931 of 1,964 series fit on one day. A series that spans two days states the
+  range in the header, not a date on each row.
+- **A level states what it is; the level below states how.** The series page says
+  which team won each game; which side they won on belongs to the game, where the
+  scoreboard can show both sides at once.
 
 Tokens live in `src/index.css` under `@theme`. Figma variables must use the same
 names (`ink-950`, `fog-300`, `gold`, `side-blue`, `side-red`) so a design and the

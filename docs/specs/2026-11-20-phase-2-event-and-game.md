@@ -168,6 +168,21 @@ Final payloads, measured:
 | `picks.json` | 24,500 | 107 KB | lazy |
 | `bans.json` | 28,306 | 126 KB | lazy |
 
+### Review amendments
+
+- **The series page does not state the side a game was won on.** It says which team
+  won; the side belongs to the game page, where the two scoreboards are already
+  side by side.
+- **The date is stated once per page.** It left the game rows inside a series and
+  stayed in the header, as a range for the 33 series that span two days. Repeating
+  it per row made it look like two dates competing, and 1,931 of 1,964 series fit
+  on one day.
+- **The series title drops the source's date suffix.** Names arrive as "Worlds 2016
+  — Quarterfinals — 2016-10-14"; the date is in the header, so the suffix is
+  removed for display and kept in the title attribute.
+- **Best-of-one rows are not yet visually distinguishable from best-of-three rows
+  beyond their text.** That is a row-component decision and it moved to phase 5.
+
 ## Open assumptions
 
 - **That a game page is worth its own artifact.** If the event page can draw every

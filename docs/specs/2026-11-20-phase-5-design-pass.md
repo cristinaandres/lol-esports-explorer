@@ -38,6 +38,12 @@ above will need.
   are the cases that break first.
 - **R6** Colour never carries meaning alone: every state that is coloured also has
   a word.
+- **R7** A row in a series list declares its format, and a best-of-one is
+  distinguishable from a best-of-three at a glance — without reading the score, in
+  greyscale, and in a screen reader. Today the only separation is the words "best
+  of 1" and the fact that a best-of-one links to a game rather than a series.
+  Two thirds of the corpus is best-of-one, so this is the most common row on the
+  site, not an edge case.
 
 ## Non-goals
 

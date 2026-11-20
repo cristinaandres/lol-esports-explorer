@@ -45,6 +45,37 @@ export function dayMonthYear(iso: string | null): string {
 }
 
 /**
+ * A series name without the source's date suffix.
+ *
+ * Series names arrive as "Worlds 2016 — Quarterfinals — 2016-10-14". The date is
+ * already in the page header, and the header is where the site states the when,
+ * so repeating it in the title reads as two different dates competing. The raw
+ * string stays in the title attribute for provenance.
+ */
+export function stripDateSuffix(name: string): string {
+  return name.replace(/\s*—\s*\d{4}-\d{2}-\d{2}$/, '')
+}
+
+/**
+ * A date, or a range when two days are involved.
+ *
+ * 1,931 of 1,964 played series fit on one day, so a date inside a series is
+ * normally a single value. The 33 that do not are bracket series played across
+ * two days, and showing only the first day there would be wrong.
+ */
+export function dateRange(startIso: string | null, endIso: string | null): string {
+  const start = startIso?.slice(0, 10) ?? ''
+  const end = endIso?.slice(0, 10) ?? ''
+  if (!start) return '—'
+  if (!end || start === end) return dayMonthYear(startIso)
+  if (start.slice(0, 7) === end.slice(0, 7)) {
+    const sameMonth = `${Number(start.slice(8, 10))}–${dayMonthYear(endIso)}`
+    return sameMonth
+  }
+  return `${dayMonthYear(startIso)} – ${dayMonthYear(endIso)}`
+}
+
+/**
  * A recorded count, or an em dash.
  *
  * Absence is not zero: 15,040 player rows carry no damage figure, and rendering

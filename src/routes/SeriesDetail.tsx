@@ -5,7 +5,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { PageHeader } from '../components/PageHeader'
 import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
-import { duration, dayMonthYear, count } from '../lib/format'
+import { count, dateRange, duration, stripDateSuffix } from '../lib/format'
 import { buildIndexes, patchLabel, teamName } from '../lib/indexes'
 
 /**
@@ -50,6 +50,8 @@ export default function SeriesDetail() {
   }
 
   const { match, games, event, wins, index } = prepared
+  const firstDate = games[0]?.date_time_utc ?? match.date_time_utc
+  const lastDate = games[games.length - 1]?.date_time_utc ?? match.date_time_utc
 
   if (games.length === 1) {
     return <Navigate to={`/games/${games[0]!.game_id}`} replace />
@@ -67,16 +69,16 @@ export default function SeriesDetail() {
             label: event?.event_name ?? 'Event',
             to: event ? `/events/${event.event_id}` : undefined,
           },
-          { label: match.match_name || 'Series' },
+          { label: stripDateSuffix(match.match_name) || 'Series' },
         ]}
       />
 
       <PageHeader
         eyebrow={match.best_of ? `best of ${match.best_of}` : 'format not stated'}
-        title={match.match_name || 'Series'}
+        title={<span title={match.match_name}>{stripDateSuffix(match.match_name) || 'Series'}</span>}
         aside={
           <p className="text-fog-600 text-right font-mono text-xs leading-relaxed">
-            {dayMonthYear(match.date_time_utc)}
+            {dateRange(firstDate, lastDate)}
             <br />
             {count(games.length)} games
             {match.forfeit === 1 ? ' · forfeit' : ''}
@@ -107,15 +109,11 @@ export default function SeriesDetail() {
                   <span className="text-fog-600 font-mono text-xs">Game {position + 1}</span>
                   <Link to={`/games/${game.game_id}`} className="hover:text-gold no-underline">
                     <span className="text-fog-100 font-medium">{teamName(index, winner)}</span>
-                    <span className="text-fog-600"> won on </span>
-                    <span className="text-fog-500">
-                      {game.blue_win === 1 ? 'blue' : 'red'} side
-                    </span>
+                    <span className="text-fog-600"> won</span>
                   </Link>
                   <span className="text-fog-600 flex items-center gap-4 font-mono text-xs">
                     <span>{duration(game.duration_seconds)}</span>
                     <span>{patchLabel(index, game.patch_key)}</span>
-                    <span>{dayMonthYear(game.date_time_utc)}</span>
                   </span>
                 </li>
               )
