@@ -116,8 +116,7 @@ export default function EraDetail() {
           <section className="mt-14">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Events</h2>
             <p className="text-fog-500 mb-5 text-sm leading-relaxed">
-              {count(events.length)} events admitted in this era. Event pages open in the next
-              phase.
+              {count(events.length)} events admitted in this era.
             </p>
 
             <div className="border-line overflow-x-auto rounded-xl border">
@@ -136,7 +135,11 @@ export default function EraDetail() {
                   {events.map((event: EventRow) => (
                     <tr key={event.event_id} className="hover:bg-ink-850/60">
                       <Td className="text-fog-600 font-mono">{event.year}</Td>
-                      <Td className="text-fog-100">{event.event_name}</Td>
+                      <Td className="text-fog-100">
+                        <Link to={`/events/${event.event_id}`} className="hover:text-gold">
+                          {event.event_name}
+                        </Link>
+                      </Td>
                       <Td className="text-fog-500">
                         <span title={event.league || undefined}>{event.competition}</span>
                       </Td>

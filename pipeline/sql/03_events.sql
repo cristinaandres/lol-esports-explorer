@@ -29,6 +29,22 @@ select
   end as competition
 from dim_event;
 
+-- Series metadata. The event page needs the format (best-of) and the series name,
+-- and the series route needs a natural id: match_key is build-local and would
+-- break every shared link on the next rebuild, so the route uses match_id.
+create or replace view match_rows as
+select
+  match_key,
+  match_id,
+  event_key,
+  match_name,
+  date_time_utc,
+  best_of,
+  tab,
+  is_nullified,
+  forfeit
+from dim_match;
+
 create or replace view event_summary as
 with per_game as (
   select

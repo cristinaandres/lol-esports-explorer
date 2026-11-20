@@ -46,7 +46,10 @@ real match is two clicks from the era that contains it.
   fake order.
 - **R6** A game that declares no pick-ban phase renders "no draft", with the
   format reason from the upstream format table. It does not render an empty
-  board.
+  board. *(Built, and vacuous in this corpus: every one of the 3,091 games has
+  player rows, so no game lacks a draft. The real case is the inverse — three
+  2020 Mid-Season Cup blind-pick games have picks and no bans — and the board
+  names it rather than drawing an empty ban list.)*
 - **R7** The 42 games with no series appear on their event page in their own
   group, reachable, not hidden behind a series that does not exist.
 - **R8** Player and team names are text in this phase, not links: the entity
@@ -123,6 +126,47 @@ npm run data:build && npm run check
 
 Observed, not assumed: the walk above must reach a draft in under four clicks and
 must show a coverage marker on every game that is not complete.
+
+## Built — what changed against this plan
+
+Written after the build, so the next reader knows where the plan and the code
+diverged, and why.
+
+- **One more artifact than planned: `matches.json`.** The series route needs a
+  natural id and the event page needs the format. `match_key` is build-local — it
+  renumbers on the next rebuild — so a URL carrying it would break every shared
+  link. `matches.json` (448 KB raw, 51 KB gzip) carries `match_id`, and the eager
+  payload lands at ~171 KB gzip, inside the 200 KB budget.
+- **Two draft artifacts instead of one.** A single `draft.json` was built first
+  and came to 6.0 MB, because `is_ordered` was repeated on all 59,214 slots. It
+  became `bans.json` (28,306 rows) plus `picks.json` (24,500 rows, ordered drafts
+  only, no `is_ordered` — `games.json` already states the fidelity per game).
+- **A fourth lazy artifact, `sides.json`, was not in the plan.** The scoreboard
+  needs the full per-side statistics, and putting them in `games.json` would have
+  added ~400 KB to what every visitor downloads. It is lazy, 99 KB gzip.
+- **Eligibility is now published.** `eras.json` carries the upstream `eligible`
+  field list, so the scoreboard drops an objective that did not exist in the era
+  instead of printing an em dash that reads like a gap in the source.
+- **Two defects were found by building it.** The first: casting the model's
+  timestamp through DuckDB produced `2011-06-18 08:30:00+00` instead of the ISO
+  string the site parses, and the page printed "NaN Sep 2020". The second, and the
+  serious one: 250 games state their draft with the two sides exchanged
+  (`draft_switched_sides`), and reading the slots without that flag puts 2,506
+  picks on the wrong side. `src/lib/data.test.ts` now asserts that every one of
+  the 30,908 picks names a champion a player on that side actually played. It is
+  the single most valuable test in the repository.
+
+Final payloads, measured:
+
+| Artifact | Rows | gzip | When |
+|---|---|---|---|
+| `games.json` | 3,091 | 83 KB | eager |
+| `matches.json` | 2,069 | 51 KB | eager |
+| names (teams, players, champions, patches) | 1,554 | 32 KB | eager |
+| `sides.json` | 6,182 | 98 KB | lazy |
+| `player-games.json` | 30,910 | 620 KB | lazy |
+| `picks.json` | 24,500 | 107 KB | lazy |
+| `bans.json` | 28,306 | 126 KB | lazy |
 
 ## Open assumptions
 

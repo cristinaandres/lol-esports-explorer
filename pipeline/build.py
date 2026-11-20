@@ -41,9 +41,25 @@ OUT_DIR = ROOT / "public" / "data"
 # Artifact name -> the view it serialises. One file per level of the site, so a
 # page loads its level and nothing else. The era artifact is the exception: it is
 # assembled in build_eras(), because its spine is declared upstream, not derived.
+#
+# Ordering is in the query, not in a component: the site trusts the file order and
+# the check compares bytes, so an unordered select would make the artifact flap.
 ARTIFACTS: dict[str, str] = {
+    # Eager: loaded by every page.
     "totals.json": "select * from corpus_totals",
     "events.json": "select * from event_summary",
+    "games.json": "select * from game_rows order by date_time_utc, game_key",
+    "matches.json": "select * from match_rows order by match_key",
+    # Names. Loaded eagerly because every page resolves a key to a name.
+    "teams.json": "select * from dim_team order by team_key",
+    "players.json": "select * from dim_player order by player_key",
+    "champions.json": "select * from dim_champion order by champion_key",
+    "patches.json": "select * from dim_patch order by patch_key",
+    # Lazy: fetched on the first game page and cached for the session.
+    "sides.json": "select * from side_rows order by game_key, side",
+    "player-games.json": "select * from player_rows order by game_key, side, player_key",
+    "bans.json": "select * from ban_rows order by game_key, side, entry_index",
+    "picks.json": "select * from pick_rows order by game_key, side, entry_index",
 }
 
 # Era-level fields the site reads; zero when the era governs no game.
@@ -100,6 +116,10 @@ def build_eras(con: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
             "from": era["from"],
             "cites": era["cites"],
             "eligible_fields": len(era["eligible"]),
+            # The field names that could hold a value in this era, as the upstream
+            # rule spells them. The game page uses them to say "this did not exist
+            # yet" instead of "the source has no value", which are different facts.
+            "eligible": era["eligible"],
         }
         for field in ERA_FIELDS:
             entry[field] = plain(facts.get(field, 0))
@@ -109,10 +129,26 @@ def build_eras(con: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
     return spine
 
 
+def dumps(rows: list[dict[str, object]]) -> str:
+    """Serialise a table as JSON with one row per line.
+
+    Two reasons, both about reading a diff rather than a payload: a compact
+    two-space-indented array of 30,910 objects is a megabyte of indentation, and
+    an unchanged file should produce an unchanged line. gzip does not care, and
+    neither does the browser.
+    """
+    if not rows:
+        return "[]\n"
+    body = ",\n".join(
+        json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in rows
+    )
+    return "[\n" + body + "\n]\n"
+
+
 def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
     """Return artifact name -> serialised UTF-8 JSON text."""
     rendered: dict[str, str] = {
-        "eras.json": json.dumps(build_eras(con), ensure_ascii=False, indent=2) + "\n"
+        "eras.json": dumps(build_eras(con))
     }
     for name, query in ARTIFACTS.items():
         cursor = con.execute(query)
@@ -121,7 +157,7 @@ def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
             {column: plain(value) for column, value in zip(columns, row)}
             for row in cursor.fetchall()
         ]
-        rendered[name] = json.dumps(rows, ensure_ascii=False, indent=2) + "\n"
+        rendered[name] = dumps(rows)
 
     source = json.loads(SOURCE_FILE.read_text(encoding="utf-8"))
     meta = {

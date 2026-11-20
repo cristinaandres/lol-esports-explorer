@@ -7,19 +7,19 @@
 -- Keeping them runnable by hand is deliberate: an analyst must be able to
 -- reproduce any number the site shows without going through the build script.
 
--- Timestamp and date columns are read as ISO-8601 text rather than as DuckDB
--- temporal types. The model defines those columns as text ("YYYY-MM-DD" and
--- "YYYY-MM-DDTHH:MM:SSZ"), the site renders them verbatim, and a timestamp
--- round-tripped through a timezone-aware type would reintroduce a timezone the
--- source never stated.
+-- Timestamp and date columns are read back as the ISO-8601 text the model
+-- defines ("YYYY-MM-DD" and "YYYY-MM-DDTHH:MM:SSZ"). A plain cast is not enough:
+-- DuckDB parses the column as a timezone-aware timestamp and casts it back as
+-- "2026-05-12 09:26:00+00", which is a different string, so the site would print
+-- a date it cannot parse. The format is restored explicitly, in UTC.
 create or replace view dim_event as
   select * replace (cast(date_start as varchar) as date_start)
   from read_csv('data/model/dim_event.csv', header = true);
 create or replace view dim_match as
-  select * replace (cast(date_time_utc as varchar) as date_time_utc)
+  select * replace (strftime(cast(date_time_utc as timestamptz) at time zone 'UTC', '%Y-%m-%dT%H:%M:%SZ') as date_time_utc)
   from read_csv('data/model/dim_match.csv', header = true);
 create or replace view dim_game as
-  select * replace (cast(date_time_utc as varchar) as date_time_utc)
+  select * replace (strftime(cast(date_time_utc as timestamptz) at time zone 'UTC', '%Y-%m-%dT%H:%M:%SZ') as date_time_utc)
   from read_csv('data/model/dim_game.csv', header = true);
 create or replace view dim_team as
   select * from read_csv('data/model/dim_team.csv', header = true);

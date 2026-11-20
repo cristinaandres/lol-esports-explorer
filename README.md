@@ -86,16 +86,19 @@ pipeline/sql/              the semantic layer: DuckDB views over the model
 pipeline/build.py          emits public/data/*.json, and --check
 public/data/               the artifacts the site reads (generated, committed)
 src/routes/                one file per level of the navigation
-src/components/            Ratio, Breadcrumbs, Stat, Layout
+src/components/            Ratio, Scoreboard, DraftBoard, PlayerTable, Layout
 src/lib/                   types, formatters, era copy
 docs/                      product spec, IA, metric definitions, roadmap
 ```
 
 ## Scope
 
-Built: the era spine, era detail with coverage and its event list, the glossary.
-Next: event, series, game and entity pages, the head-to-head view for pick'ems.
-See `docs/roadmap.md`.
+Built: the era spine, era detail with coverage, the event page, the series page,
+and the game page with its scoreboard, draft board and player rows. The 42 games
+the source attaches to no series are reachable from their event.
+
+Next: player, team and champion pages with the context/career split, then the
+head-to-head view for pick'ems. See `docs/roadmap.md`.
 
 ## Licence
 

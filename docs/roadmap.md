@@ -24,12 +24,16 @@ Empty declared eras are kept in the data but removed from the navigation: they a
 documented below the era grid and in the glossary, and their pages remain
 reachable by URL for citation. A card that opens onto nothing is not a level.
 
-## 2 — Event and game
+## 2 — Event and game *(done)*
 
 Spec: `docs/specs/2026-11-20-phase-2-event-and-game.md`
 
-`/events/:id`, `/series/:id` (best-of-three and above only), `/games/:id` with the
-draft board, and the 42 series-less games reachable from their event.
+`/events/:id`, `/series/:id` (best-of-three and above only, and a best-of-one
+redirects to its game), `/games/:id` with the scoreboard, the draft board and the
+player rows, and the 42 series-less games reachable from their event.
+
+Player and team names are still text: the links arrive with phase 3, because a
+link to a route that does not exist yet is worse than plain text.
 
 ## 3 — Entities
 

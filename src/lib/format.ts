@@ -33,3 +33,29 @@ export function monthYear(iso: string | null): string {
 export function isoDate(iso: string | null): string {
   return iso ?? '—'
 }
+
+/** '2019-10-12T14:00:00Z' -> '12 Oct 2019'. The model's ISO string, never a Date. */
+export function dayMonthYear(iso: string | null): string {
+  if (!iso) return '—'
+  const [date] = iso.split('T')
+  const [year, month, day] = (date ?? '').split('-')
+  const names = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const index = Number(month) - 1
+  return names[index] ? `${Number(day)} ${names[index]} ${year}` : iso
+}
+
+/**
+ * A recorded count, or an em dash.
+ *
+ * Absence is not zero: 15,040 player rows carry no damage figure, and rendering
+ * that as 0 would claim a player dealt no damage. Every measure on the site goes
+ * through here.
+ */
+export function orDash(value: number | null | undefined): string {
+  return value === null || value === undefined ? '—' : count(value)
+}
+
+/** A percentage already computed, with no denominator attached. Prefer Ratio. */
+export function fixed(value: number, digits = 1): string {
+  return value.toFixed(digits)
+}

@@ -1,8 +1,18 @@
 {
   "artifacts": {
-    "eras.json": "cfdcb4c7f283963a88815a8fcdad35b32c1ddf811eeb7cf64f0a7f61c379342e",
-    "events.json": "3aa08a68dfb4c323a1386fe91baa308642a8734fac4f7d0bbcc1cef97e5bbdf8",
-    "totals.json": "972e129c13f94df7d75c058481f475ee32a22958e1cfa54a49cf4673e780cf33"
+    "bans.json": "aa015fb29b7eaa69b40dea485c386d9be0cc04c9addaeb3b7237ce041420742b",
+    "champions.json": "5431edb6b00ad26d58af299a614d424042589c063984d0cd19e1b1df9c3fc7a6",
+    "eras.json": "756a66e41964b96be1bed0c23273a456037618df212fc80857572a84578a4adf",
+    "events.json": "5770f86fce96b5c281efab4be23f6f6ff66bf0b8ac335933e7f9c85f2fab89fd",
+    "games.json": "e8af139e00a462cd8b0d6808fadd542d8cbafa338753024e876ff238ac66a79b",
+    "matches.json": "846eaa620334fa51e0d485af8202214156731fb3f0e19653f963dd0b06740d9d",
+    "patches.json": "f8d11dbc398511b07548e6366303899b9e57fee96fbccf7f47ef9d883317a3bb",
+    "picks.json": "5a84013e54e9b8793ce317408e1d701574bb1460a7e29e76e74f3077f9b8410b",
+    "player-games.json": "383732eacd9d9959e9c2ed3f677ec44815761f4ecd05fb67affc1a1cfec80e7e",
+    "players.json": "82e7d0497357e47631f38081c7fa3a9e64b5ef61cf0adb20cd0abe935b0c8443",
+    "sides.json": "40be3080273bd979bfd4e9b3c5e06ff405903b2d060672af2ee529f1e99a9ebf",
+    "teams.json": "6566981403f6e0ff5598fab3c1477e10a0be7f9f895ce451ab72c0fd1bd4f22d",
+    "totals.json": "3f0e5c92d6a1d3f466d994061b8c4526d3232358ebc0aed33d57cb45a1265d3c"
   },
   "modelFiles": {
     "bridge_alias.csv": "6320c2f2561da6ebb9b5803f1f492ec30ae0e900d189bf8ec489627de867ca23",

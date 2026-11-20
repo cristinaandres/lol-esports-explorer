@@ -6,6 +6,8 @@ export type Era = {
   /** The patch and source the boundary is cited from. */
   cites: string
   eligible_fields: number
+  /** Field names that could hold a value in this era, as the upstream rule spells them. */
+  eligible: string[]
   first_date: string | null
   last_date: string | null
   games: number
@@ -59,6 +61,132 @@ export type Totals = {
   first_date: string
   last_date: string
   blue_wins: number
+}
+
+/** How much of a record the source carries, per group. */
+export type Coverage = 'complete' | 'partial' | 'unavailable'
+
+/**
+ * One row of public/data/games.json.
+ *
+ * Every measure here can be null, and null means "the source did not record it",
+ * which is not zero. The site renders that as an em dash.
+ */
+export type Game = {
+  game_key: number
+  game_id: string
+  event_key: number
+  /** 0 when the game is not attached to a series (42 games in the corpus). */
+  match_key: number
+  date_time_utc: string
+  era: string
+  /** 0 when the source states no patch. */
+  patch_key: number
+  duration_seconds: number | null
+  /** 1 when the blue side won, 0 otherwise. */
+  blue_win: number
+  blue_team_key: number
+  red_team_key: number
+  draft_fidelity: 'ordered' | 'unordered'
+  /** 1 when the source stated the draft with the sides swapped; null when unordered. */
+  draft_switched_sides: number | null
+  team_stats_coverage: Coverage
+  draft_coverage: Coverage
+  player_stats_coverage: Coverage
+}
+
+/** One row of public/data/matches.json: one series. */
+export type Match = {
+  /** Build-local. Never put this in a URL. */
+  match_key: number
+  /** The durable identifier, and what the series route uses. */
+  match_id: string
+  event_key: number
+  match_name: string
+  date_time_utc: string
+  /** 1, 3 or 5. Null when the source stated no format (one series in the corpus). */
+  best_of: number | null
+  tab: string
+  is_nullified: number | null
+  forfeit: number | null
+}
+
+/** One row of public/data/sides.json: the scoreboard for one side of one game. */
+export type Side = {
+  game_key: number
+  side: 'blue' | 'red'
+  team_key: number
+  is_winner: number
+  kills: number | null
+  gold: number | null
+  towers: number | null
+  inhibitors: number | null
+  barons: number | null
+  dragons: number | null
+  dragons_clouds: number | null
+  dragons_infernals: number | null
+  dragons_mountains: number | null
+  dragons_oceans: number | null
+  dragons_hextechs: number | null
+  dragons_chemtechs: number | null
+  dragons_elders: number | null
+  rift_heralds: number | null
+  void_grubs: number | null
+  atakhans: number | null
+}
+
+/** One row of public/data/player-games.json. */
+export type PlayerGame = {
+  game_key: number
+  player_key: number
+  team_key: number
+  champion_key: number
+  side: 'blue' | 'red'
+  role: string
+  kills: number
+  deaths: number
+  assists: number
+  cs: number | null
+  gold: number | null
+  damage: number | null
+  vision: number | null
+}
+
+/** One row of public/data/bans.json or picks.json: a draft slot. */
+export type DraftSlot = {
+  game_key: number
+  side: 'blue' | 'red'
+  entry_index: number
+  slot: number
+  champion_key: number
+}
+
+export type Team = {
+  team_key: number
+  team_id: string
+  team_name: string
+  overview_page: string
+  region: string
+}
+
+export type Player = {
+  player_key: number
+  player_id: string
+  player_name: string
+  overview_page: string
+}
+
+export type Champion = {
+  champion_key: number
+  champion_id: string
+  champion_name: string
+  riot_key: number
+}
+
+export type Patch = {
+  patch_key: number
+  patch: string
+  patch_name: string
 }
 
 /** public/data/meta.json: the pin from a number on the site back to its payload. */
