@@ -13,6 +13,7 @@ import {
   applyFilter,
   emptyReason,
   filterSearch,
+  isEmptyFilter,
   NO_FILTER,
   optionsFor,
   parseFilter,
@@ -218,9 +219,26 @@ export default function TeamDetail() {
 
           <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Events</h2>
-            <p className="text-fog-500 mb-5 text-sm leading-relaxed">
-              {count(summary.events.length)} events in this selection.
-            </p>
+            <div className="mb-5 flex flex-wrap items-center gap-3">
+              <p className="text-fog-500 text-sm leading-relaxed">
+                {count(summary.events.length)} events in this selection.
+              </p>
+              {!isEmptyFilter(filter) ? (
+                <span className="border-line bg-ink-850 text-fog-300 flex items-center gap-2 rounded-full border px-3 py-1 text-xs">
+                  <span className="text-fog-600">filtered by</span>
+                  {filter.competition ?? 'any competition'}
+                  {filter.year !== null ? ` · ${filter.year}` : ''}
+                  <button
+                    type="button"
+                    onClick={() => applyFilters({ ...filter, competition: null, year: null })}
+                    className="text-fog-500 hover:text-gold"
+                    aria-label="Clear the filter"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ) : null}
+            </div>
 
             <div className="border-line overflow-x-auto rounded-xl border">
               <table className="w-full min-w-[32rem] text-sm">

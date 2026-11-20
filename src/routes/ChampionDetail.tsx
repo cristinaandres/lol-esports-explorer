@@ -12,7 +12,7 @@ import { eraCopy } from '../lib/eras'
 import { CareerFilters } from '../components/CareerFilters'
 import { applyFilter, emptyReason, filterSearch, NO_FILTER, optionsFor, parseFilter, recoverFilter } from '../lib/filters'
 import { count, dayMonthYear } from '../lib/format'
-import { buildIndexes, playerName, teamName } from '../lib/indexes'
+import { buildIndexes, playerName } from '../lib/indexes'
 
 /**
  * One champion, era by era.
@@ -274,25 +274,6 @@ export default function ChampionDetail() {
             </section>
           ) : null}
 
-          {users && users.teams.length > 0 ? (
-            <section className="mt-10">
-              <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Teams</h2>
-              <p className="text-fog-500 mb-4 text-sm leading-relaxed">
-                Teams that played it most in this selection.
-              </p>
-              <ul className="divide-line border-line divide-y border-y">
-                {users.teams.slice(0, 8).map((entry) => (
-                  <li key={entry.key} className="flex items-baseline justify-between gap-3 py-2">
-                    <span className="text-fog-300 text-sm">{teamName(index, entry.key)}</span>
-                    <span className="flex items-baseline gap-3 text-xs">
-                      <span className="text-fog-600 tabular-nums">{count(entry.games)} games</span>
-                      <Ratio part={entry.wins} total={entry.games} />
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
         </>
       )}
     </>
