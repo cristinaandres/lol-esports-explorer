@@ -1,7 +1,7 @@
 # 07: Search by any name an entity ever had
 
 **Blocked by:** 05 and 06 (both entity kinds must exist to link to)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -43,3 +43,18 @@ Unit tests on the matcher (exact, substring, accent, alias-hit, ambiguity), and 
 browser check of the keyboard path from the header to a result and back. Covers no
 numbered behaviour in the phase 3 spec: search was added in review, and it is the
 entry point the spec left open.
+
+## Built
+
+- The alias bridge is fetched on first focus, not on mount: a page a reader is
+  reading never pays 63 KB for a search they did not start. Verified in the network
+  log — ten data requests before typing, `aliases.json` only after.
+- Ranking is exact > prefix > substring, and a current name beats an alias at the
+  same rank: an alias hit must not outrank the thing it is an alias of.
+- One result per entity. A name that is both a current name and somebody's former
+  handle returns both entities, which is why `APA` lists two players.
+- The query is kept after opening a result, so coming back to the page shows what
+  was typed instead of an empty box.
+- Verified: `mad lions` returns Movistar KOI with *formerly MAD Lions*; `nunu`
+  returns the champion with its former name; arrows and Enter open a result;
+  Escape closes; the count is announced through a live region.

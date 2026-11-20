@@ -1,7 +1,7 @@
 # 04: Arrive at a player from the game they just played
 
 **Blocked by:** 03 (shares the query-string contract and the page header)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -43,3 +43,15 @@ series pages), which needs its own decision about what context to carry.
 Unit tests on the context parameters (present, absent, stale id), and a browser
 walk from a game to a player and back. Covers spec R2 and closes phase 2's R8,
 which left the names as text on purpose.
+
+## Built
+
+- The context is resolved against the player's own appearances, so a game they did
+  not play produces no block. The parameter says where the reader came from; that
+  check is what makes the block true rather than decorative.
+- The game page link carries `?from=game:<id>`; the game number inside a series is
+  computed from the series' own games, and a best-of-one says just "Game".
+- Changing a filter keeps the context. The reader is narrowing the career around
+  the game they arrived from, not leaving it behind.
+- Verified: game → Armut shows the block with event, series and game 1, side, result,
+  champion, 5/3/15 · 226 CS; "Career view" drops the parameter and keeps the page.

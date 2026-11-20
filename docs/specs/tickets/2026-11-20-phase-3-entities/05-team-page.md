@@ -1,7 +1,7 @@
 # 05: A team page that survives a rename
 
 **Blocked by:** 03 (inherits the filter bar and the query-string contract)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -51,3 +51,17 @@ Unit tests on the roster derivation (a player who appears, leaves, and returns; 
 team that changed region), a data test that every team's appearance total equals
 the rows that reference it, and a browser walk from a scoreboard into a team.
 Covers spec R5, extended by the review.
+
+## Built
+
+- The filter module became generic over anything with a competition and a date, so
+  the same code narrows a career and a team instead of being copied.
+- The roster is derived from the player rows of the games in scope, and the page
+  says so. A player who appeared for the opponent in the same game is not counted:
+  the row must belong to this team *and* to a game in the list.
+- Side preference is shown as two ratios, blue and red, because it belongs to the
+  era as much as to the team.
+- Renames come from the alias bridge: Movistar KOI lists Splyce (2016–2019),
+  MAD Lions (2020–2023) and MAD Lions KOI (2024). MAD Team stays a different
+  organisation, and a test pins the separation.
+- Team names link here from the scoreboard, the series page and the event table.

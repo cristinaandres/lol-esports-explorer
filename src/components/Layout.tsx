@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router'
 
+import { SearchBox } from './SearchBox'
 import { DATA_REPO, REPO_URL, SITE_NAME, SITE_TAGLINE } from '../lib/site'
 import type { Meta } from '../lib/types'
 
@@ -21,6 +22,9 @@ export function Layout({ meta, children }: { meta: Meta | null; children: ReactN
               {SITE_TAGLINE}
             </span>
           </Link>
+          <div className="flex flex-1 items-center justify-end gap-5">
+            <SearchBox />
+          </div>
           <nav className="flex items-center gap-5 text-sm">
             {links.map((link) => (
               <NavLink

@@ -1,7 +1,7 @@
 # 06: A champion page across eras, not across patches it did not exist in
 
 **Blocked by:** 02 (the entity page shell)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -43,3 +43,17 @@ twice in sixteen years.
 Unit tests over the per-era aggregation (a champion present in every era, one
 released mid-corpus, one never banned), and a data test asserting that the sum of a
 champion's per-era picks equals its total picks. Covers spec R6.
+
+## Built
+
+- Presence is pick plus ban over the games played in the era, with the games of the
+  era as the denominator. Dividing by the games the champion appears in would only
+  ever say it was present when it was present.
+- A blind-pick game where both sides played the champion counts once: it is one
+  game and one side won it.
+- A champion released mid-corpus shows nothing before its first game, which the
+  spec asks for and which is not the same fact as zero.
+- Verified: Azir 9% (293/3,091) picked, 12% banned, 21% presence, 50% won when
+  picked, present in all six eras; Nunu lists the name it replaced and the other
+  170 champions show no empty section.
+- Champion names link here from the draft board and the player table.
