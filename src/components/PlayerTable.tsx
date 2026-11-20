@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { ROLE_ORDER } from '../lib/draft'
 import { count, orDash } from '../lib/format'
 import { championName, playerName, playerPath, teamName, type Indexes } from '../lib/indexes'
+import { fromParam } from '../lib/context'
 import type { PlayerGame } from '../lib/types'
 
 /**
@@ -15,9 +16,12 @@ import type { PlayerGame } from '../lib/types'
 export function PlayerTable({
   playerGames,
   index,
+  gameId,
 }: {
   playerGames: PlayerGame[]
   index: Indexes
+  /** The game page's id, so a name links back with the game it came from. */
+  gameId?: string
 }) {
   // Role order, because the source lists the rows in whatever order it likes and
   // the two sides must read the same way down the page.
@@ -56,8 +60,8 @@ export function PlayerTable({
             <th className="px-4 py-2.5 text-right font-medium">Vision</th>
           </tr>
         </thead>
-        <SideRows side="blue" rows={blue} index={index} />
-        <SideRows side="red" rows={red} index={index} />
+        <SideRows side="blue" rows={blue} index={index} gameId={gameId} />
+        <SideRows side="red" rows={red} index={index} gameId={gameId} />
       </table>
     </div>
   )
@@ -67,10 +71,12 @@ function SideRows({
   side,
   rows,
   index,
+  gameId,
 }: {
   side: 'blue' | 'red'
   rows: PlayerGame[]
   index: Indexes
+  gameId?: string
 }) {
   if (rows.length === 0) return null
   const team = rows[0]!.team_key
@@ -94,8 +100,8 @@ function SideRows({
           <tr key={row.player_key} className="hover:bg-ink-850/50">
             <td className="text-fog-600 px-4 py-2 text-xs tracking-wider uppercase">{row.role}</td>
             <td className="text-fog-100 px-4 py-2">
-              {playerPath(index, row.player_key) ? (
-                <Link to={playerPath(index, row.player_key)!} className="hover:text-gold">
+              {playerHref(index, row.player_key, gameId) ? (
+                <Link to={playerHref(index, row.player_key, gameId)!} className="hover:text-gold">
                   {playerName(index, row.player_key)}
                 </Link>
               ) : (
@@ -115,4 +121,11 @@ function SideRows({
       </tbody>
     </>
   )
+}
+
+/** The player's route, carrying the game it was reached from. */
+function playerHref(index: Indexes, playerKey: number, gameId?: string): string | null {
+  const path = playerPath(index, playerKey)
+  if (!path) return null
+  return gameId ? `${path}?from=${fromParam(gameId)}` : path
 }

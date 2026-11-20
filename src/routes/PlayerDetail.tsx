@@ -13,10 +13,12 @@ import {
   careerFrom,
   MIN_GAMES_FOR_RATE,
   rankByWinRate,
+  type Appearance,
   type ChampionStat,
   type MeasureSummary,
 } from '../lib/career'
 import { useAliases, useDataset, usePlayerGames } from '../lib/data'
+import { contextFor, parseFrom } from '../lib/context'
 import { eraCopy } from '../lib/eras'
 import {
   applyFilter,
@@ -27,8 +29,9 @@ import {
   parseFilter,
   recoverFilter,
 } from '../lib/filters'
-import { count, monthYear, perGame } from '../lib/format'
+import { count, dayMonthYear, duration, monthYear, perGame, stripDateSuffix } from '../lib/format'
 import { buildIndexes, championName, teamName } from '../lib/indexes'
+import type { EventRow, Match } from '../lib/types'
 
 /**
  * One player's career.
@@ -48,6 +51,7 @@ export default function PlayerDetail() {
   const aliases = useAliases()
   const [searchParams, setSearchParams] = useSearchParams()
   const filter = parseFilter(searchParams)
+  const from = parseFrom(searchParams)
 
   const prepared = useMemo(() => {
     if (dataset.status !== 'ready') return null
@@ -57,14 +61,35 @@ export default function PlayerDetail() {
     const competitions = new Map(
       dataset.data.events.map((event) => [event.event_key, event.competition]),
     )
+    const appearances =
+      rows.status === 'ready'
+        ? appearancesFor(dataset.data.games, rows.data, player.player_key, competitions)
+        : []
+
+    const hit = contextFor(appearances, from)
+    const context = hit
+      ? {
+          appearance: hit,
+          event: dataset.data.events.find((event) => event.event_key === hit.game.event_key),
+          match: dataset.data.matches.find((match) => match.match_key === hit.game.match_key),
+          ...(() => {
+            const siblings =
+              hit.game.match_key === 0
+                ? []
+                : dataset.data.games
+                    .filter((game) => game.match_key === hit.game.match_key)
+                    .sort((a, b) => a.date_time_utc.localeCompare(b.date_time_utc))
+            const position = siblings.findIndex((game) => game.game_key === hit.game.game_key)
+            return { position: position >= 0 ? position + 1 : null, seriesGames: siblings.length }
+          })(),
+        }
+      : null
 
     return {
       player,
       ready: rows.status === 'ready',
-      appearances:
-        rows.status === 'ready'
-          ? appearancesFor(dataset.data.games, rows.data, player.player_key, competitions)
-          : [],
+      appearances,
+      context,
       former:
         aliases.status === 'ready'
           ? namesFor(aliases.data, 'player', player.player_id).map((row) => ({
@@ -75,10 +100,18 @@ export default function PlayerDetail() {
           : [],
       index: buildIndexes(dataset.data),
     } as const
-  }, [dataset, rows, aliases, id])
+  }, [dataset, rows, aliases, id, from])
 
   const applyFilters = (next: typeof filter) => {
-    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
+    const params = new URLSearchParams(filterSearch(next))
+    // The context survives a filter change: the reader came from a game and is
+    // narrowing the career around it, not leaving the game behind.
+    if (from) params.set('from', `game:${from}`)
+    setSearchParams(params, { replace: true })
+  }
+
+  const clearContext = () => {
+    setSearchParams(new URLSearchParams(filterSearch(filter)), { replace: true })
   }
 
   if (dataset.status === 'loading') return <p className="text-fog-600">Loading…</p>
@@ -108,6 +141,7 @@ export default function PlayerDetail() {
   const career = prepared.ready ? careerFrom(visible) : null
   const options = optionsFor(all)
   const reason = emptyReason(all, filter)
+  const context = prepared.context
   const eraLabel =
     career && career.eras.length > 0
       ? career.eras.length === 1
@@ -167,6 +201,10 @@ export default function PlayerDetail() {
           ) : null
         }
       />
+
+      {context ? (
+        <ContextCard context={context} onClear={clearContext} index={index} />
+      ) : null}
 
       {prepared.ready ? (
         <CareerFilters
@@ -333,6 +371,72 @@ export default function PlayerDetail() {
         </>
       )}
     </>
+  )
+}
+
+function ContextCard({
+  context,
+  onClear,
+  index,
+}: {
+  context: {
+    appearance: Appearance
+    event: EventRow | undefined
+    match: Match | undefined
+    position: number | null
+    seriesGames: number
+  }
+  onClear: () => void
+  index: ReturnType<typeof buildIndexes>
+}) {
+  const { appearance, event, match, position, seriesGames } = context
+  const { game, row } = appearance
+  const won = row.side === 'blue' ? game.blue_win === 1 : game.blue_win === 0
+  const series = match ? stripDateSuffix(match.match_name) : null
+
+  return (
+    <section className="border-line bg-ink-900/60 mb-6 rounded-xl border p-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-fog-600 text-[10px] tracking-[0.14em] uppercase">You came from</p>
+          <p className="text-fog-100 mt-1.5">
+            {event ? (
+              <Link to={`/events/${event.event_id}`} className="hover:text-gold">
+                {event.event_name}
+              </Link>
+            ) : (
+              'Event'
+            )}
+            <span className="text-fog-600 m-2">·</span>
+            <Link to={`/games/${game.game_id}`} className="hover:text-gold">
+              {series ?? 'Game'}
+              {position !== null && seriesGames > 1 ? ` · Game ${position}` : ''}
+            </Link>
+          </p>
+          <p className="text-fog-500 mt-1 text-xs">
+            {dayMonthYear(game.date_time_utc)} · {row.side} side ·{' '}
+            <span className={won ? 'text-gold' : 'text-fog-500'}>{won ? 'won' : 'lost'}</span>
+            <span className="text-fog-600"> · {duration(game.duration_seconds)}</span>
+          </p>
+        </div>
+
+        <div className="text-right">
+          <p className="text-fog-100 text-sm">{championName(index, row.champion_key)}</p>
+          <p className="text-fog-500 mt-1 font-mono text-xs">
+            {row.kills} / {row.deaths} / {row.assists}
+            <span className="text-fog-600"> · {row.cs} CS · {count(row.gold ?? 0)} gold</span>
+          </p>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClear}
+        className="text-fog-500 hover:text-gold mt-3 text-xs underline-offset-4 hover:underline"
+      >
+        Career view — drop this game →
+      </button>
+    </section>
   )
 }
 

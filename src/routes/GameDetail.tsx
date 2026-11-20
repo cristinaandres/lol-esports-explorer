@@ -133,7 +133,7 @@ export default function GameDetail() {
           />
           <section>
             <h2 className="text-fog-100 mb-3 text-lg font-semibold tracking-tight">Players</h2>
-            <PlayerTable playerGames={playerGames} index={index} />
+            <PlayerTable playerGames={playerGames} index={index} gameId={game.game_id} />
           </section>
         </div>
       ) : detail.status === 'failed' ? (
