@@ -30,6 +30,17 @@ export type MeasureSummary = {
 }
 
 export type EntityStat = { key: number; games: number; wins: number }
+
+/**
+ * A champion, in the role it was played in.
+ *
+ * 58 player-champion pairs in the corpus were played in two roles — Perkz on
+ * Kai'Sa mid and bot, Bwipo on Ornn bot and top — so a champion is keyed by role
+ * as well as by itself. Collapsing the two would merge two different jobs into one
+ * win rate.
+ */
+export type ChampionStat = EntityStat & { role: string }
+
 export type RoleStat = { role: string; games: number }
 
 export type Career = {
@@ -45,7 +56,7 @@ export type Career = {
   averages: { kills: number | null; deaths: number | null; assists: number | null }
   /** The measures that can be absent, each with the rows that state it. */
   measures: { cs: MeasureSummary; gold: MeasureSummary; damage: MeasureSummary; vision: MeasureSummary }
-  champions: EntityStat[]
+  champions: ChampionStat[]
   teams: EntityStat[]
   roles: RoleStat[]
   /** Distinct eras the player appears in, oldest first. */
@@ -102,7 +113,7 @@ export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number):
     vision: { sum: 0, measured: 0, average: null as number | null, firstMeasured: null as string | null },
   }
 
-  const champions = new Map<number, EntityStat>()
+  const champions = new Map<string, ChampionStat>()
   const teams = new Map<number, EntityStat>()
   const roles = new Map<string, number>()
   const eraFirst = new Map<string, string>()
@@ -122,7 +133,7 @@ export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number):
       measures[key].firstMeasured ??= game.date_time_utc
     }
 
-    bump(champions, row.champion_key, won(game, row))
+    bumpChampion(champions, row.role, row.champion_key, won(game, row))
     bump(teams, row.team_key, won(game, row))
     roles.set(row.role, (roles.get(row.role) ?? 0) + 1)
 
@@ -151,7 +162,9 @@ export function careerFor(games: Game[], rows: PlayerGame[], playerKey: number):
       assists: assists / between,
     },
     measures,
-    champions: sortStats(champions),
+    champions: [...champions.values()].sort(
+      (a, b) => b.games - a.games || a.role.localeCompare(b.role) || a.key - b.key,
+    ),
     teams: sortStats(teams),
     roles: [...roles.entries()]
       .map(([role, count]) => ({ role, games: count }))
@@ -177,6 +190,22 @@ function bump(target: Map<number, EntityStat>, key: number, victory: boolean): v
   target.set(key, { key, games: 1, wins: victory ? 1 : 0 })
 }
 
+function bumpChampion(
+  target: Map<string, ChampionStat>,
+  role: string,
+  key: number,
+  victory: boolean,
+): void {
+  const id = `${role}|${key}`
+  const existing = target.get(id)
+  if (existing) {
+    existing.games += 1
+    if (victory) existing.wins += 1
+    return
+  }
+  target.set(id, { key, role, games: 1, wins: victory ? 1 : 0 })
+}
+
 /**
  * How many games a champion needs before its win rate may rank it.
  *
@@ -194,7 +223,7 @@ export const MIN_GAMES_FOR_RATE = 5
  * reader cannot see: 5/6 is 83.3% and 34/41 is 82.9%, so ranking on the second
  * decimal would put the smaller sample first while both read "83%".
  */
-export function rankByWinRate(stats: EntityStat[]): EntityStat[] {
+export function rankByWinRate<T extends EntityStat>(stats: T[]): T[] {
   const rate = (stat: EntityStat) =>
     stat.games === 0 ? 0 : Math.round((stat.wins / stat.games) * 100)
   return [...stats].sort((a, b) => rate(b) - rate(a) || b.games - a.games || a.key - b.key)

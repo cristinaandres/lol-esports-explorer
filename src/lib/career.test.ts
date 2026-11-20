@@ -132,7 +132,7 @@ describe('careerFor', () => {
     expect(career.games).toBe(1)
     expect(career.averages.kills).toBe(3)
     expect(career.measures.damage.average).toBe(9000)
-    expect(career.champions).toEqual([{ key: 100, games: 1, wins: 1 }])
+    expect(career.champions).toEqual([{ key: 100, role: 'Mid', games: 1, wins: 1 }])
   })
 
   it('returns an empty career for a player with no games', () => {
@@ -172,7 +172,7 @@ describe('careerFor', () => {
     expect(career.kills).toBe(0)
   })
 
-  it('orders champions and teams by games played', () => {
+  it('orders champions by games played', () => {
     const career = careerFor(
       [
         game({ game_key: 1 }),
@@ -189,6 +189,25 @@ describe('careerFor', () => {
 
     expect(career.champions.map((champion) => champion.key)).toEqual([5, 6])
     expect(career.teams.map((team) => team.key)).toEqual([20, 10])
+  })
+
+  /**
+   * A champion played in two roles is two jobs, not one. 58 player-champion pairs
+   * in the corpus are like this: Perkz's Kai'Sa, Bwipo's Ornn.
+   */
+  it('keeps a champion played in two roles as two entries', () => {
+    const career = careerFor(
+      [game({ game_key: 1 }), game({ game_key: 2, date_time_utc: '2020-01-02T00:00:00Z' })],
+      [
+        row({ game_key: 1, champion_key: 5, role: 'Mid' }),
+        row({ game_key: 2, champion_key: 5, role: 'Bot' }),
+      ],
+      7,
+    )
+
+    expect(career.champions).toHaveLength(2)
+    expect(career.champions.map((champion) => champion.role).sort()).toEqual(['Bot', 'Mid'])
+    expect(career.champions.every((champion) => champion.games === 1)).toBe(true)
   })
 
   it('lists the eras the player appears in, oldest first', () => {

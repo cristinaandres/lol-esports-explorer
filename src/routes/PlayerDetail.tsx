@@ -2,11 +2,12 @@ import { useMemo } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { HoverNote } from '../components/HoverNote'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { careerFor, MIN_GAMES_FOR_RATE, rankByWinRate, type MeasureSummary } from '../lib/career'
+import { careerFor, MIN_GAMES_FOR_RATE, rankByWinRate, type ChampionStat, type MeasureSummary } from '../lib/career'
 import { useAliases, useDataset, usePlayerGames } from '../lib/data'
 import { count, monthYear, perGame } from '../lib/format'
 import { buildIndexes, championName, teamName } from '../lib/indexes'
@@ -71,6 +72,9 @@ export default function PlayerDetail() {
 
   const { player, career, former, index } = prepared
   const mainRole = career?.roles[0]?.role
+  const roleLabel = career
+    ? career.roles.map((role) => role.role.toLowerCase()).join(', ')
+    : null
 
   // Win rate first, but only among champions with enough games for a rate to mean
   // something. A single win is 100%, and ranking it above 34 wins in 41 games
@@ -81,13 +85,17 @@ export default function PlayerDetail() {
   const unranked = career
     ? rankByWinRate(career.champions.filter((champion) => champion.games < MIN_GAMES_FOR_RATE))
     : []
+  // A role is only worth printing when there is more than one: 68 of the 1,140
+  // players in the corpus played in two roles, and for the other 1,072 the label
+  // would be the same word on every row.
+  const showRole = (career?.roles.length ?? 0) > 1
 
   return (
     <>
       <Breadcrumbs items={[{ label: player.player_name }]} />
 
       <PageHeader
-        eyebrow={mainRole ? `player · ${mainRole.toLowerCase()}` : 'player'}
+        eyebrow={roleLabel ? `player · ${roleLabel}` : 'player'}
         title={player.player_name}
         lead={
           former.length > 0 ? (
@@ -151,14 +159,9 @@ export default function PlayerDetail() {
           <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Per game</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Each average is divided by the rows that state the measure, never by games. Damage is
-              recorded on {count(career.measures.damage.measured)} of this player&rsquo;s{' '}
-              {count(career.games)} games
-              {career.measures.damage.firstMeasured
-                ? ` — from ${monthYear(career.measures.damage.firstMeasured)} onwards. The ${count(
-                    career.games - career.measures.damage.measured,
-                  )} games before that state nothing, and are not counted as zero.`
-                : '.'}
+              Each average is divided by the rows that state the measure, never by games. Where that
+              is fewer than the games played, the cell in the last column says how many; hover it for
+              the reason.
             </p>
 
             <div className="border-line overflow-x-auto rounded-xl border">
@@ -187,10 +190,10 @@ export default function PlayerDetail() {
                     games={career.games}
                     summary={{ sum: career.assists, measured: career.games, average: career.averages.assists, firstMeasured: null }}
                   />
-                  <MeasureRow label="CS" games={career.games} summary={career.measures.cs} />
-                  <MeasureRow label="Gold" games={career.games} summary={career.measures.gold} />
-                  <MeasureRow label="Damage" games={career.games} summary={career.measures.damage} />
-                  <MeasureRow label="Vision" games={career.games} summary={career.measures.vision} />
+                  <MeasureRow label="CS" games={career.games} summary={career.measures.cs} note={coverageNote(career.measures.cs, career.games)} />
+                  <MeasureRow label="Gold" games={career.games} summary={career.measures.gold} note={coverageNote(career.measures.gold, career.games)} />
+                  <MeasureRow label="Damage" games={career.games} summary={career.measures.damage} note={coverageNote(career.measures.damage, career.games)} />
+                  <MeasureRow label="Vision" games={career.games} summary={career.measures.vision} note={coverageNote(career.measures.vision, career.games)} />
                 </tbody>
               </table>
             </div>
@@ -204,16 +207,19 @@ export default function PlayerDetail() {
               {MIN_GAMES_FOR_RATE} games to be ranked: one win in one game is 100%, and 100% of one
               game is not a rate. The ones below the threshold are listed separately rather than
               hidden.
+              {showRole
+                ? ' A champion played in more than one role appears once per role: they are different jobs, not a bigger sample.'
+                : ''}
             </p>
 
-            <ChampionList champions={ranked} index={index} />
+            <ChampionList champions={ranked} index={index} showRole={showRole} />
 
             {unranked.length > 0 ? (
               <>
                 <h3 className="text-fog-600 mt-8 mb-3 text-[11px] tracking-[0.14em] uppercase">
                   Fewer than {MIN_GAMES_FOR_RATE} games
                 </h3>
-                <ChampionList champions={unranked} index={index} muted />
+                <ChampionList champions={unranked} index={index} showRole={showRole} muted />
               </>
             ) : null}
           </section>
@@ -258,21 +264,28 @@ export default function PlayerDetail() {
 function ChampionList({
   champions,
   index,
+  showRole,
   muted = false,
 }: {
-  champions: { key: number; games: number; wins: number }[]
+  champions: ChampionStat[]
   index: ReturnType<typeof buildIndexes>
+  showRole: boolean
   muted?: boolean
 }) {
   return (
     <ul className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-3">
       {champions.map((champion) => (
         <li
-          key={champion.key}
+          key={`${champion.role}|${champion.key}`}
           className="border-line/60 flex items-baseline justify-between gap-3 border-b py-1.5"
         >
           <span className={`truncate text-sm ${muted ? 'text-fog-500' : 'text-fog-300'}`}>
             {championName(index, champion.key)}
+            {showRole ? (
+              <span className="text-fog-600 ml-2 text-[10px] tracking-wider uppercase">
+                {champion.role}
+              </span>
+            ) : null}
           </span>
           <span className="shrink-0 text-xs">
             <Ratio part={champion.wins} total={champion.games} />
@@ -283,15 +296,40 @@ function ChampionList({
   )
 }
 
+/**
+ * Why a measure is stated on fewer games than the player played.
+ *
+ * Damage is recorded on 0% of the corpus before 2020 and on 100% from 2021, so the
+ * gap is the source's, not the player's. Saying so on the cell keeps the reason
+ * next to the number instead of in a paragraph the reader has to connect to it.
+ */
+function coverageNote(summary: MeasureSummary, games: number): string | null {
+  if (summary.measured >= games) return null
+  const missing = games - summary.measured
+  const from = summary.firstMeasured ? monthYear(summary.firstMeasured) : null
+
+  return from
+    ? `Recorded from ${from} onwards. The ${count(missing)} earlier games state nothing, and are not counted as zero.`
+    : `Recorded on ${count(summary.measured)} of ${count(games)} games. The rest state nothing, and are not counted as zero.`
+}
+
 function MeasureRow({
   label,
   summary,
   games,
+  note,
 }: {
   label: string
   summary: MeasureSummary
   games: number
+  note?: string | null
 }) {
+  const coverage = (
+    <>
+      {count(summary.measured)} / {count(games)}
+    </>
+  )
+
   return (
     <tr className="hover:bg-ink-850/50">
       <td className="text-fog-100 px-4 py-2">{label}</td>
@@ -300,7 +338,7 @@ function MeasureRow({
       </td>
       <td className="px-4 py-2 text-right tabular-nums">{perGame(summary.average)}</td>
       <td className="text-fog-600 px-4 py-2 text-right font-mono text-xs tabular-nums">
-        {count(summary.measured)} / {count(games)}
+        {note ? <HoverNote note={note}>{coverage}</HoverNote> : coverage}
       </td>
     </tr>
   )
