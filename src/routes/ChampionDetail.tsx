@@ -8,7 +8,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { championRecord, championRoleStats, championUsers, presenceOf, roleKda } from '../lib/champion'
+import { championPlayers, championRecord, championRoleStats, presenceOf, roleKda } from '../lib/champion'
 import { useAliases, useDataset, useGameDetail } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { CareerFilters } from '../components/CareerFilters'
@@ -98,10 +98,10 @@ export default function ChampionDetail() {
           champion.release_date,
         )
       : null
-  const users =
+  const players =
     detail.status === 'ready'
-      ? championUsers(visibleGames, detail.data.playerGames, champion.champion_key)
-      : null
+      ? championPlayers(visibleGames, detail.data.playerGames, champion.champion_key)
+      : []
   const roleStats =
     detail.status === 'ready'
       ? championRoleStats(visibleGames, detail.data.playerGames, champion.champion_key)
@@ -262,7 +262,7 @@ export default function ChampionDetail() {
             />
           </section>
 
-          {users && users.roles.length > 0 ? (
+          {roleStats.length > 0 ? (
             <section className="mt-12 grid gap-10 lg:grid-cols-2">
               <div>
                 <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">By role</h2>
@@ -308,7 +308,7 @@ export default function ChampionDetail() {
                   Players who picked it, with the games they are measured on.
                 </p>
                 <ul className="divide-line border-line divide-y border-y">
-                  {users.players.slice(0, 8).map((entry) => (
+                  {players.slice(0, 8).map((entry) => (
                     <li key={entry.key} className="flex items-baseline justify-between gap-3 py-2">
                       <span className="text-fog-300 text-sm">
                         {playerPath(index, entry.key) ? (

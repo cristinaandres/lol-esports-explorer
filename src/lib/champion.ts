@@ -131,52 +131,30 @@ function add(target: Map<string, Set<number>>, era: string, gameKey: number): vo
 }
 
 export type ChampionUser = { key: number; games: number; wins: number }
-export type ChampionRole = { role: string; games: number }
-
-export type ChampionUsers = {
-  roles: ChampionRole[]
-  players: ChampionUser[]
-  teams: ChampionUser[]
-}
 
 /**
- * Who picks this champion, and in which role.
+ * Who picks this champion.
  *
- * A champion is not played the same way everywhere: Azir is a mid pick, and the
- * team that plays it most is a different fact from the region that bans it. Roles
- * are reported apart from players and teams because a champion played in two roles
- * is two answers to "where does this fit", not one.
+ * Players only. The teams that picked it are already on every game page that fields
+ * it, and a list of them answered a question nobody asked: who plays a champion is a
+ * question about players.
  */
-export function championUsers(
+export function championPlayers(
   games: Game[],
   playerGames: PlayerGame[],
   championKey: number,
-): ChampionUsers {
+): ChampionUser[] {
   const byKey = new Map(games.map((game) => [game.game_key, game]))
-  const roles = new Map<string, number>()
   const players = new Map<number, ChampionUser>()
-  const teams = new Map<number, ChampionUser>()
 
   for (const row of playerGames) {
     if (row.champion_key !== championKey) continue
     const game = byKey.get(row.game_key)
     if (!game) continue
-
-    const won = row.side === 'blue' ? game.blue_win === 1 : game.blue_win === 0
-    roles.set(row.role, (roles.get(row.role) ?? 0) + 1)
-    bump(players, row.player_key, won)
-    bump(teams, row.team_key, won)
+    bump(players, row.player_key, row.side === 'blue' ? game.blue_win === 1 : game.blue_win === 0)
   }
 
-  const order = (a: ChampionUser, b: ChampionUser) => b.games - a.games || a.key - b.key
-
-  return {
-    roles: [...roles.entries()]
-      .map(([role, games]) => ({ role, games }))
-      .sort((a, b) => b.games - a.games || a.role.localeCompare(b.role)),
-    players: [...players.values()].sort(order),
-    teams: [...teams.values()].sort(order),
-  }
+  return [...players.values()].sort((a, b) => b.games - a.games || a.key - b.key)
 }
 
 function bump(target: Map<number, ChampionUser>, key: number, won: boolean): void {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { championRecord, championRoleStats, championUsers, presenceOf, roleKda } from './champion'
+import { championPlayers, championRecord, championRoleStats, presenceOf, roleKda } from './champion'
 import type { DraftSlot, Game, PlayerGame } from './types'
 
 function game(overrides: Partial<Game> = {}): Game {
@@ -118,14 +118,14 @@ describe('championRecord', () => {
   })
 })
 
-describe('championUsers', () => {
+describe('championPlayers', () => {
   const games = [
     game({ game_key: 1, blue_win: 1 }),
     game({ game_key: 2, blue_win: 1, date_time_utc: '2024-02-01T00:00:00Z' }),
   ]
 
-  it('splits roles, players and teams', () => {
-    const users = championUsers(
+  it('lists the players who picked it, most games first', () => {
+    const players = championPlayers(
       games,
       [
         row({ game_key: 1, player_key: 7, team_key: 10, role: 'Mid' }),
@@ -135,24 +135,21 @@ describe('championUsers', () => {
       100,
     )
 
-    expect(users.roles).toEqual([{ role: 'Mid', games: 2 }, { role: 'Top', games: 1 }])
-    expect(users.players.map((entry) => entry.key)).toEqual([7, 8, 9])
-    expect(users.teams[0]).toMatchObject({ key: 10, games: 2 })
+    expect(players.map((entry) => entry.key)).toEqual([7, 8, 9])
+    expect(players[0]).toMatchObject({ games: 1 })
   })
 
   it('counts a win only for the side that won', () => {
-    const users = championUsers(
+    const players = championPlayers(
       games,
       [row({ game_key: 1, player_key: 7, team_key: 10, side: 'blue' })],
       100,
     )
-    expect(users.players[0]).toEqual({ key: 7, games: 1, wins: 1 })
+    expect(players[0]).toEqual({ key: 7, games: 1, wins: 1 })
   })
 
   it('ignores rows outside the games in scope, which is how the filter narrows it', () => {
-    const users = championUsers([], [row()], 100)
-    expect(users.roles).toEqual([])
-    expect(users.players).toEqual([])
+    expect(championPlayers([], [row()], 100)).toEqual([])
   })
 })
 

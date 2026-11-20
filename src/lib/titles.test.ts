@@ -69,6 +69,19 @@ describe('championships', () => {
     expect(champs.get(1)).toMatchObject({ teamKey: 10, wins: 2, losses: 1 })
   })
 
+  it('awards a relay whose final is a single decisive series', () => {
+    // Rift Rivals 2017 NA-EU: one best-of-five, TSM 3-0. A relay is not
+    // disqualifying; having no single final is.
+    const finals = [match({ match_name: 'Rift Rivals 2017 NA-EU — Finals — 2017-07-08' })]
+    const series = [
+      game({ game_key: 1, blue_win: 1, blue_team_key: 10, red_team_key: 20 }),
+      game({ game_key: 2, blue_win: 1, blue_team_key: 10, red_team_key: 20 }),
+      game({ game_key: 3, blue_win: 0, blue_team_key: 20, red_team_key: 10 }),
+    ]
+
+    expect(championships(series, finals).get(1)).toMatchObject({ teamKey: 10, wins: 3, losses: 0 })
+  })
+
   it('awards nothing when the event names more than one final', () => {
     // The Rift Rivals relays: a region wins, and no single team does.
     const matches = [match(), match({ match_key: 2, match_name: 'Rift Rivals 2018 NA-EU — Finals — 2018-07-07' })]

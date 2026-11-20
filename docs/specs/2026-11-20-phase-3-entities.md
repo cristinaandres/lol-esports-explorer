@@ -162,7 +162,9 @@ Five changes asked for after the phase shipped, and what each settled.
    of who is on the team now.
 3. **The champion page got filters and a breakdown.** Competition → year now narrow
    it like the other entity pages, and the page answers *where* the champion is
-   played (roles) and *who* plays it (players, teams) instead of a single table.
+   played — a per-role table with picks, share, win rate and KDA — and *who* picks it,
+   instead of a single table. A list of teams was built and removed in review: the
+   teams that picked a champion are already on every game page that fields it.
 4. **A competition in the team's event table is a control.** Clicking it applies the
    visible filter rather than opening a hidden one: the bar updates, the URL shows
    it, and the reader can undo it. A filter nobody can see is a filter nobody can
@@ -171,5 +173,8 @@ Five changes asked for after the phase shipped, and what each settled.
    champion column, so a title is inferred: an event's final is the single series
    named Finals, and the title goes to the team that won more games in it. The rule
    reproduces eleven known results (Worlds 2015–2024, MSI 2016–2024) and awards
-   nothing where it cannot name one team — twelve events, mostly the Rift Rivals
-   relays, where a region wins.
+   nothing where it cannot name one team — twelve events that name several series
+   Finals, most of them Rift Rivals relays whose winner is a region. A relay is not
+   disqualifying in itself: Rift Rivals 2017 NA-EU was decided by one best-of-five and
+   awards TSM, which is correct. What decides is whether the event has one final to
+   point at, not what kind of event it is.

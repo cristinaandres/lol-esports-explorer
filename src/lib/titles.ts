@@ -14,12 +14,15 @@ import type { Game, Match } from './types'
  *   2. The champion is the team that won more games in it.
  *
  * Validated against the corpus: the rule reproduces Worlds 2015, 2016, 2017, 2019,
- * 2021, 2022, 2023 and 2024, and MSI 2016, 2023 and 2024, which are known.
+ * 2021, 2022, 2023 and 2024, and MSI 2016, 2023 and 2024, which are known. It also
+ * reproduces Rift Rivals 2017 NA-EU, where the relay was decided by one best-of-five
+ * and TSM won it.
  *
- * It deliberately awards nothing where the condition fails. Twelve events name
- * several series Finals — the Rift Rivals relays, where a region wins and no single
- * team does — and one carries no final at all. Saying "no title we can name" is
- * better than naming the wrong team.
+ * It deliberately awards nothing where the condition fails: an event that names
+ * several series Finals — most of the Rift Rivals relays, whose winner is a region
+ * and not a team — or none at all. Saying "no title we can name" is better than
+ * naming the wrong team. A relay is not disqualifying in itself: what decides is
+ * whether the event has one final to point at.
  */
 
 export type Championship = {
