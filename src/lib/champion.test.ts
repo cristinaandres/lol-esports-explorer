@@ -155,3 +155,37 @@ describe('championUsers', () => {
     expect(users.players).toEqual([])
   })
 })
+
+describe('championRecord before the champion existed', () => {
+  const games = [
+    game({ game_key: 1, era: 'elemental-drakes', date_time_utc: '2013-06-01T00:00:00Z' }),
+    game({ game_key: 2, era: 'voidgrubs', date_time_utc: '2024-11-07T00:00:00Z' }),
+    game({ game_key: 3, era: 'voidgrubs', date_time_utc: '2024-12-01T00:00:00Z' }),
+  ]
+
+  it('leaves games before the release date out of the denominator', () => {
+    const career = championRecord(games, [row({ game_key: 2 })], [], 100, '2024-11-06')
+    expect(career.games).toBe(2)
+  })
+
+  it('drops an era the champion could not have been played in', () => {
+    const career = championRecord(games, [row({ game_key: 2 })], [], 100, '2024-11-06')
+    expect(career.eras.map((era) => era.era)).toEqual(['voidgrubs'])
+  })
+
+  it('counts a game played on the release day itself', () => {
+    const career = championRecord(
+      [game({ game_key: 4, date_time_utc: '2024-11-06T00:00:00Z' })],
+      [],
+      [],
+      100,
+      '2024-11-06',
+    )
+    expect(career.games).toBe(1)
+  })
+
+  it('uses the whole corpus when the release date is unknown', () => {
+    const career = championRecord(games, [row({ game_key: 2 })], [], 100, null)
+    expect(career.games).toBe(3)
+  })
+})

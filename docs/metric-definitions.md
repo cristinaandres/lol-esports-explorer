@@ -52,6 +52,6 @@ two pages from computing the same name two ways.
 | Pick rate | `games with champion / games in scope`; bans reported separately | 2 |
 | Head-to-head | Games where the two teams are the two sides of one game; the denominator is those games, nothing wider | 4 |
 | Title | An event whose final is the single series named Finals, won by the team with more game wins in it. Events with several such series award nothing | phase 3 review |
-| Presence (champion) | Pick plus ban over the games played in the scope. A game where both sides played the champion counts once | phase 3 review |
+| Presence (champion) | Pick plus ban over the games played in the scope **on or after the champion's release date**. A game where both sides played it counts once. Games from before it existed are excluded from the denominator, because it was not eligible for them | phase 3 review |
 | Release date | Champion's live date, pinned from Leaguepedia. Not part of the model, and never derived from its first appearance in the corpus | phase 3 review |
 | Win rate | Wins over games. Named "rate" because that is what a League reader calls it; the denominator is always printed | phase 3 review |

@@ -88,7 +88,13 @@ export default function ChampionDetail() {
   const visibleGames = applyFilter(scoped, filter).map((entry) => entry.game)
   const record =
     detail.status === 'ready'
-      ? championRecord(visibleGames, detail.data.playerGames, detail.data.bans, champion.champion_key)
+      ? championRecord(
+          visibleGames,
+          detail.data.playerGames,
+          detail.data.bans,
+          champion.champion_key,
+          champion.release_date,
+        )
       : null
   const users =
     detail.status === 'ready'
@@ -174,7 +180,7 @@ export default function ChampionDetail() {
               value={<span className="text-lg">{champion.release_date ? dayMonthYear(champion.release_date) : '—'}</span>}
               hint={champion.release_date ? `${champion.release_date.slice(0, 4)} · source: Leaguepedia` : undefined}
             />
-            <Stat label="Games in scope" value={count(record.games)} />
+            <Stat label="Games since release" value={count(record.games)} />
             <Stat label="Picked" value={<Ratio part={record.picked} total={record.games} />} />
             <Stat label="Banned" value={<Ratio part={record.banned} total={record.games} />} />
             <Stat
@@ -188,15 +194,19 @@ export default function ChampionDetail() {
           </StatRow>
 
           <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">
-            Presence is pick plus ban over the games of the era, so a champion banned in most of its
-            games was respected rather than played. A champion that did not exist yet shows nothing
-            in that era — that is not the same fact as never being picked.
+            Every figure counts only the games played <em>after</em> the champion was released
+            {champion.release_date ? ` (${dayMonthYear(champion.release_date)})` : ''}, denominator
+            included. A champion cannot be picked before it exists, so counting those games would
+            report a presence rate it was never eligible for. The eras below are the ones in which
+            it could be played at all.
           </p>
 
           <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">By era</h2>
-            <p className="text-fog-500 mb-5 text-sm leading-relaxed">
-              Each era is measured against the games played in it.
+            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+              Each era is measured against the games played in it since the champion was released,
+              so an era that ended before it existed carries no count at all rather than a row of
+              zeroes.
             </p>
 
             <div className="border-line overflow-x-auto rounded-xl border">

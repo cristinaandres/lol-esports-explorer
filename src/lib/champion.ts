@@ -33,16 +33,27 @@ export type ChampionRecord = {
   eras: ChampionEra[]
 }
 
+/**
+ * @param since  The champion's release date, `YYYY-MM-DD`. Games before it are
+ *   excluded from every figure, denominator included: a champion cannot be picked
+ *   before it exists, so counting those games would report a presence rate the
+ *   champion was never eligible for. Pass null when the date is unknown and the
+ *   caller accepts the whole corpus as the denominator.
+ */
 export function championRecord(
   games: Game[],
   playerGames: PlayerGame[],
   bans: DraftSlot[],
   championKey: number,
+  since: string | null = null,
 ): ChampionRecord {
-  const byKey = new Map(games.map((game) => [game.game_key, game]))
+  const eligible = since
+    ? games.filter((game) => game.date_time_utc.slice(0, 10) >= since)
+    : games
+  const byKey = new Map(eligible.map((game) => [game.game_key, game]))
 
   const eras = new Map<string, { games: number; from: string }>()
-  for (const game of games) {
+  for (const game of eligible) {
     const created = eras.get(game.era)
     if (!created) {
       eras.set(game.era, { games: 1, from: game.date_time_utc })
@@ -94,7 +105,7 @@ export function championRecord(
   const banned = rows.reduce((total, era) => total + era.banned, 0)
 
   return {
-    games: games.length,
+    games: eligible.length,
     picked,
     banned,
     won: rows.reduce((total, era) => total + era.won, 0),
