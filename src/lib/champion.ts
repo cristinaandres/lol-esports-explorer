@@ -188,3 +188,59 @@ function bump(target: Map<number, ChampionUser>, key: number, won: boolean): voi
   }
   target.set(key, { key, games: 1, wins: won ? 1 : 0 })
 }
+
+export type ChampionRoleStat = {
+  role: string
+  picks: number
+  wins: number
+  kills: number
+  deaths: number
+  assists: number
+}
+
+/**
+ * The roles a champion is picked in, with the figures that make the difference mean
+ * something.
+ *
+ * A role count alone says "it was played mid 293 times"; it does not say whether it
+ * won there. A champion played in two roles is two answers to where it fits, and the
+ * site already splits a player's career that way — the champion page should read the
+ * same.
+ */
+export function championRoleStats(
+  games: Game[],
+  playerGames: PlayerGame[],
+  championKey: number,
+): ChampionRoleStat[] {
+  const byKey = new Map(games.map((game) => [game.game_key, game]))
+  const roles = new Map<string, ChampionRoleStat>()
+
+  for (const row of playerGames) {
+    if (row.champion_key !== championKey) continue
+    const game = byKey.get(row.game_key)
+    if (!game) continue
+
+    const won = row.side === 'blue' ? game.blue_win === 1 : game.blue_win === 0
+    const entry = roles.get(row.role) ?? {
+      role: row.role,
+      picks: 0,
+      wins: 0,
+      kills: 0,
+      deaths: 0,
+      assists: 0,
+    }
+    entry.picks += 1
+    if (won) entry.wins += 1
+    entry.kills += row.kills
+    entry.deaths += row.deaths
+    entry.assists += row.assists
+    roles.set(row.role, entry)
+  }
+
+  return [...roles.values()].sort((a, b) => b.picks - a.picks || a.role.localeCompare(b.role))
+}
+
+/** KDA for one role, summed first and divided once, floored at one death. */
+export function roleKda(entry: ChampionRoleStat): number {
+  return (entry.kills + entry.assists) / Math.max(1, entry.deaths)
+}

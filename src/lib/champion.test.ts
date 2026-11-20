@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { championRecord, championUsers, presenceOf } from './champion'
+import { championRecord, championRoleStats, championUsers, presenceOf, roleKda } from './champion'
 import type { DraftSlot, Game, PlayerGame } from './types'
 
 function game(overrides: Partial<Game> = {}): Game {
@@ -187,5 +187,50 @@ describe('championRecord before the champion existed', () => {
   it('uses the whole corpus when the release date is unknown', () => {
     const career = championRecord(games, [row({ game_key: 2 })], [], 100, null)
     expect(career.games).toBe(3)
+  })
+})
+
+describe('championRoleStats', () => {
+  const games = [
+    game({ game_key: 1, blue_win: 1 }),
+    game({ game_key: 2, blue_win: 0, date_time_utc: '2024-02-01T00:00:00Z' }),
+    game({ game_key: 3, blue_win: 1, date_time_utc: '2024-03-01T00:00:00Z' }),
+  ]
+
+  it('splits picks by role with wins and totals', () => {
+    const roles = championRoleStats(
+      games,
+      [
+        row({ game_key: 1, role: 'Mid', kills: 5, deaths: 1, assists: 7 }),
+        row({ game_key: 2, role: 'Mid', side: 'blue', kills: 2, deaths: 4, assists: 3 }),
+        row({ game_key: 3, role: 'Bot', kills: 9, deaths: 0, assists: 2 }),
+      ],
+      100,
+    )
+
+    expect(roles.map((entry) => entry.role)).toEqual(['Mid', 'Bot'])
+    expect(roles[0]).toMatchObject({ picks: 2, wins: 1, kills: 7, deaths: 5, assists: 10 })
+  })
+
+  it('orders by picks, then role', () => {
+    const roles = championRoleStats(
+      games,
+      [row({ game_key: 1, role: 'Support' }), row({ game_key: 2, role: 'Mid' }), row({ game_key: 3, role: 'Mid' })],
+      100,
+    )
+    expect(roles.map((entry) => entry.role)).toEqual(['Mid', 'Support'])
+  })
+
+  it('ignores rows outside the games in scope', () => {
+    expect(championRoleStats([], [row()], 100)).toEqual([])
+  })
+
+  it('computes KDA once, after summing', () => {
+    const [role] = championRoleStats(
+      [game({ game_key: 1 })],
+      [row({ game_key: 1, kills: 3, deaths: 0, assists: 4 })],
+      100,
+    )
+    expect(roleKda(role!)).toBe(7)
   })
 })

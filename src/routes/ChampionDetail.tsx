@@ -8,7 +8,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { championRecord, championUsers, presenceOf } from '../lib/champion'
+import { championRecord, championRoleStats, championUsers, presenceOf, roleKda } from '../lib/champion'
 import { useAliases, useDataset, useGameDetail } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { CareerFilters } from '../components/CareerFilters'
@@ -102,6 +102,10 @@ export default function ChampionDetail() {
     detail.status === 'ready'
       ? championUsers(visibleGames, detail.data.playerGames, champion.champion_key)
       : null
+  const roleStats =
+    detail.status === 'ready'
+      ? championRoleStats(visibleGames, detail.data.playerGames, champion.champion_key)
+      : []
   const reason = emptyReason(scoped, filter)
   const index = buildIndexes(dataset.data)
 
@@ -259,24 +263,43 @@ export default function ChampionDetail() {
           </section>
 
           {users && users.roles.length > 0 ? (
-            <section className="mt-12 grid gap-10 sm:grid-cols-2">
+            <section className="mt-12 grid gap-10 lg:grid-cols-2">
               <div>
-                <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Roles</h2>
+                <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">By role</h2>
                 <p className="text-fog-500 mb-4 text-sm leading-relaxed">
-                  Where it is played. A champion played in two roles is two answers to where it
-                  fits, not one.
+                  Where it is played, and how it does there. A champion picked in two roles is two
+                  answers to where it fits, with two records.
                 </p>
-                <ul className="flex flex-wrap gap-2">
-                  {users.roles.map((role) => (
-                    <li
-                      key={role.role}
-                      className="border-line text-fog-300 rounded-lg border px-3 py-1.5 text-sm"
-                    >
-                      {role.role}
-                      <span className="text-fog-600 ml-2 font-mono text-xs">{count(role.games)}</span>
-                    </li>
-                  ))}
-                </ul>
+
+                <DataTable
+                  minWidth="26rem"
+                  rowKey={(entry) => entry.role}
+                  rows={roleStats}
+                  columns={[
+                    { key: 'role', label: 'Role', primary: true, render: (entry) => entry.role },
+                    { key: 'picks', label: 'Picks', align: 'right', render: (entry) => count(entry.picks) },
+                    {
+                      key: 'share',
+                      label: 'Share',
+                      align: 'right',
+                      render: (entry) => (
+                        <Ratio part={entry.picks} total={record?.picked ?? entry.picks} />
+                      ),
+                    },
+                    {
+                      key: 'win',
+                      label: 'Win rate',
+                      align: 'right',
+                      render: (entry) => <Ratio part={entry.wins} total={entry.picks} />,
+                    },
+                    {
+                      key: 'kda',
+                      label: 'KDA',
+                      align: 'right',
+                      render: (entry) => roleKda(entry).toFixed(2),
+                    },
+                  ]}
+                />
               </div>
 
               <div>
