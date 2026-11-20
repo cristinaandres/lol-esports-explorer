@@ -5,11 +5,5 @@
   ],
   "codemode": {
     "mode": "on"
-  },
-  "extensions": [
-    "!extensions/**"
-  ],
-  "skills": [
-    "!skills/**"
-  ]
+  }
 }
