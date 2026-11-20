@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 import { ROLE_ORDER } from '../lib/draft'
 import { count, orDash } from '../lib/format'
-import { championName, playerName, playerPath, teamName, type Indexes } from '../lib/indexes'
+import { championName, championPath, playerName, playerPath, teamName, type Indexes } from '../lib/indexes'
 import { fromParam } from '../lib/context'
 import type { PlayerGame } from '../lib/types'
 
@@ -108,7 +108,15 @@ function SideRows({
                 playerName(index, row.player_key)
               )}
             </td>
-            <td className="text-fog-300 px-4 py-2">{championName(index, row.champion_key)}</td>
+            <td className="text-fog-300 px-4 py-2">
+              {championPath(index, row.champion_key) ? (
+                <Link to={championPath(index, row.champion_key)!} className="hover:text-gold">
+                  {championName(index, row.champion_key)}
+                </Link>
+              ) : (
+                championName(index, row.champion_key)
+              )}
+            </td>
             <td className="px-4 py-2 text-right tabular-nums">{count(row.kills)}</td>
             <td className="px-4 py-2 text-right tabular-nums">{count(row.deaths)}</td>
             <td className="px-4 py-2 text-right tabular-nums">{count(row.assists)}</td>

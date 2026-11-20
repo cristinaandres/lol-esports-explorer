@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router'
 
 import { Layout } from './components/Layout'
 import { useDataset } from './lib/data'
+import ChampionDetail from './routes/ChampionDetail'
 import EraDetail from './routes/EraDetail'
 import EventDetail from './routes/EventDetail'
 import GameDetail from './routes/GameDetail'
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/games/:game" element={<GameDetail />} />
         <Route path="/players/:player" element={<PlayerDetail />} />
         <Route path="/teams/:team" element={<TeamDetail />} />
+        <Route path="/champions/:champion" element={<ChampionDetail />} />
         <Route path="/glossary" element={<Glossary />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 
 import { playersByRole, readDraftState, sidesSwapped, slotsFor } from '../lib/draft'
-import { championName, type Indexes } from '../lib/indexes'
+import { Link } from 'react-router'
+
+import { championName, championPath, type Indexes } from '../lib/indexes'
 import type { DraftSlot, Game, PlayerGame } from '../lib/types'
 
 /**
@@ -149,7 +151,9 @@ function SideDraft({
                 className="border-line bg-ink-850 flex items-baseline gap-1.5 rounded-lg border px-3 py-2"
               >
                 <span className="text-fog-600 font-mono text-[10px]">{slot.slot}</span>
-                <span className="text-fog-100 text-sm">{championName(index, slot.champion_key)}</span>
+                <span className="text-fog-100 text-sm">
+                  {championLink(index, slot.champion_key)}
+                </span>
               </li>
             ))}
       </ol>
@@ -168,12 +172,25 @@ function SideDraft({
                 key={slot.entry_index}
                 className="border-line text-fog-500 rounded border border-dashed px-2 py-1 text-xs line-through decoration-fog-600"
               >
-                {championName(index, slot.champion_key)}
+                {championLink(index, slot.champion_key)}
               </li>
             ))}
           </ul>
         )}
       </div>
     </div>
+  )
+}
+
+/** A champion name, linked when the champion has a page. */
+function championLink(index: Indexes, key: number) {
+  const href = championPath(index, key)
+  const name = championName(index, key)
+  return href ? (
+    <Link to={href} className="hover:text-gold">
+      {name}
+    </Link>
+  ) : (
+    name
   )
 }
