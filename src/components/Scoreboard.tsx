@@ -1,5 +1,7 @@
 import { duration, orDash } from '../lib/format'
-import { patchLabel, teamName, type Indexes } from '../lib/indexes'
+import { Link } from 'react-router'
+
+import { patchLabel, teamName, teamPath, type Indexes } from '../lib/indexes'
 import type { Game, Side } from '../lib/types'
 
 /**
@@ -110,7 +112,13 @@ function SideHead({
         {side.side}
       </div>
       <div className="text-fog-100 text-lg font-semibold tracking-tight">
-        {teamName(index, side.team_key)}
+        {teamPath(index, side.team_key) ? (
+          <Link to={teamPath(index, side.team_key)!} className="hover:text-gold">
+            {teamName(index, side.team_key)}
+          </Link>
+        ) : (
+          teamName(index, side.team_key)
+        )}
       </div>
       {isWinner ? (
         <div className="text-gold mt-1 text-[11px] tracking-widest uppercase">winner</div>

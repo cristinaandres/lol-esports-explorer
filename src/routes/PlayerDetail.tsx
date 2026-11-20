@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { CareerFilters } from '../components/CareerFilters'
+import { EmptyFilter } from '../components/EmptyFilter'
 import { HoverNote } from '../components/HoverNote'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
@@ -222,27 +223,22 @@ export default function PlayerDetail() {
           <div className="bg-ink-900 border-line h-48 animate-pulse rounded-xl border" />
         </div>
       ) : career.games === 0 && all.length > 0 ? (
-        <div className="border-line bg-ink-900 rounded-xl border p-6">
-          <h2 className="text-fog-100 text-base font-semibold">
-            {reason === 'year'
+        <EmptyFilter
+          title={
+            reason === 'year'
               ? `No games at ${filter.competition} in ${filter.year}.`
               : reason === 'competition'
                 ? `No games in ${filter.competition}.`
-                : 'No games match both filters.'}
-          </h2>
-          <p className="text-fog-300 mt-2 max-w-xl text-sm leading-relaxed">
-            {reason === 'year'
+                : 'No games match both filters.'
+          }
+          body={
+            reason === 'year'
               ? `${player.player_name} played at ${filter.competition}, just not in ${filter.year}. The year is what emptied this view.`
-              : `${player.player_name} has no game in that competition. The competition is what emptied this view.`}
-          </p>
-          <button
-            type="button"
-            onClick={() => applyFilters(recoverFilter(all, filter))}
-            className="border-line hover:border-line-bright text-gold mt-4 rounded-lg border px-3 py-1.5 text-sm"
-          >
-            {reason === 'year' ? `Show every ${filter.competition} game` : 'Show every game'}
-          </button>
-        </div>
+              : `${player.player_name} has no game in that competition. The competition is what emptied this view.`
+          }
+          action={reason === 'year' ? `Show every ${filter.competition} game` : 'Show every game'}
+          onAction={() => applyFilters(recoverFilter(all, filter))}
+        />
       ) : career.games === 0 ? (
         <p className="border-line bg-ink-900 text-fog-300 rounded-xl border p-6 text-sm">
           The dataset carries no game for this player. The record exists, the games do not — a fact

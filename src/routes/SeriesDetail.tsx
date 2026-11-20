@@ -6,7 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, dateRange, duration, stripDateSuffix } from '../lib/format'
-import { buildIndexes, patchLabel, teamName } from '../lib/indexes'
+import { buildIndexes, patchLabel, teamName, teamPath } from '../lib/indexes'
 
 /**
  * One series and its games.
@@ -94,11 +94,18 @@ export default function SeriesDetail() {
       ) : (
         <>
           <div className="border-line mb-6 flex items-baseline justify-between gap-4 rounded-xl border px-5 py-4">
-            <span className="text-fog-100 text-lg font-semibold">{teamName(index, a)}</span>
+            <Link to={teamPath(index, a) ?? '#'} className="text-fog-100 hover:text-gold text-lg font-semibold">
+              {teamName(index, a)}
+            </Link>
             <span className="text-fog-300 font-mono tabular-nums">
               {wins.get(a) ?? 0} – {wins.get(b) ?? 0}
             </span>
-            <span className="text-fog-100 text-right text-lg font-semibold">{teamName(index, b)}</span>
+            <Link
+              to={teamPath(index, b) ?? '#'}
+              className="text-fog-100 hover:text-gold text-right text-lg font-semibold"
+            >
+              {teamName(index, b)}
+            </Link>
           </div>
 
           <ol className="divide-line border-line divide-y border-y">

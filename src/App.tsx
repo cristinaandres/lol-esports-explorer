@@ -10,6 +10,7 @@ import Home from './routes/Home'
 import NotFound from './routes/NotFound'
 import PlayerDetail from './routes/PlayerDetail'
 import SeriesDetail from './routes/SeriesDetail'
+import TeamDetail from './routes/TeamDetail'
 
 export default function App() {
   const { data } = useDataset()
@@ -23,6 +24,7 @@ export default function App() {
         <Route path="/series/:series" element={<SeriesDetail />} />
         <Route path="/games/:game" element={<GameDetail />} />
         <Route path="/players/:player" element={<PlayerDetail />} />
+        <Route path="/teams/:team" element={<TeamDetail />} />
         <Route path="/glossary" element={<Glossary />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

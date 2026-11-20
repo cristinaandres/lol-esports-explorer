@@ -8,7 +8,7 @@ import { Stat, StatRow } from '../components/Stat'
 import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, duration, dayMonthYear } from '../lib/format'
-import { buildIndexes, teamName } from '../lib/indexes'
+import { buildIndexes, teamName, teamPath } from '../lib/indexes'
 import { groupGamesBySeries } from '../lib/series'
 
 export default function EventDetail() {
@@ -111,14 +111,19 @@ export default function EventDetail() {
                   </span>
 
                   <span className="flex flex-wrap items-baseline gap-2">
-                    <Link to={href} className="text-fog-100 hover:text-gold font-medium">
+                    <Link
+                      to={teamPath(index, a) ?? href}
+                      className="text-fog-100 hover:text-gold font-medium"
+                    >
                       {teamName(index, a)}
-                      {single ? null : (
-                        <span className="text-fog-300 mx-2 font-normal tabular-nums">
-                          {scoreA} – {scoreB}
-                        </span>
-                      )}
-                      {single ? ' vs ' : null}
+                    </Link>
+                    <Link to={href} className="text-fog-300 hover:text-gold no-underline tabular-nums">
+                      {single ? 'vs' : `${scoreA} – ${scoreB}`}
+                    </Link>
+                    <Link
+                      to={teamPath(index, b) ?? href}
+                      className="text-fog-100 hover:text-gold font-medium"
+                    >
                       {teamName(index, b)}
                     </Link>
                     <span className="text-fog-600 text-xs">

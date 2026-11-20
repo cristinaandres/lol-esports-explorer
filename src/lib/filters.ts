@@ -1,4 +1,3 @@
-import type { Appearance } from './career'
 
 /**
  * The filter a reader narrows a career with, and the URL that carries it.
@@ -17,6 +16,16 @@ export type CareerFilter = {
   competition: string | null
   /** A four-digit year taken from the game's date, or null for all of them. */
   year: number | null
+}
+
+/**
+ * What a filter needs from a row: the competition it belongs to and when it was
+ * played. Career appearances and team appearances both satisfy it, which is why
+ * the filter is written once and applied to both.
+ */
+export type Filterable = {
+  competition: string
+  game: { date_time_utc: string }
 }
 
 export const NO_FILTER: CareerFilter = { competition: null, year: null }
@@ -66,15 +75,15 @@ export function yearOf(iso: string): number {
   return Number(iso.slice(0, 4))
 }
 
-export function matches(appearance: Appearance, filter: CareerFilter): boolean {
-  if (filter.competition !== null && appearance.competition !== filter.competition) return false
-  if (filter.year !== null && yearOf(appearance.game.date_time_utc) !== filter.year) return false
+export function matches<T extends Filterable>(item: T, filter: CareerFilter): boolean {
+  if (filter.competition !== null && item.competition !== filter.competition) return false
+  if (filter.year !== null && yearOf(item.game.date_time_utc) !== filter.year) return false
   return true
 }
 
-export function applyFilter(appearances: Appearance[], filter: CareerFilter): Appearance[] {
-  if (isEmptyFilter(filter)) return appearances
-  return appearances.filter((appearance) => matches(appearance, filter))
+export function applyFilter<T extends Filterable>(items: T[], filter: CareerFilter): T[] {
+  if (isEmptyFilter(filter)) return items
+  return items.filter((item) => matches(item, filter))
 }
 
 /**
@@ -86,13 +95,13 @@ export function applyFilter(appearances: Appearance[], filter: CareerFilter): Ap
  * whole range, and the ones that would empty the view are simply not reachable by
  * picking the other first.
  */
-export function optionsFor(appearances: Appearance[]): { competitions: string[]; years: number[] } {
+export function optionsFor<T extends Filterable>(items: T[]): { competitions: string[]; years: number[] } {
   const competitions = new Set<string>()
   const years = new Set<number>()
 
-  for (const appearance of appearances) {
-    competitions.add(appearance.competition)
-    years.add(yearOf(appearance.game.date_time_utc))
+  for (const item of items) {
+    competitions.add(item.competition)
+    years.add(yearOf(item.game.date_time_utc))
   }
 
   return {
@@ -108,16 +117,14 @@ export function optionsFor(appearances: Appearance[]): { competitions: string[];
  * the year is what emptied it. Naming the culprit is the difference between "no
  * games" and "no games at Worlds in 2013, try another year".
  */
-export function emptyReason(
-  appearances: Appearance[],
+export function emptyReason<T extends Filterable>(
+  items: T[],
   filter: CareerFilter,
 ): 'competition' | 'year' | null {
-  if (appearances.length === 0) return null
-  if (applyFilter(appearances, filter).length > 0) return null
+  if (items.length === 0) return null
+  if (applyFilter(items, filter).length > 0) return null
   if (filter.competition !== null && filter.year !== null) {
-    const byCompetition = appearances.filter(
-      (appearance) => appearance.competition === filter.competition,
-    )
+    const byCompetition = items.filter((item) => item.competition === filter.competition)
     return byCompetition.length > 0 ? 'year' : 'competition'
   }
   return filter.competition !== null ? 'competition' : 'year'
@@ -130,12 +137,12 @@ export function emptyReason(
  * even that leaves nothing -- so the one control on the empty state can promise
  * that the view it produces has games in it.
  */
-export function recoverFilter(appearances: Appearance[], filter: CareerFilter): CareerFilter {
-  const reason = emptyReason(appearances, filter)
+export function recoverFilter<T extends Filterable>(items: T[], filter: CareerFilter): CareerFilter {
+  const reason = emptyReason(items, filter)
   const candidates: CareerFilter[] =
     reason === 'year'
       ? [{ ...filter, year: null }, NO_FILTER]
       : [{ ...filter, competition: null }, NO_FILTER]
 
-  return candidates.find((candidate) => applyFilter(appearances, candidate).length > 0) ?? NO_FILTER
+  return candidates.find((candidate) => applyFilter(items, candidate).length > 0) ?? NO_FILTER
 }
