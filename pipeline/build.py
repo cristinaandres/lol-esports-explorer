@@ -69,7 +69,13 @@ ARTIFACTS: dict[str, str] = {
     """,
     "patches.json": "select * from dim_patch order by patch_key",
     # Renames. Loaded by the entity pages and by search, not by the lists.
-    "aliases.json": "select * from alias_all order by kind, entity_id, alias_string, valid_from",
+    # NULLS LAST is spelled out: the short names carry no window, and where nulls land
+    # is a DuckDB setting rather than a property of the data. An artifact whose row
+    # order depends on a default fails --check on a machine with a different one.
+    "aliases.json": """
+        select * from alias_all
+        order by kind, entity_id, alias_string, valid_from nulls last
+    """,
     # Lazy: fetched on the first game page and cached for the session.
     "sides.json": "select * from side_rows order by game_key, side",
     "player-games.json": "select * from player_rows order by game_key, side, player_key",

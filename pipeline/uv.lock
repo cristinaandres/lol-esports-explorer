@@ -33,4 +33,4 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "duckdb", specifier = ">=2.0.0" }]
+requires-dist = [{ name = "duckdb", specifier = "==2.0.0" }]
