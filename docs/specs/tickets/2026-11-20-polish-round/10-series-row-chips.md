@@ -1,7 +1,7 @@
 # 10: Keep the game chips on the series row, aligned right
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -29,3 +29,9 @@ in the same order it reads now.
 
 A browser check measuring the row height at three widths, and a screenshot of a
 five-game series.
+
+## Built
+
+The format and the chips share the last cell, so a series row is one line at any width
+above the stacking breakpoint. Measured: rows come out at 56–57 px regardless of
+games, and the last chip ends exactly at the row's right edge (1276 px at 1440).

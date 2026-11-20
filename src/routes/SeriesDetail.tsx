@@ -98,7 +98,13 @@ export default function SeriesDetail() {
         </p>
       ) : (
         <>
-          <div className="border-line mb-6 flex items-baseline justify-between gap-4 rounded-xl border px-5 py-4">
+          <section
+            aria-labelledby="series-score-heading"
+            className="border-line mb-6 flex items-baseline justify-between gap-4 rounded-xl border px-5 py-4"
+          >
+            <h2 id="series-score-heading" className="sr-only">
+              Series score
+            </h2>
             <Link to={teamPath(index, a) ?? '#'} className="text-fog-100 hover:text-gold text-lg font-semibold">
               {teamName(index, a)}
             </Link>
@@ -111,7 +117,7 @@ export default function SeriesDetail() {
             >
               {teamName(index, b)}
             </Link>
-          </div>
+          </section>
 
           <ol className="divide-line border-line divide-y border-y">
             {games.map((game, position) => {

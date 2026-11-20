@@ -66,6 +66,7 @@ export default function GameDetail() {
 
   const { game, event, match, siblings, position, index } = prepared
   const eraId = game.era ?? ''
+  const seriesScore = siblings.length > 1 ? scoreOf(siblings) : null
   const previous = position > 0 ? siblings[position - 1] : undefined
   const next = position >= 0 ? siblings[position + 1] : undefined
 
@@ -107,11 +108,20 @@ export default function GameDetail() {
           </>
         }
         aside={
-          <p className="text-fog-600 text-right font-mono text-xs leading-relaxed">
-            {duration(game.duration_seconds)} · patch {patchLabel(index, game.patch_key)}
-            <br />
-            {eraCopy(eraId).title}
-          </p>
+          <div className="text-right">
+            {seriesScore ? (
+              <p className="text-fog-300 mb-2 font-mono text-sm">
+                {teamName(index, seriesScore.a)} <span className="text-gold">{seriesScore.winsA}</span>
+                <span className="text-fog-600"> – </span>
+                <span className="text-gold">{seriesScore.winsB}</span> {teamName(index, seriesScore.b)}
+              </p>
+            ) : null}
+            <p className="text-fog-600 font-mono text-xs leading-relaxed">
+              {duration(game.duration_seconds)} · patch {patchLabel(index, game.patch_key)}
+              <br />
+              {eraCopy(eraId).title}
+            </p>
+          </div>
         }
       />
 
@@ -189,4 +199,19 @@ function TeamTitle({
   ) : (
     <>{name}</>
   )
+}
+
+/** The series score: wins per team across the games of one series. */
+function scoreOf(games: { blue_win: number; blue_team_key: number; red_team_key: number }[]) {
+  const first = games[0]!
+  const a = first.blue_team_key
+  const b = first.red_team_key
+  let winsA = 0
+  let winsB = 0
+  for (const game of games) {
+    const winner = game.blue_win === 1 ? game.blue_team_key : game.red_team_key
+    if (winner === a) winsA += 1
+    else if (winner === b) winsB += 1
+  }
+  return { a, b, winsA, winsB }
 }

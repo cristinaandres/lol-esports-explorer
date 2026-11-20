@@ -1,7 +1,7 @@
 # 11: Step back to the previous phase
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -27,3 +27,9 @@ correctly offers nothing rather than an empty slot.
 ## Validation
 
 A browser walk from the first phase to the last and back, asserting each step.
+
+## Built
+
+A phase now offers both directions, side by side. Verified on First Stand 2025: the
+first phase has no previous and the last has no next, and the middle ones link both
+ways in playing order.

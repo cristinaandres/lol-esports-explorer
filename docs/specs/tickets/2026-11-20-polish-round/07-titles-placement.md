@@ -1,7 +1,7 @@
 # 07: Put the titles in the same place on both entity pages
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -27,3 +27,9 @@ should not have to be found.
 ## Validation
 
 A browser check of the section headings on both pages, in order.
+
+## Built
+
+Titles moved above the per-game table on the player page, so both entity pages now
+read Titles first. Verified: player → Titles, Per game, Champions, Events, Teams,
+Roles; team → Titles, Events, Current roster, Everyone who played.

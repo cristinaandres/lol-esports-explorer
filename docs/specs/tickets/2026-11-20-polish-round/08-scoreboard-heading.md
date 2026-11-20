@@ -1,7 +1,7 @@
 # 08: Give the scoreboard a heading
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -28,3 +28,10 @@ gets one too, for the same reason.
 ## Validation
 
 A browser check of the heading outline of each route, asserting no skipped level.
+
+## Built
+
+The scoreboard carries a visible "Scoreboard" heading and an `aria-labelledby`; the
+series score box got a visually hidden heading of its own. Heading outline of a game
+page: h1, h2 Scoreboard, h2 Draft, h3 Blue side, h3 Red side, h2 Players — no level
+skipped.

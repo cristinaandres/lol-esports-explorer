@@ -91,7 +91,8 @@ export default function PhaseDetail() {
 
   const games = found.series.reduce((sum, entry) => sum + entry.games.length, 0)
   const position = all.findIndex((entry) => entry.tab === found.tab)
-  const next = all[position + 1]
+  const previous = position > 0 ? all[position - 1] : undefined
+  const next = position >= 0 ? all[position + 1] : undefined
 
   return (
     <>
@@ -109,17 +110,33 @@ export default function PhaseDetail() {
         title={found.tab}
         lead={`${count(found.series.length)} series, ${count(games)} games, from ${dayMonthYear(found.firstDate)}.`}
         aside={
-          next ? (
-            <p className="text-fog-600 text-right text-xs">
-              next phase
-              <br />
-              <Link
-                to={`/events/${event.event_id}/phases/${phaseSlug(next.tab)}`}
-                className="text-fog-300 hover:text-gold"
-              >
-                {next.tab} →
-              </Link>
-            </p>
+          previous || next ? (
+            <div className="text-fog-600 flex items-start gap-6 text-right text-xs">
+              {previous ? (
+                <p>
+                  previous phase
+                  <br />
+                  <Link
+                    to={`/events/${event.event_id}/phases/${phaseSlug(previous.tab)}`}
+                    className="text-fog-300 hover:text-gold"
+                  >
+                    ← {previous.tab}
+                  </Link>
+                </p>
+              ) : null}
+              {next ? (
+                <p>
+                  next phase
+                  <br />
+                  <Link
+                    to={`/events/${event.event_id}/phases/${phaseSlug(next.tab)}`}
+                    className="text-fog-300 hover:text-gold"
+                  >
+                    {next.tab} →
+                  </Link>
+                </p>
+              ) : null}
+            </div>
           ) : null
         }
       />

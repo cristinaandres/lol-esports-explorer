@@ -48,11 +48,12 @@ export function SeriesList({
               </span>
               <span>{teamName(index, b)}</span>
             </Link>
-            <span className="text-fog-600 text-xs">
-              {match?.best_of ? `best of ${match.best_of}` : 'format not stated'}
-            </span>
+            <span className="flex flex-wrap items-center justify-end gap-3">
+              <span className="text-fog-600 shrink-0 text-xs">
+                {match?.best_of ? `best of ${match.best_of}` : 'format not stated'}
+              </span>
 
-            <span className="flex flex-wrap items-center gap-1.5">
+              <span className="flex flex-wrap items-center gap-1.5">
               {single ? (
                 <span className="text-fog-600 font-mono text-xs">
                   {duration(entry.games[0]!.duration_seconds)}
@@ -69,6 +70,7 @@ export function SeriesList({
                   </Link>
                 ))
               )}
+              </span>
             </span>
           </li>
         )

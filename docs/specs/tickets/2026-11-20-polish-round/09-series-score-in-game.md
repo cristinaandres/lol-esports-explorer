@@ -1,7 +1,7 @@
 # 09: Show the series score on a game
 
 **Blocked by:** None (can start immediately)
-**Status:** ready
+**Status:** done
 
 ## What to build
 
@@ -27,3 +27,9 @@ where the score would be a restatement.
 ## Validation
 
 A browser check comparing the score on a game with the score on its series page.
+
+## Built
+
+A game inside a series states the score in the header — `Papara SuperMassive 3 – 1
+Movistar KOI` — derived from the series' own games. A best-of-one and a game with no
+series show nothing extra.

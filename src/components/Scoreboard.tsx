@@ -48,7 +48,12 @@ export function Scoreboard({
   const absent = eligible.length === 0 ? [] : all.filter((row) => !known.has(row.field))
 
   return (
-    <section aria-label="Scoreboard" className="border-line overflow-hidden rounded-xl border">
+    <section aria-labelledby="scoreboard-heading" className="border-line overflow-hidden rounded-xl border">
+      <header className="border-line border-b px-5 py-3">
+        <h2 id="scoreboard-heading" className="text-fog-100 text-sm font-semibold tracking-tight">
+          Scoreboard
+        </h2>
+      </header>
       <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-4 px-5 pt-5 pb-4">
         <SideHead side={blue} index={index} align="left" />
         <div className="text-fog-600 pb-1 font-mono text-xs">vs</div>
