@@ -254,8 +254,8 @@ export default function PlayerDetail() {
       ) : (
         <>
           <StatRow>
-            <Stat label="Games" value={count(career.games)} />
             <Stat label="Events" value={count(eventStats.length)} />
+            <Stat label="Games" value={count(career.games)} />
             <Stat label="Win rate" value={<Ratio part={career.wins} total={career.games} />} />
             <Stat
               label="KDA"
