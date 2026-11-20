@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { SeriesList } from '../components/SeriesList'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
@@ -10,6 +11,7 @@ import { eraCopy } from '../lib/eras'
 import { count, duration, dayMonthYear } from '../lib/format'
 import { buildIndexes, teamName } from '../lib/indexes'
 import { groupGamesBySeries } from '../lib/series'
+import { groupByPhase, phasePath } from '../lib/phases'
 
 export default function EventDetail() {
   const { event: id } = useParams()
@@ -25,7 +27,15 @@ export default function EventDetail() {
     const matches = new Map(
       data.matches.filter((match) => match.event_key === event.event_key).map((match) => [match.match_key, match]),
     )
-    return { event, games, matches, grouped: groupGamesBySeries(games), index: buildIndexes(data) } as const
+    const grouped = groupGamesBySeries(games)
+    return {
+      event,
+      games,
+      matches,
+      grouped,
+      phases: groupByPhase(grouped.series, matches),
+      index: buildIndexes(data),
+    } as const
   }, [state, id])
 
   if (state.status === 'loading') return <p className="text-fog-600">Loading…</p>
@@ -43,7 +53,7 @@ export default function EventDetail() {
     )
   }
 
-  const { event, matches, grouped, index } = prepared
+  const { event, matches, grouped, phases, index } = prepared
   const eraId = event.eras?.split(', ')[0] ?? ''
   const eraTitle = eraId ? eraCopy(eraId).title : '—'
 
@@ -51,6 +61,7 @@ export default function EventDetail() {
     <>
       <Breadcrumbs
         items={[
+          { label: 'Eras', to: '/eras' },
           { label: eraTitle, to: eraId ? `/eras/${eraId}` : undefined },
           { label: event.event_name },
         ]}
@@ -84,68 +95,34 @@ export default function EventDetail() {
 
       {grouped.series.length > 0 ? (
         <section className="mt-12">
-          <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Series</h2>
-          <p className="text-fog-500 mb-5 text-sm leading-relaxed">
-            A best-of-one is shown as the game it is: there is no series page to open for a single
-            game.
+          <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Phases</h2>
+          <p className="text-fog-500 mb-8 max-w-3xl text-sm leading-relaxed">
+            The competition as it was played, phase by phase. A best-of-one is shown as the game it
+            is: there is no series page to open for a single game.
           </p>
 
-          <ol className="divide-line border-line divide-y border-y">
-            {grouped.series.map((series) => {
-              const match = matches.get(series.matchKey)
-              const single = series.games.length === 1
-              const [a, b] = series.teamKeys
-              const scoreA = series.wins.get(a) ?? 0
-              const scoreB = series.wins.get(b) ?? 0
-              const href = single
-                ? `/games/${series.games[0]!.game_id}`
-                : `/series/${match?.match_id ?? ''}`
-
-              return (
-                <li
-                  key={series.matchKey}
-                  className="grid gap-2 py-4 sm:grid-cols-[7rem_1fr_auto] sm:items-center sm:gap-4"
-                >
-                  <span className="text-fog-600 font-mono text-xs">
-                    {dayMonthYear(series.firstDate)}
-                  </span>
-
-                  <Link
-                    to={href}
-                    className="text-fog-100 hover:text-gold flex flex-wrap items-baseline gap-2 font-medium"
-                  >
-                    <span>{teamName(index, a)}</span>
-                    <span className="text-fog-300 font-normal tabular-nums">
-                      {single ? 'vs' : `${scoreA} – ${scoreB}`}
-                    </span>
-                    <span>{teamName(index, b)}</span>
-                  </Link>
-                  <span className="text-fog-600 text-xs">
-                    {match?.best_of ? `best of ${match.best_of}` : 'format not stated'}
-                  </span>
-
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    {single ? (
-                      <span className="text-fog-600 font-mono text-xs">
-                        {duration(series.games[0]!.duration_seconds)}
-                      </span>
+          <div className="space-y-10">
+            {phases.map((phase) => (
+              <div key={phase.tab}>
+                <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3">
+                  <h3 className="text-fog-100 text-base font-semibold tracking-tight">
+                    {phase.tab === 'Unknown phase' ? (
+                      phase.tab
                     ) : (
-                      series.games.map((game, position) => (
-                        <Link
-                          key={game.game_key}
-                          to={`/games/${game.game_id}`}
-                          className="border-line text-fog-500 hover:border-line-bright hover:text-fog-100 rounded border px-2 py-0.5 font-mono text-[11px] no-underline"
-                          title={`${dayMonthYear(game.date_time_utc)} · ${duration(game.duration_seconds)}`}
-                        >
-                          G{position + 1}
-                        </Link>
-                      ))
+                      <Link to={phasePath(event.event_id, phase.tab)} className="hover:text-gold">
+                        {phase.tab}
+                      </Link>
                     )}
+                  </h3>
+                  <span className="text-fog-600 text-xs">
+                    {count(phase.series.length)} {phase.series.length === 1 ? 'series' : 'series'} ·{' '}
+                    {count(phase.series.reduce((sum, entry) => sum + entry.games.length, 0))} games
                   </span>
-                </li>
-              )
-            })}
-          </ol>
+                </div>
+                <SeriesList series={phase.series} matches={matches} index={index} />
+              </div>
+            ))}
+          </div>
         </section>
       ) : null}
 

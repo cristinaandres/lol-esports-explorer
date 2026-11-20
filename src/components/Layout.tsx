@@ -6,7 +6,7 @@ import { DATA_REPO, REPO_URL, SITE_NAME, SITE_TAGLINE } from '../lib/site'
 import type { Meta } from '../lib/types'
 
 const links = [
-  { to: '/', label: 'Eras', end: true },
+  { to: '/eras', label: 'Eras', end: false },
   { to: '/glossary', label: 'Glossary', end: false },
 ]
 

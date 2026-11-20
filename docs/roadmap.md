@@ -51,6 +51,14 @@ Spec: `docs/specs/2026-11-20-phase-4-head-to-head.md`
 `/compare`: two teams, the head-to-head record with its `n`, recent form, and a
 champion pool overlap. No prediction, by design.
 
+## 4b — Structure before phase 4
+
+- `/eras` as a real index, so the breadcrumb can say `Home / Eras / …` without
+  claiming the home page is the era list.
+- Phases inside a competition: the event page groups its series by `tab`, and each
+  phase is a page of its own.
+- Every trail starts at Home; every entity trail passes through its index.
+
 ## 5 — Design and polish
 
 Spec: `docs/specs/2026-11-20-phase-5-design-pass.md`

@@ -7,6 +7,7 @@ import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, dateRange, duration, stripDateSuffix } from '../lib/format'
 import { buildIndexes, patchLabel, teamName, teamPath } from '../lib/indexes'
+import { phasePath } from '../lib/phases'
 
 /**
  * One series and its games.
@@ -64,12 +65,16 @@ export default function SeriesDetail() {
     <>
       <Breadcrumbs
         items={[
+          { label: 'Eras', to: '/eras' },
           { label: eraId ? eraCopy(eraId).title : '—', to: eraId ? `/eras/${eraId}` : undefined },
           {
             label: event?.event_name ?? 'Event',
             to: event ? `/events/${event.event_id}` : undefined,
           },
-          { label: stripDateSuffix(match.match_name) || 'Series' },
+          ...(event && match.tab
+            ? [{ label: match.tab, to: phasePath(event.event_id, match.tab) }]
+            : []),
+          { label: `${teamName(index, a)} vs ${teamName(index, b)}` },
         ]}
       />
 

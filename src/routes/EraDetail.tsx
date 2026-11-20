@@ -41,7 +41,7 @@ export default function EraDetail() {
 
   return (
     <>
-      <Breadcrumbs items={[{ label: copy.title }]} />
+      <Breadcrumbs items={[{ label: 'Eras', to: '/eras' }, { label: copy.title }]} />
 
       <PageHeader
         eyebrow={span(era)}

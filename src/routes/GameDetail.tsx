@@ -9,8 +9,9 @@ import { PlayerTable } from '../components/PlayerTable'
 import { Scoreboard } from '../components/Scoreboard'
 import { useDataset, useGameDetail, type Dataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
-import { dayMonthYear, duration, stripDateSuffix } from '../lib/format'
+import { dayMonthYear, duration } from '../lib/format'
 import { buildIndexes, patchLabel, teamName, teamPath } from '../lib/indexes'
+import { phasePath } from '../lib/phases'
 
 /** The era's declared eligible fields, or an empty list when the era is unknown. */
 function eraEligible(data: Dataset, eraId: string): string[] {
@@ -75,15 +76,19 @@ export default function GameDetail() {
     <>
       <Breadcrumbs
         items={[
+          { label: 'Eras', to: '/eras' },
           { label: eraId ? eraCopy(eraId).title : '—', to: eraId ? `/eras/${eraId}` : undefined },
           {
             label: event?.event_name ?? 'Event',
             to: event ? `/events/${event.event_id}` : undefined,
           },
+          ...(event && match?.tab
+            ? [{ label: match.tab, to: phasePath(event.event_id, match.tab) }]
+            : []),
           ...(match && siblings.length > 1
             ? [
                 {
-                  label: stripDateSuffix(match.match_name) || 'Series',
+                  label: `${teamName(index, game.blue_team_key)} vs ${teamName(index, game.red_team_key)}`,
                   to: `/series/${match.match_id}`,
                 },
               ]
