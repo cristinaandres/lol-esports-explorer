@@ -14,7 +14,8 @@ export default function Home() {
   if (status === 'failed')
     return (
       <p className="text-side-red">
-        Could not load the dataset: {error.message}. Run <code>node tools/check.ts</code>.
+        Could not load the dataset: {error.message}. Reload the page to try again; if it keeps
+        failing, the artifacts may be mid-deploy.
       </p>
     )
 

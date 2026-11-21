@@ -4,6 +4,7 @@ import { Link } from 'react-router'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { PageHeader } from '../components/PageHeader'
 import { LoadFailure } from '../components/LoadFailure'
+import { Skeleton } from '../components/Skeleton'
 import { useDataset, useGameCorpus } from '../lib/data'
 import { count } from '../lib/format'
 import { buildIndexes, teamName } from '../lib/indexes'
@@ -51,8 +52,7 @@ export default function EventsIndex() {
     } as const
   }, [state, corpus])
 
-  if (state.status === 'loading' || corpus.status === 'loading')
-    return <p className="text-fog-600">Loading…</p>
+  if (state.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
   if (corpus.status === 'failed')
     return (
       <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />

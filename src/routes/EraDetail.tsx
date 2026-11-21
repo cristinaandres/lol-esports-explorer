@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { LoadFailure } from '../components/LoadFailure'
 import { Skeleton } from '../components/Skeleton'
 import { CoverageRow } from '../components/Coverage'
 import { DataTable } from '../components/DataTable'
@@ -14,10 +15,14 @@ import type { Era } from '../lib/types'
 
 export default function EraDetail() {
   const { era: id } = useParams()
-  const { status, data } = useDataset()
+  const dataset = useDataset()
+  const { status, data } = dataset
 
   if (status === 'loading') return <Skeleton shape="page" />
-  if (status !== 'ready') return <p className="text-fog-600">Nothing to show.</p>
+  // A failed load is not an empty era: "Nothing to show" would tell the reader the
+  // era holds no games when in fact the file never arrived.
+  if (status === 'failed')
+    return <LoadFailure failures={[{ what: 'the dataset', error: dataset.error }]} onRetry={dataset.retry} />
 
   // Empty declared eras are documented in the glossary but are not part of the
   // navigation, so stepping through the spine never lands on a page with no game.
