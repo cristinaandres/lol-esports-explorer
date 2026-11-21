@@ -24,7 +24,8 @@ import { groupGamesBySeries } from '../lib/series'
  */
 export default function PhaseDetail() {
   const { event: eventId, phase } = useParams()
-  const { status, data } = useDataset()
+  const dataset = useDataset()
+  const { status, data } = dataset
   const corpus = useGameCorpus()
 
   const prepared = useMemo(() => {
@@ -60,7 +61,7 @@ export default function PhaseDetail() {
       <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
     )
   if (status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {status === 'failed' ? '' : ''}</p>
+    return <LoadFailure failures={[{ what: 'the dataset', error: dataset.error }]} onRetry={dataset.retry} />
 
   if (!prepared?.event) {
     return (
