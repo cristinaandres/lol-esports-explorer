@@ -31,7 +31,8 @@ import type {
  *  - The game level is the two artifacts a page that draws games needs -- every
  *    game, and the series they belong to -- fetched once by the pages that render
  *    a game table, a draft board or a series. An era page, the eras index, the
- *    events index, the glossary and the selection audit never ask for them.
+ *    glossary and the selection audit never ask for them; the events index does,
+ *    because it derives each event's champion from the games and the series.
  *  - The lazy set is fetched in pieces, each once per session, by the pages that
  *    read it: the 30,910 player rows for any career, the bans for a champion, and
  *    the scoreboards plus the ordered picks only for a game. A visitor who reads
@@ -80,8 +81,8 @@ async function getJson<T>(name: string): Promise<T> {
  * A loader that fetches once, and only remembers an attempt that worked.
  *
  * Pages ask for an artifact every time they need it, so the first answer is kept
- * and handed out again; that is what stops three pages from downloading the same
- * 620 KB. A failure, though, describes the moment and not the file: a dropped
+ * and handed out again; that is what stops a second page from downloading the
+ * same 688 KB. A failure, though, describes the moment and not the file: a dropped
  * connection, a flaky deploy or a network that is briefly down must not become
  * permanent for the document. Clearing the slot before rethrowing means the next
  * caller starts a fresh request, while a success stays cached for the session.
@@ -164,7 +165,7 @@ export function loadGameCorpus(): Promise<GameCorpus> {
  *
  * A player page needs 30,910 rows and nothing else; a game page needs them plus
  * the scoreboards and the draft. Loading the smaller set first means a career page
- * costs 620 KB gzip rather than 950, and the game page reuses the same promise
+ * costs 688 KB gzip rather than 1,063, and the game page reuses the same promise
  * instead of fetching the file twice.
  */
 const playerRows = memoised<PlayerGame[]>(() => getJson<PlayerGame[]>('player-games.json'))

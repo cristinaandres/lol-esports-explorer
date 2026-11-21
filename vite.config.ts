@@ -14,7 +14,7 @@ export default defineConfig({
     // A linked worktree is a full checkout under `.worktrees/` inside this
     // repository, because project trust is keyed on the checkout root. Vitest's
     // default include is `**/*.test.ts`, so without this exclusion a worktree's copy
-    // of the suite runs as if it were this checkout's: 32 files instead of 16, a
+    // of the suite runs as if it were this checkout's: 34 files instead of 17, a
     // failing branch breaking `dev`'s check, and a green run that says nothing about
     // the code under test. The defaults are kept, not replaced.
     exclude: [...configDefaults.exclude, '**/.worktrees/**'],

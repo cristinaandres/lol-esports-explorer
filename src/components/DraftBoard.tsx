@@ -16,8 +16,8 @@ import type { DraftSlot, Game, PlayerGame } from '../lib/types'
  *    plausible pick order the data cannot support.
  *  - bans range from 0 to 10 a game. Zero is not "no bans happened", it is "the
  *    wiki recorded none", so the column says so instead of showing an empty grid.
- *  - picks range from 8 to 10, because some games are missing player rows. The
- *    board never pads to five.
+ *  - every draft that has picks has ten (2,450 games, five a side). The board
+ *    never pads to five.
  */
 export function DraftBoard({
   game,

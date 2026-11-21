@@ -116,7 +116,7 @@ describe('lazy loading', () => {
 
     const urls = urlsOf(fetchMock)
     expect(urls.filter((url) => url.endsWith('bans.json'))).toHaveLength(1)
-    // The scoreboards and the ordered picks are 236 KB gzip a champion page never
+    // The scoreboards and the ordered picks are 235 KB gzip a champion page never
     // renders: it counts the bans and nothing else from the draft.
     expect(urls.filter((url) => url.endsWith('sides.json'))).toHaveLength(0)
     expect(urls.filter((url) => url.endsWith('picks.json'))).toHaveLength(0)
@@ -124,7 +124,7 @@ describe('lazy loading', () => {
 
   it('asks for no game-level artifact on an era page', async () => {
     // The era page draws its events and its era's own figures; a game list belongs
-    // to an event. The two files are 133 KB gzip between them, and the page that
+    // to an event. The two files are 145 KB gzip between them, and the page that
     // reads neither must not pay for them.
     const fetchMock = stubFetch([])
     const { loadDataset } = await freshData()
@@ -164,7 +164,7 @@ describe('lazy loading', () => {
 
     const urls = urlsOf(fetchMock)
     // The scoreboards and the draft belong to a game page; a career page must not
-    // pay 330 KB for them.
+    // pay 375 KB for them.
     expect(urls.filter((url) => url.endsWith('sides.json'))).toHaveLength(0)
     expect(urls.filter((url) => url.endsWith('picks.json'))).toHaveLength(0)
   })

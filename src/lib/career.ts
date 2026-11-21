@@ -5,7 +5,7 @@ import type { Game, PlayerGame } from './types'
  *
  * The rule the whole site is built on applies here more sharply than anywhere
  * else: a measure is only as good as the rows that state it. Damage is recorded
- * on 15,910 of the 30,910 player rows, so a damage average is not "damage divided
+ * on 15,870 of the 30,910 player rows, so a damage average is not "damage divided
  * by games" -- that would divide by games the source never measured. Every
  * measure therefore carries its own denominator, and the page prints both.
  *
