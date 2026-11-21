@@ -6,3 +6,9 @@ requires-python = ">=3.11"
 # Pinned exactly: the artifacts are byte-compared in CI, so a different DuckDB
 # must be a deliberate bump with a regenerated diff, not a silent upgrade.
 dependencies = ["duckdb==2.0.0"]
+
+# Test-only, and pinned for the same reason as duckdb: a refusal that goes red on
+# one machine and green on another is not a check. Installed by `uv run` by default;
+# run with `uv run --project pipeline python -m pytest pipeline/tests`.
+[dependency-groups]
+dev = ["pytest==9.2.0"]
