@@ -10,12 +10,13 @@ import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
 import { championPlayers, championRecord, championRoleStats, presenceOf, roleKda } from '../lib/champion'
-import { useAliases, useBans, useDataset, useGames, usePlayerGames } from '../lib/data'
+import { useAliases, useBans, useDataset, useGames, usePlayerGames, type Dataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { CareerFilters } from '../components/CareerFilters'
 import { applyFilter, emptyReason, filterSearch, NO_FILTER, optionsFor, parseFilter, recoverFilter } from '../lib/filters'
 import { count, dayMonthYear } from '../lib/format'
 import { buildIndexes, playerName, playerPath } from '../lib/indexes'
+import type { Champion } from '../lib/types'
 
 /**
  * One champion, era by era.
@@ -24,56 +25,20 @@ import { buildIndexes, playerName, playerPath } from '../lib/indexes'
  * released mid-corpus shows nothing before its first game rather than a run of
  * zeroes. That is the same rule the scoreboard applies to objectives, and it is
  * what stops "not yet released" from reading as "never picked".
+ *
+ * The id is resolved against the eager set alone, in `ChampionDetail`; the lazy set
+ * lives in `ChampionPage`, which a found id mounts and a typo'd one never does.
  */
 export default function ChampionDetail() {
   const { champion: id } = useParams()
   const dataset = useDataset()
-  const games = useGames()
-  const playerRows = usePlayerGames()
-  const banRows = useBans()
-  const aliases = useAliases()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filter = parseFilter(searchParams)
 
-  const prepared = useMemo(() => {
-    if (dataset.status !== 'ready' || games.status !== 'ready') return null
-    const champion = dataset.data.champions.find((row) => row.champion_id === id)
-    if (!champion) return { champion: undefined } as const
-
-    const index = buildIndexes(dataset.data)
-    const scoped = games.data.map((game) => ({
-      game,
-      competition: index.competitions.get(game.event_key) ?? 'Unknown',
-    }))
-
-    return {
-      champion,
-      scoped,
-      index,
-      former:
-        aliases.status === 'ready'
-          ? namesFor(aliases.data, 'champion', champion.champion_id).map((row) => ({
-              name: row.alias_string,
-              from: row.valid_from,
-              to: row.valid_to,
-            }))
-          : [],
-    } as const
-  }, [dataset, games, aliases, id])
-
-  const applyFilters = (next: typeof filter) => {
-    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
-  }
-
-  if (dataset.status === 'loading' || games.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
-  if (games.status === 'failed')
-    return (
-      <LoadFailure failures={[{ what: 'the games', error: games.error }]} onRetry={games.retry} />
-    )
 
-  if (!prepared?.champion) {
+  const champion = dataset.data.champions.find((row) => row.champion_id === id)
+  if (!champion) {
     return (
       <div className="py-12">
         <p className="text-fog-600 mb-3 font-mono text-xs tracking-widest uppercase">Not found</p>
@@ -92,7 +57,51 @@ export default function ChampionDetail() {
     )
   }
 
-  const { champion, former, scoped } = prepared
+  return <ChampionPage champion={champion} data={dataset.data} />
+}
+
+function ChampionPage({ champion, data }: { champion: Champion; data: Dataset }) {
+  const games = useGames()
+  const playerRows = usePlayerGames()
+  const banRows = useBans()
+  const aliases = useAliases()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter = parseFilter(searchParams)
+
+  const prepared = useMemo(() => {
+    if (games.status !== 'ready') return null
+
+    const index = buildIndexes(data)
+    const scoped = games.data.map((game) => ({
+      game,
+      competition: index.competitions.get(game.event_key) ?? 'Unknown',
+    }))
+
+    return {
+      scoped,
+      index,
+      former:
+        aliases.status === 'ready'
+          ? namesFor(aliases.data, 'champion', champion.champion_id).map((row) => ({
+              name: row.alias_string,
+              from: row.valid_from,
+              to: row.valid_to,
+            }))
+          : [],
+    } as const
+  }, [data, games, aliases, champion])
+
+  const applyFilters = (next: typeof filter) => {
+    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
+  }
+
+  if (games.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: games.error }]} onRetry={games.retry} />
+    )
+  if (!prepared) return <Skeleton shape="page" />
+
+  const { former, scoped } = prepared
   const visibleGames = applyFilter(scoped, filter).map((entry) => entry.game)
   // A champion page counts bans and reads picks nowhere, so it asks for the player
   // rows and the bans and leaves the scoreboards and the ordered draft on the game
