@@ -10,6 +10,9 @@ const players: Player[] = [
 const teams: Team[] = [
   { team_key: 1, team_id: 'tm-koi', team_name: 'Movistar KOI', overview_page: '', region: 'EMEA', games: 0, short_name: 'KOI' },
   { team_key: 2, team_id: 'tm-mad', team_name: 'MAD Team', overview_page: '', region: 'LMS', games: 0, short_name: null },
+  // "illum" prefixes this name and sits inside "Nunu & Willump", so one query
+  // reaches both ranks and the order between them can be asserted.
+  { team_key: 3, team_id: 'tm-illum', team_name: 'Illuminar Gaming', overview_page: '', region: 'EMEA', games: 0, short_name: null },
 ]
 const champions: Champion[] = [
   { champion_key: 1, champion_id: 'ch-nunu', champion_name: 'Nunu & Willump', riot_key: 20, games: 0, release_date: '2009-02-21' },
@@ -89,9 +92,17 @@ describe('search', () => {
     expect(search(index, '  mad   lions ')[0]?.id).toBe('tm-koi')
   })
 
-  it('matches the middle of a name, ranked below a prefix', () => {
+  it('ranks a prefix above a match in the middle of a name', () => {
+    // Both halves of the claim, against one query: "illum" starts Illuminar
+    // Gaming and is buried in Nunu & Willump. Asserting only that something
+    // matched would pass with the two ranks the wrong way round.
     const results = search(index, 'illum')
-    expect(results.length).toBeGreaterThan(0)
+    expect(results.map((result) => result.name)).toEqual(['Illuminar Gaming', 'Nunu & Willump'])
+  })
+
+  it('finds a name by a string from the middle of it', () => {
+    // "willump" prefixes nothing in the index; it is only ever inside a name.
+    expect(search(index, 'willump').map((result) => result.id)).toEqual(['ch-nunu'])
   })
 
   it('returns nothing for an empty query rather than everything', () => {
