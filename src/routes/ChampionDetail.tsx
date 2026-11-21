@@ -9,7 +9,7 @@ import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
 import { championPlayers, championRecord, championRoleStats, presenceOf, roleKda } from '../lib/champion'
-import { useAliases, useDataset, useGameDetail } from '../lib/data'
+import { useAliases, useBans, useDataset, usePlayerGames } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { CareerFilters } from '../components/CareerFilters'
 import { applyFilter, emptyReason, filterSearch, NO_FILTER, optionsFor, parseFilter, recoverFilter } from '../lib/filters'
@@ -27,7 +27,8 @@ import { buildIndexes, playerName, playerPath } from '../lib/indexes'
 export default function ChampionDetail() {
   const { champion: id } = useParams()
   const dataset = useDataset()
-  const detail = useGameDetail()
+  const playerRows = usePlayerGames()
+  const banRows = useBans()
   const aliases = useAliases()
   const [searchParams, setSearchParams] = useSearchParams()
   const filter = parseFilter(searchParams)
@@ -57,7 +58,7 @@ export default function ChampionDetail() {
             }))
           : [],
     } as const
-  }, [dataset, detail, aliases, id])
+  }, [dataset, aliases, id])
 
   const applyFilters = (next: typeof filter) => {
     setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
@@ -88,24 +89,28 @@ export default function ChampionDetail() {
 
   const { champion, former, scoped } = prepared
   const visibleGames = applyFilter(scoped, filter).map((entry) => entry.game)
-  const record =
-    detail.status === 'ready'
-      ? championRecord(
-          visibleGames,
-          detail.data.playerGames,
-          detail.data.bans,
-          champion.champion_key,
-          champion.release_date,
-        )
+  // A champion page counts bans and reads picks nowhere, so it asks for the player
+  // rows and the bans and leaves the scoreboards and the ordered draft on the game
+  // page, where they are actually rendered.
+  const draft =
+    playerRows.status === 'ready' && banRows.status === 'ready'
+      ? { playerGames: playerRows.data, bans: banRows.data }
       : null
-  const players =
-    detail.status === 'ready'
-      ? championPlayers(visibleGames, detail.data.playerGames, champion.champion_key)
-      : []
-  const roleStats =
-    detail.status === 'ready'
-      ? championRoleStats(visibleGames, detail.data.playerGames, champion.champion_key)
-      : []
+  const record = draft
+    ? championRecord(
+        visibleGames,
+        draft.playerGames,
+        draft.bans,
+        champion.champion_key,
+        champion.release_date,
+      )
+    : null
+  const players = draft
+    ? championPlayers(visibleGames, draft.playerGames, champion.champion_key)
+    : []
+  const roleStats = draft
+    ? championRoleStats(visibleGames, draft.playerGames, champion.champion_key)
+    : []
   const reason = emptyReason(scoped, filter)
   const index = buildIndexes(dataset.data)
 

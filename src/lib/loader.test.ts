@@ -92,6 +92,36 @@ describe('lazy loading', () => {
     expect(urlsOf(fetchMock).filter((url) => url.endsWith('player-games.json'))).toHaveLength(1)
   })
 
+  it('composes the game detail from what a champion page already fetched', async () => {
+    // A reader reaches a game from a champion; the two artifacts they share are
+    // asked for once, and only the two the game page alone needs are added.
+    const fetchMock = stubFetch([])
+    const { loadBans, loadGameDetail, loadPlayerGames } = await freshData()
+
+    await Promise.all([loadPlayerGames(), loadBans()])
+    await loadGameDetail()
+
+    const urls = urlsOf(fetchMock)
+    expect(urls.filter((url) => url.endsWith('player-games.json'))).toHaveLength(1)
+    expect(urls.filter((url) => url.endsWith('bans.json'))).toHaveLength(1)
+    expect(urls.filter((url) => url.endsWith('sides.json'))).toHaveLength(1)
+    expect(urls.filter((url) => url.endsWith('picks.json'))).toHaveLength(1)
+  })
+
+  it('asks for the bans and nothing from the draft board on a champion page', async () => {
+    const fetchMock = stubFetch([])
+    const { loadBans, loadPlayerGames } = await freshData()
+
+    await Promise.all([loadPlayerGames(), loadBans()])
+
+    const urls = urlsOf(fetchMock)
+    expect(urls.filter((url) => url.endsWith('bans.json'))).toHaveLength(1)
+    // The scoreboards and the ordered picks are 236 KB gzip a champion page never
+    // renders: it counts the bans and nothing else from the draft.
+    expect(urls.filter((url) => url.endsWith('sides.json'))).toHaveLength(0)
+    expect(urls.filter((url) => url.endsWith('picks.json'))).toHaveLength(0)
+  })
+
   it('asks for the player rows and nothing heavier on a career page', async () => {
     const fetchMock = stubFetch([])
     const { loadAliases, loadPlayerGames } = await freshData()
@@ -127,7 +157,7 @@ describe('retrying a failed load', () => {
     expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 
-  it('asks again for the whole game detail, scoreboards included', async () => {
+  it('asks again only for the piece of a game detail that failed', async () => {
     const fetchMock = stubFetchRefusingOnce('sides.json', [])
     const { loadGameDetail } = await freshData()
 
@@ -140,15 +170,16 @@ describe('retrying a failed load', () => {
     })
     await loadGameDetail()
 
-    // Seven calls, not eight: the three artifacts the detail owns outright are
-    // asked for twice, while the player rows answered on the first attempt and are
-    // reused, which is the cache doing its job inside the retry.
+    // Five calls: the detail composes the per-artifact loaders, so the retry asks
+    // again for the scoreboards alone while the bans, the picks and the player rows
+    // that arrived on the first attempt are reused. Composing is what keeps a retry
+    // cheap; the rejection is still not remembered.
     const urls = urlsOf(fetchMock)
-    for (const file of ['sides.json', 'bans.json', 'picks.json']) {
-      expect(urls.filter((url) => url.endsWith(file)), file).toHaveLength(2)
+    expect(urls.filter((url) => url.endsWith('sides.json'))).toHaveLength(2)
+    for (const file of ['bans.json', 'picks.json', 'player-games.json']) {
+      expect(urls.filter((url) => url.endsWith(file)), file).toHaveLength(1)
     }
-    expect(urls.filter((url) => url.endsWith('player-games.json'))).toHaveLength(1)
-    expect(fetchMock).toHaveBeenCalledTimes(7)
+    expect(fetchMock).toHaveBeenCalledTimes(5)
   })
 
   it('asks again for the player rows inside a game detail, not only the detail', async () => {

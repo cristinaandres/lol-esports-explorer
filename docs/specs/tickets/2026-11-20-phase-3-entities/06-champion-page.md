@@ -57,3 +57,8 @@ champion's per-era picks equals its total picks. Covers spec R6.
   picked, present in all six eras; Nunu lists the name it replaced and the other
   170 champions show no empty section.
 - Champion names link here from the draft board and the player table.
+- The page asks the network for two artifacts, not four. It counts bans and reads
+  no pick, so it loads `player-games.json` and `bans.json` and leaves `sides.json`
+  and `picks.json` — 236 KB gzip it never renders — to the game page. Measured in
+  headless Chromium: a champion page requests those two files from the draft and
+  nothing else.
