@@ -3946,6 +3946,7 @@
 {"kind":"team","alias_string":"XAN","entity_id":"tm-f60c32258444","entity_name":"Xan","valid_from":null,"valid_to":null,"evidence":"shortname"},
 {"kind":"team","alias_string":"Xan","entity_id":"tm-f60c32258444","entity_name":"Xan","valid_from":"2011-06-18","valid_to":"2011-06-18","evidence":"registry;redirect;observed"},
 {"kind":"team","alias_string":"PAIN","entity_id":"tm-f642dbf0692c","entity_name":"paiN Gaming","valid_from":null,"valid_to":null,"evidence":"shortname"},
+{"kind":"team","alias_string":"PG","entity_id":"tm-f642dbf0692c","entity_name":"paiN Gaming","valid_from":null,"valid_to":null,"evidence":"shortname"},
 {"kind":"team","alias_string":"PaiN","entity_id":"tm-f642dbf0692c","entity_name":"paiN Gaming","valid_from":null,"valid_to":null,"evidence":"redirect"},
 {"kind":"team","alias_string":"PaiN Gaming","entity_id":"tm-f642dbf0692c","entity_name":"paiN Gaming","valid_from":null,"valid_to":null,"evidence":"registry;redirect"},
 {"kind":"team","alias_string":"PaiN Razer","entity_id":"tm-f642dbf0692c","entity_name":"paiN Gaming","valid_from":null,"valid_to":null,"evidence":"redirect"},
