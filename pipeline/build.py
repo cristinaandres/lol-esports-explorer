@@ -107,6 +107,69 @@ def sha256(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def pinned_files(directory: pathlib.Path) -> dict[str, str]:
+    """Every pinned file in a directory, hashed, keyed by name.
+
+    The rule is the directory, not an extension list: `data/model/` holds the model
+    CSVs, the data dictionary and the DDL, and `data/upstream/` holds the era table,
+    the build manifest and the curated files. Hashing `*.csv` alone let three files
+    the provenance document calls pinned go unrecorded, which is the kind of gap a
+    reader only finds by checking by hand.
+
+    Two exceptions, both because the alternative is an artifact that depends on the
+    machine rather than on the pin:
+
+      * A dotfile is the operating system's, not the pin's. macOS writes `.DS_Store`
+        into any directory it lists, `.gitignore` already ignores it, and hashing it
+        would make `--check` fail on one contributor's laptop and pass on another.
+      * Anything that is not a plain regular file -- a subdirectory, a symlink -- is
+        refused rather than skipped, because skipping it is how a pinned file ends up
+        recorded nowhere, which is the defect this function exists to close.
+
+    Deterministic: names are sorted, and a new file changes the artifact once, on
+    purpose, so the diff says what was added.
+    """
+    pinned: dict[str, str] = {}
+    for path in sorted(directory.iterdir()):
+        if path.name.startswith("."):
+            continue
+        if path.is_symlink() or not path.is_file():
+            raise SystemExit(
+                f"error: {path.relative_to(ROOT)} is not a regular file; "
+                "a pinned directory holds pinned files only"
+            )
+        pinned[path.name] = sha256(path)
+    return pinned
+
+
+def verify_manifest(source: dict[str, object]) -> None:
+    """The pinned manifest must be the one `pipeline/source.json` names.
+
+    `manifest.json` is the upstream build manifest, and until now its hash was
+    recorded in source.json and checked against nothing: the file it described was
+    not in the repository. It is committed, and this is the comparison that makes
+    the recorded hash mean something -- the build refuses to produce artifacts from a
+    manifest that is missing or that some later refresh replaced without updating the
+    pin.
+    """
+    manifest = UPSTREAM_DIR / "manifest.json"
+    expected = source.get("manifestSha256")
+    if not manifest.is_file():
+        raise SystemExit(
+            "error: data/upstream/manifest.json is missing; run pipeline/refresh-data.sh"
+        )
+    if not isinstance(expected, str):
+        raise SystemExit("error: pipeline/source.json states no manifestSha256")
+    actual = sha256(manifest)
+    if actual != expected:
+        raise SystemExit(
+            "error: data/upstream/manifest.json is not the manifest pipeline/source.json pins\n"
+            f"  pinned:    {expected}\n"
+            f"  on disk:   {actual}\n"
+            "  re-pin with pipeline/refresh-data.sh <tag>, then rebuild"
+        )
+
+
 def plain(value: object) -> object:
     """Coerce DuckDB's decimal/date values into JSON-native ones."""
     if isinstance(value, decimal.Decimal):
@@ -229,6 +292,11 @@ def dumps(rows: list[dict[str, object]]) -> str:
 
 def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
     """Return artifact name -> serialised UTF-8 JSON text."""
+    # Read and verify the pin first: a manifest that disagrees with source.json makes
+    # every artifact below untrustworthy, so the build stops before writing any.
+    source = json.loads(SOURCE_FILE.read_text(encoding="utf-8"))
+    verify_manifest(source)
+
     rendered: dict[str, str] = {
         "eras.json": dumps(build_eras(con))
     }
@@ -241,11 +309,10 @@ def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
         ]
         rendered[name] = dumps(rows)
 
-    source = json.loads(SOURCE_FILE.read_text(encoding="utf-8"))
     meta = {
         "source": source,
-        "modelFiles": {path.name: sha256(path) for path in sorted(MODEL_DIR.glob("*.csv"))},
-        "upstreamFiles": {path.name: sha256(path) for path in sorted(UPSTREAM_DIR.glob("*.json"))},
+        "modelFiles": pinned_files(MODEL_DIR),
+        "upstreamFiles": pinned_files(UPSTREAM_DIR),
         "artifacts": {
             name: hashlib.sha256(text.encode("utf-8")).hexdigest()
             for name, text in rendered.items()

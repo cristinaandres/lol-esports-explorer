@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { namesFor, resolve } from './aliases'
 import { careerFor } from './career'
 import { slotSide } from './draft'
-import type { AliasRow, DraftSlot, EventRow, Game, Match, Player, PlayerGame } from './types'
+import type { AliasRow, DraftSlot, EventRow, Game, Match, Meta, Player, PlayerGame } from './types'
 
 /**
  * Invariants over the committed artifacts, not over a fixture.
@@ -27,6 +27,25 @@ const picks = read<DraftSlot[]>('picks.json')
 const bans = read<DraftSlot[]>('bans.json')
 const aliases = read<AliasRow[]>('aliases.json')
 const players = read<Player[]>('players.json')
+const meta = read<Meta>('meta.json')
+
+describe('meta.json', () => {
+  it('records the manifest that the pin states the hash of', () => {
+    // The manifest is the upstream build's receipts. Its hash lived in source.json
+    // and was compared against nothing while the file itself was not committed.
+    expect(meta.upstreamFiles['manifest.json']).toBe(meta.source.manifestSha256)
+    expect(meta.source.manifestSha256).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('records the pinned files that a *.csv glob missed', () => {
+    // The document called the dictionary and the DDL pinned; the hash map covered
+    // only the CSVs, so two pinned files were recorded nowhere. Presence is the
+    // claim under test, not a particular digest: the pin moves, the rule does not.
+    for (const name of ['data-dictionary.md', 'schema.sql']) {
+      expect(meta.modelFiles[name], name).toMatch(/^[0-9a-f]{64}$/)
+    }
+  })
+})
 
 describe('games.json', () => {
   it('carries every game exactly once', () => {

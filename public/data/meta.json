@@ -18,6 +18,7 @@
   },
   "modelFiles": {
     "bridge_alias.csv": "6320c2f2561da6ebb9b5803f1f492ec30ae0e900d189bf8ec489627de867ca23",
+    "data-dictionary.md": "5061de60a650b3d608b60eeab17078bda8270deba88fd252369a568b231e334c",
     "dim_champion.csv": "ae11e10eb5a5f278456c96115d7360ede866354923825de4af09fc998e9b0b96",
     "dim_date.csv": "67bc1db3de2bef236f1089afdf027178d68812ce2bf7000ae2930d569a41c22c",
     "dim_event.csv": "1e80c68ce55a59fcbd2094abc702f217ab961c49eec6699294083363bd3dc75e",
@@ -28,12 +29,13 @@
     "dim_team.csv": "a5d92968c66921332947637febff67cab7a8c5cdd42e8b2e72535cb08ae7756b",
     "fact_draft_slot.csv": "57d9838384cc6bf15eebfe02792bef5187179f4138bb3182c1a030cf876b5cf7",
     "fact_game_side.csv": "90551c13efbdbe3e6e03f98c647eec5929a370cdaab21e5b141d44dffcf0f9f8",
-    "fact_player_game.csv": "84d75fb4c0b7effb7dc6f0521f5ae536d55b748b4aacee5e04de3386c862c1db"
+    "fact_player_game.csv": "84d75fb4c0b7effb7dc6f0521f5ae536d55b748b4aacee5e04de3386c862c1db",
+    "schema.sql": "d5af7e413717759f1e2a382c311e156b93b0f5bd97bcd0a5a6cf76229ac9908f"
   },
   "source": {
     "commit": "714ce6fd0812a69e649c9bf77fb510fb079a71b6",
     "manifestSha256": "872b43cff39683cca16cf84e8af42d9d2cf658932acb75c1f50a963130a968f0",
-    "note": "The model CSVs in data/model/ are a byte-for-byte copy of the pinned tag's build output. Refresh with pipeline/refresh-data.sh.",
+    "note": "The files in data/model/ -- the CSVs, the data dictionary and the DDL -- are a byte-for-byte copy of the pinned tag's build output. Refresh with pipeline/refresh-data.sh.",
     "repository": "RRiboulet/lol-dataset",
     "tag": "v1.1.0"
   },
@@ -42,6 +44,7 @@
     "event-coverage.json": "a0cf323d773ace6853405e548619bd4b1983843743e7e30aac8e0ccc598cae04",
     "event-selection.json": "1d8161205279bc316ddbe9cd145801c9bab093b5c5f162e3f7e8ec842d633e43",
     "game-eras.json": "a3758bccdb650792ab266b1100f41736c987c5a97b17e371dbdf03520ad4ab4c",
+    "manifest.json": "872b43cff39683cca16cf84e8af42d9d2cf658932acb75c1f50a963130a968f0",
     "team-shortnames.json": "9777b22478aa7cbd0df153504d785388dbc649304bfa63711cc4ec49ab691385"
   }
 }

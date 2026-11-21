@@ -46,6 +46,13 @@ group by c.champion_key, c.champion_id, c.champion_name, c.riot_key;
 -- Release dates live outside the model. They are joined on the champion's name,
 -- which is how the wiki keys them, and an unmatched champion keeps a null rather
 -- than a guessed date.
+--
+-- Two rows match no champion today (Akshan, Briar). That is expected rather than
+-- drift: the wiki states a release date as soon as a champion exists, and the model
+-- only carries champions that appear in a game, so a champion released but not yet
+-- played is pinned here and absent there. Release dates are moving into the dataset
+-- itself, which will make this file redundant; until then an unmatched row is the
+-- same fact as a champion the corpus never fields, not a join to guard.
 create or replace view champion_releases as
 select entry.name, entry.releaseDate as release_date
 from read_json(
