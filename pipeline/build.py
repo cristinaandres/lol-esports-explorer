@@ -53,8 +53,11 @@ ARTIFACTS: dict[str, str] = {
         left join event_coverage_report c using (event_id)
         order by e.date_start, e.event_name
     """,
+    # id ends the order: two pairs tie on decision, rule and name (the two
+    # All-Star 2018 Las Vegas and the two IEM Global Challenge Sao Paulo rows),
+    # and a tie is not an order.
     "selection.json": """
-        select * from selection_candidates order by decision, rule, name
+        select * from selection_candidates order by decision, rule, name, id
     """,
     "games.json": "select * from game_rows order by date_time_utc, game_key",
     "matches.json": "select * from match_rows order by match_key",
