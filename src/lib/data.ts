@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type {
   AliasRow,
@@ -273,7 +273,12 @@ export function useAsync<T>(load: () => Promise<T>): AsyncState<T> {
     }
   }, [load, attempt])
 
-  return { ...state, retry }
+  // The same object between renders while the state is unchanged. `{ ...state }`
+  // alone is a new identity on every render, so a caller's `useMemo(() => …, [hook])`
+  // could never hit: the memos that derive a player's appearances over 30,910 rows,
+  // or the corpus champions over 3,091 games, ran again on every keystroke of a
+  // filter that changes neither.
+  return useMemo(() => ({ ...state, retry }), [state, retry])
 }
 
 export function useDataset(): AsyncState<Dataset> {
