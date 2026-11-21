@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { namesFor, normalise } from './aliases'
 import { appearancesFor, careerFrom } from './career'
 import { slotSide } from './draft'
+import { winnerKey } from './game'
 import { buildSearchIndex, search } from './search'
 import type {
   AliasRow,
@@ -501,6 +502,45 @@ describe('games.json', () => {
   it('keeps dates in the ISO form the site parses', () => {
     const malformed = games.filter((game) => !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(game.date_time_utc))
     expect(malformed).toEqual([])
+  })
+})
+
+describe('games.json and sides.json', () => {
+  /**
+   * The witness for `winnerKey` that is not a restatement of it.
+   *
+   * `game.test.ts` compares the predicate against the expression it is written as,
+   * which catches drift and not a predicate that is wrong in both places at once.
+   * Here the two artifacts are walked together instead: `sides.json` publishes each
+   * side's `is_winner`, a column the upstream model states per side and this
+   * repository only copies, while `winnerKey` reads the game-level `blue_win`.
+   *
+   * The two arrive from opposite directions on a red win. `blue_win` is the blue
+   * row's flag, so `winnerKey` reaching the red team means naming a team the
+   * expression it is checked against never mentions -- the red row is the witness,
+   * and a predicate that returned the losing team would agree with itself and
+   * disagree with the corpus on all 3,091 games.
+   */
+  it('names the team whose side row says it won, on every game', () => {
+    // One row per game per side, so "the side that says is_winner" must be one
+    // side: two would make the witness ambiguous and none would make it silent.
+    const winners = new Map<number, number>()
+    const twoWinners = new Set<number>()
+    for (const side of sides) {
+      if (side.is_winner !== 1) continue
+      if (winners.has(side.game_key)) twoWinners.add(side.game_key)
+      winners.set(side.game_key, side.team_key)
+    }
+    expect([...twoWinners]).toEqual([])
+    expect(winners.size).toBe(games.length)
+
+    const wrong = games
+      .filter((game) => winners.get(game.game_key) !== winnerKey(game))
+      .map(
+        (game) =>
+          `${game.game_id}: winnerKey is ${winnerKey(game)}, sides.json says ${winners.get(game.game_key)}`,
+      )
+    expect(wrong).toEqual([])
   })
 })
 
