@@ -118,6 +118,70 @@ describe('search', () => {
   })
 })
 
+describe('search index with duplicate rows for one name', () => {
+  // The artifact's real shape, reduced: the alias bridge carries "100T" as an
+  // undated redirect and the pinned short names carry it again as a short name,
+  // and the redirect sorts first. Before the index merged rows by name, the
+  // redirect won the tie and the result said "formerly 100T".
+  const duplicateTeams: Team[] = [
+    { team_key: 1, team_id: 'tm-100', team_name: '100 Thieves', overview_page: '', region: 'NA', games: 0, short_name: '100T' },
+    { team_key: 2, team_id: 'tm-mvp', team_name: 'MVP', overview_page: '', region: 'KR', games: 0, short_name: 'MVP' },
+  ]
+  const duplicateAliases: AliasRow[] = [
+    {
+      kind: 'team',
+      alias_string: '100T',
+      entity_id: 'tm-100',
+      entity_name: '100 Thieves',
+      valid_from: null,
+      valid_to: null,
+      evidence: 'redirect',
+    },
+    {
+      kind: 'team',
+      alias_string: '100T',
+      entity_id: 'tm-100',
+      entity_name: '100 Thieves',
+      valid_from: null,
+      valid_to: null,
+      evidence: 'shortname',
+    },
+    {
+      kind: 'team',
+      alias_string: 'MVP',
+      entity_id: 'tm-mvp',
+      entity_name: 'MVP',
+      valid_from: null,
+      valid_to: null,
+      evidence: 'shortname',
+    },
+  ]
+  const duplicateIndex = buildSearchIndex([], duplicateTeams, [], duplicateAliases)
+
+  it('keeps one entry for a name that two rows state', () => {
+    const entries = duplicateIndex.filter(
+      (entry) => entry.id === 'tm-100' && entry.term === '100T',
+    )
+    expect(entries).toHaveLength(1)
+  })
+
+  it('is an abbreviation once any row for the name says so, whichever came first', () => {
+    expect(search(duplicateIndex, '100t')[0]).toMatchObject({
+      id: 'tm-100',
+      name: '100 Thieves',
+      matched: '100T',
+      current: false,
+      abbreviation: true,
+    })
+  })
+
+  it('describes a name the entity still goes by as current, not as a short name', () => {
+    // "MVP" is the team's name before it is the team's abbreviation; a chip beside
+    // it would read "MVP MVP".
+    expect(search(duplicateIndex, 'MVP')[0]).toMatchObject({ id: 'tm-mvp', current: true, abbreviation: false })
+  })
+})
+
 describe('resultPath', () => {
   it('routes each kind to its page', () => {
     expect(resultPath({ kind: 'player', id: 'pl-1', name: '', matched: '', current: true, abbreviation: false })).toBe('/players/pl-1')
