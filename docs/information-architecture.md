@@ -21,7 +21,7 @@ carries its context.
 ```
 /                       the era spine
 /eras/:era              coverage, boundaries, the events in it
-/events/:id             teams, format, series list, leaders, draft pool
+/events/:id             teams, coverage, series by phase, series-less games
 /series/:id             only for best-of-three and above
 /games/:id              scoreboard, draft, player rows
 /players                index: every player, with the games they appear in
@@ -56,11 +56,13 @@ one sentence on what changed. A gap card states why it is empty.
 
 **Figma frames:** `10-era`, `10-era/coverage`, `10-era/gap`.
 
-## Level 2 — event (next phase)
+## Level 2 — event
 
-Teams, format, the series list, leaders per role, draft pool with pick and ban
-counts. Rows that are best-of-one link straight to a game; the rest link to a
-series.
+Teams with the games they played, the event's own coverage, the series grouped by
+phase, and the games the source attaches to no series. The header names the winner
+where the final is the single series named Finals; an event that names several
+such series names nobody. A series of one game links straight to the game; the rest
+link to a series.
 
 ## Level 3 — series (conditional)
 
@@ -68,7 +70,7 @@ Only rendered for best-of-three and above. For a best-of-one, the event links
 directly to the game: a level that exists for one third of the corpus is a level
 the reader has to learn for no reason.
 
-## Level 4 — game (next phase)
+## Level 4 — game
 
 Two-sided scoreboard, the full draft with its fidelity (`ordered` or `unordered`),
 player rows with role and champion, and the reconciled team totals.
@@ -111,7 +113,7 @@ counts. Nothing is shown when the sample is zero — the page says so instead.
 | `Ratio` | Renders `62% (8/13)`. The only way a share may appear. |
 | `CoverageBadge` | `complete` / `partial` / `unavailable`, with the group it refers to. |
 | `Breadcrumbs` | The path from the top is always visible; back is a link, not a gesture. |
-| `EmptyState` | Says what is missing and why, never just "no data". |
+| `EmptyFilter` | The state a filter produces when nothing survives it: names the half that emptied the view and offers one control that brings the games back. |
 
 ## Visual rules
 

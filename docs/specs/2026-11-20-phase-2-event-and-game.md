@@ -1,6 +1,7 @@
 # Phase 2 — Event and game
 
-Status: proposed. Depends on nothing; phase 3 depends on it.
+Status: built and deployed. Depends on nothing; phase 3 depends on it. What the
+build changed against the plan is recorded at the end of this document.
 
 ## Objective
 
@@ -93,8 +94,9 @@ drawn from it and must not be faked from the final gold.
 
 - **Pipeline** — `pipeline/build.py --check` already proves the artifacts are
   current; the new queries are covered by the same gate.
-- **`src/lib/draft.ts`** — pure functions `groupPicks`, `groupBans`,
-  `readDraftState` tested with three fixtures: ordered, unordered, no draft.
+- **`src/lib/draft.ts`** — pure functions `readDraftState`, `slotsFor`,
+  `sortSlots`, `slotSide` and `playersByRole`, tested with three fixtures:
+  ordered, unordered, no draft.
 - **`src/lib/series.ts`** — `groupGamesBySeries` tested with a best-of-one event, a
   best-of-five event, and the 42-game orphan case.
 - **Data test** — reading the committed `public/data/games.json`: exactly 3,091
