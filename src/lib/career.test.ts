@@ -164,7 +164,7 @@ describe('career aggregation', () => {
   })
 
   /**
-   * The rule that matters most on this page. 15,910 of the 30,910 player rows
+   * The rule that matters most on this page. 15,040 of the 30,910 player rows
    * carry no damage figure, so an average over "games" would divide by rows that
    * never stated one.
    */

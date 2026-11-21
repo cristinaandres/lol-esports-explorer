@@ -250,7 +250,8 @@ const CONTRACT = {
       is_nullified: 'number',
       forfeit: 'number',
     },
-    // One series states no format. The unknown member is not published at all.
+    // No published series states no format; the only nulls are the model's unknown
+    // member, which is not published.
     nullable: ['best_of', 'is_nullified', 'forfeit'],
   },
   'patches.json': {

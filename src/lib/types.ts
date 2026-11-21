@@ -140,7 +140,10 @@ export type Match = {
   event_key: number
   match_name: string
   date_time_utc: string
-  /** 1, 3 or 5. Null when the source stated no format (one series in the corpus). */
+  /**
+   * 1, 3 or 5. The only null in the model is its `match_key` 0 unknown member,
+   * which this artifact does not publish.
+   */
   best_of: number | null
   tab: string
   is_nullified: number | null

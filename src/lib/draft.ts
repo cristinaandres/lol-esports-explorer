@@ -23,7 +23,8 @@ export type DraftState = 'ordered' | 'unordered' | 'none'
  * draft with no recorded bans would have zero slots and would be misread as a
  * game played without a pick-ban phase. Every one of the 3,091 games in the
  * corpus has player rows, and the three 2020 Mid-Season Cup blind-pick games have
- * picks but no bans -- which is a draft, recorded without bans.
+ * neither picks nor bans -- their champions are known from the player rows alone,
+ * which is what makes them a draft recorded without bans.
  */
 export function readDraftState(game: Game, playerRowCount: number): DraftState {
   if (playerRowCount === 0) return 'none'
