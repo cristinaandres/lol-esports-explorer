@@ -9,7 +9,7 @@ import { LoadFailure } from '../components/LoadFailure'
 import { PageHeader } from '../components/PageHeader'
 import { PlayerTable } from '../components/PlayerTable'
 import { Scoreboard } from '../components/Scoreboard'
-import { useDataset, useGameDetail, type Dataset } from '../lib/data'
+import { useDataset, useGameCorpus, useGameDetail, type Dataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { dayMonthYear, duration } from '../lib/format'
 import { buildIndexes, patchLabel, teamName, teamPath } from '../lib/indexes'
@@ -23,20 +23,22 @@ function eraEligible(data: Dataset, eraId: string): string[] {
 export default function GameDetail() {
   const { game: id } = useParams()
   const dataset = useDataset()
+  const corpus = useGameCorpus()
   const detail = useGameDetail()
 
   const prepared = useMemo(() => {
-    if (dataset.status !== 'ready') return null
+    if (dataset.status !== 'ready' || corpus.status !== 'ready') return null
     const data = dataset.data
-    const game = data.games.find((row) => row.game_id === id)
+    const allGames = corpus.data.games
+    const game = allGames.find((row) => row.game_id === id)
     if (!game) return { game: undefined } as const
 
     const event = data.events.find((row) => row.event_key === game.event_key)
-    const match = data.matches.find((row) => row.match_key === game.match_key)
+    const match = corpus.data.matches.find((row) => row.match_key === game.match_key)
     const siblings =
       game.match_key === 0
         ? []
-        : data.games
+        : allGames
             .filter((row) => row.match_key === game.match_key)
             .sort((a, b) => a.date_time_utc.localeCompare(b.date_time_utc))
 
@@ -48,11 +50,15 @@ export default function GameDetail() {
       position: siblings.findIndex((row) => row.game_key === game.game_key),
       index: buildIndexes(data),
     } as const
-  }, [dataset, id])
+  }, [dataset, corpus, id])
 
-  if (dataset.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
 
   if (!prepared?.game) {
     return (

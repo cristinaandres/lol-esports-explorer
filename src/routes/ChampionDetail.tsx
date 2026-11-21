@@ -2,15 +2,15 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { Skeleton } from '../components/Skeleton'
 import { LoadFailure } from '../components/LoadFailure'
+import { Skeleton } from '../components/Skeleton'
 import { DataTable } from '../components/DataTable'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
 import { championPlayers, championRecord, championRoleStats, presenceOf, roleKda } from '../lib/champion'
-import { useAliases, useBans, useDataset, usePlayerGames } from '../lib/data'
+import { useAliases, useBans, useDataset, useGames, usePlayerGames } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { CareerFilters } from '../components/CareerFilters'
 import { applyFilter, emptyReason, filterSearch, NO_FILTER, optionsFor, parseFilter, recoverFilter } from '../lib/filters'
@@ -28,6 +28,7 @@ import { buildIndexes, playerName, playerPath } from '../lib/indexes'
 export default function ChampionDetail() {
   const { champion: id } = useParams()
   const dataset = useDataset()
+  const games = useGames()
   const playerRows = usePlayerGames()
   const banRows = useBans()
   const aliases = useAliases()
@@ -35,12 +36,12 @@ export default function ChampionDetail() {
   const filter = parseFilter(searchParams)
 
   const prepared = useMemo(() => {
-    if (dataset.status !== 'ready') return null
+    if (dataset.status !== 'ready' || games.status !== 'ready') return null
     const champion = dataset.data.champions.find((row) => row.champion_id === id)
     if (!champion) return { champion: undefined } as const
 
     const index = buildIndexes(dataset.data)
-    const scoped = dataset.data.games.map((game) => ({
+    const scoped = games.data.map((game) => ({
       game,
       competition: index.competitions.get(game.event_key) ?? 'Unknown',
     }))
@@ -58,15 +59,19 @@ export default function ChampionDetail() {
             }))
           : [],
     } as const
-  }, [dataset, aliases, id])
+  }, [dataset, games, aliases, id])
 
   const applyFilters = (next: typeof filter) => {
     setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'loading' || games.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+  if (games.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: games.error }]} onRetry={games.retry} />
+    )
 
   if (!prepared?.champion) {
     return (

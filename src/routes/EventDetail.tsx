@@ -8,7 +8,8 @@ import { SeriesList } from '../components/SeriesList'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
-import { useDataset } from '../lib/data'
+import { LoadFailure } from '../components/LoadFailure'
+import { useDataset, useGameCorpus } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, duration, dayMonthYear } from '../lib/format'
 import { buildIndexes, teamName, teamPath } from '../lib/indexes'
@@ -20,16 +21,19 @@ import { teamsOfGames } from '../lib/team'
 export default function EventDetail() {
   const { event: id } = useParams()
   const state = useDataset()
+  const corpus = useGameCorpus()
 
   const prepared = useMemo(() => {
-    if (state.status !== 'ready') return null
+    if (state.status !== 'ready' || corpus.status !== 'ready') return null
     const data = state.data
     const event = data.events.find((row) => row.event_id === id)
     if (!event) return { event: undefined } as const
 
-    const games = data.games.filter((game) => game.event_key === event.event_key)
+    const allGames = corpus.data.games
+    const allMatches = corpus.data.matches
+    const games = allGames.filter((game) => game.event_key === event.event_key)
     const matches = new Map(
-      data.matches.filter((match) => match.event_key === event.event_key).map((match) => [match.match_key, match]),
+      allMatches.filter((match) => match.event_key === event.event_key).map((match) => [match.match_key, match]),
     )
     const grouped = groupGamesBySeries(games)
     return {
@@ -38,15 +42,19 @@ export default function EventDetail() {
       matches,
       grouped,
       phases: groupByPhase(grouped.series, matches),
-      champs: championships(data.games, data.matches),
+      champs: championships(allGames, allMatches),
       teams: teamsOfGames(games),
       index: buildIndexes(data),
     } as const
-  }, [state, id])
+  }, [state, corpus, id])
 
-  if (state.status === 'loading') return <Skeleton shape="page" />
+  if (state.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
   if (state.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {state.error.message}</p>
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
   if (!prepared?.event) {
     return (
       <p className="text-fog-300">

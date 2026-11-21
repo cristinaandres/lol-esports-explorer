@@ -21,11 +21,17 @@ import type {
 /*
  * The site has no backend: every view is answered from committed JSON.
  *
- * Two load shapes, on purpose.
+ * Three shapes, chosen by what a page actually renders.
  *
- *  - The eager set is fetched by the first page a reader opens. It is ~120 KB
- *    gzipped and holds everything a list needs: eras, events, games, and the
- *    name of every team, player, champion and patch.
+ *  - The eager set is fetched by the first page a reader opens. It is ~45 KB
+ *    gzipped and holds what every page needs: eras, events, totals, the pin, and
+ *    the name of every team, player, champion and patch for the search in the
+ *    header. It deliberately holds no game: a game list belongs to an event, and
+ *    an era with 1,325 games is read as 26 events.
+ *  - The game level is the two artifacts a page that draws games needs -- every
+ *    game, and the series they belong to -- fetched once by the pages that render
+ *    a game table, a draft board or a series. An era page, the eras index, the
+ *    events index, the glossary and the selection audit never ask for them.
  *  - The lazy set is fetched in pieces, each once per session, by the pages that
  *    read it: the 30,910 player rows for any career, the bans for a champion, and
  *    the scoreboards plus the ordered picks only for a game. A visitor who reads
@@ -43,12 +49,16 @@ export type Dataset = {
   events: EventRow[]
   totals: Totals
   meta: Meta
-  games: Game[]
-  matches: Match[]
   teams: Team[]
   players: Player[]
   champions: Champion[]
   patches: Patch[]
+}
+
+/** The game-level artifacts, together: the games and the series they belong to. */
+export type GameCorpus = {
+  games: Game[]
+  matches: Match[]
 }
 
 export type GameDetail = {
@@ -94,19 +104,15 @@ const eager = memoised<Dataset>(() =>
     getJson<EventRow[]>('events.json'),
     getJson<Totals[]>('totals.json'),
     getJson<Meta>('meta.json'),
-    getJson<Game[]>('games.json'),
-    getJson<Match[]>('matches.json'),
     getJson<Team[]>('teams.json'),
     getJson<Player[]>('players.json'),
     getJson<Champion[]>('champions.json'),
     getJson<Patch[]>('patches.json'),
-  ]).then(([eras, events, totals, meta, games, matches, teams, players, champions, patches]) => ({
+  ]).then(([eras, events, totals, meta, teams, players, champions, patches]) => ({
     eras,
     events,
     totals: totals[0]!,
     meta,
-    games,
-    matches,
     teams,
     players,
     champions,
@@ -116,6 +122,41 @@ const eager = memoised<Dataset>(() =>
 
 export function loadDataset(): Promise<Dataset> {
   return eager()
+}
+
+/**
+ * Every game, on its own.
+ *
+ * A game list belongs to an event, a series or a career, never to an era: an era
+ * with 1,325 games is read as 26 events. So this file is not in the eager set,
+ * and the pages that ask for it are the pages that render games.
+ */
+const games = memoised<Game[]>(() => getJson<Game[]>('games.json'))
+
+export function loadGames(): Promise<Game[]> {
+  return games()
+}
+
+/** The series those games belong to. Read wherever a page names a series or a title. */
+const matches = memoised<Match[]>(() => getJson<Match[]>('matches.json'))
+
+export function loadMatches(): Promise<Match[]> {
+  return matches()
+}
+
+/**
+ * The two game-level artifacts, together.
+ *
+ * Composed rather than fetched directly, so a page that also calls `loadGames()`
+ * on its own (a champion page counts games across the corpus) reuses the same
+ * answer instead of asking twice.
+ */
+const gameCorpus = memoised<GameCorpus>(() =>
+  Promise.all([loadGames(), loadMatches()]).then(([games, matches]) => ({ games, matches })),
+)
+
+export function loadGameCorpus(): Promise<GameCorpus> {
+  return gameCorpus()
 }
 
 /**
@@ -236,6 +277,14 @@ export function useAsync<T>(load: () => Promise<T>): AsyncState<T> {
 
 export function useDataset(): AsyncState<Dataset> {
   return useAsync(loadDataset)
+}
+
+export function useGames(): AsyncState<Game[]> {
+  return useAsync(loadGames)
+}
+
+export function useGameCorpus(): AsyncState<GameCorpus> {
+  return useAsync(loadGameCorpus)
 }
 
 export function useGameDetail(): AsyncState<GameDetail> {

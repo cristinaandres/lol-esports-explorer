@@ -25,7 +25,7 @@ import {
   type ChampionStat,
   type MeasureSummary,
 } from '../lib/career'
-import { useAliases, useDataset, usePlayerGames } from '../lib/data'
+import { useAliases, useDataset, useGameCorpus, usePlayerGames } from '../lib/data'
 import { contextFor, parseFrom } from '../lib/context'
 import { eraCopy } from '../lib/eras'
 import {
@@ -64,6 +64,7 @@ import type { EventRow, Match } from '../lib/types'
 export default function PlayerDetail() {
   const { player: id } = useParams()
   const dataset = useDataset()
+  const corpus = useGameCorpus()
   const rows = usePlayerGames()
   const aliases = useAliases()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -71,14 +72,15 @@ export default function PlayerDetail() {
   const from = parseFrom(searchParams)
 
   const prepared = useMemo(() => {
-    if (dataset.status !== 'ready') return null
+    if (dataset.status !== 'ready' || corpus.status !== 'ready') return null
+    const allGames = corpus.data.games
     const player = dataset.data.players.find((row) => row.player_id === id)
     if (!player) return { player: undefined } as const
 
     const index = buildIndexes(dataset.data)
     const appearances =
       rows.status === 'ready'
-        ? appearancesFor(dataset.data.games, rows.data, player.player_key, index.competitions)
+        ? appearancesFor(allGames, rows.data, player.player_key, index.competitions)
         : []
 
     const hit = contextFor(appearances, from)
@@ -86,12 +88,12 @@ export default function PlayerDetail() {
       ? {
           appearance: hit,
           event: dataset.data.events.find((event) => event.event_key === hit.game.event_key),
-          match: dataset.data.matches.find((match) => match.match_key === hit.game.match_key),
+          match: corpus.data.matches.find((match) => match.match_key === hit.game.match_key),
           ...(() => {
             const siblings =
               hit.game.match_key === 0
                 ? []
-                : dataset.data.games
+                : allGames
                     .filter((game) => game.match_key === hit.game.match_key)
                     .sort((a, b) => a.date_time_utc.localeCompare(b.date_time_utc))
             const position = siblings.findIndex((game) => game.game_key === hit.game.game_key)
@@ -114,9 +116,9 @@ export default function PlayerDetail() {
             }))
           : [],
       index,
-      champs: championships(dataset.data.games, dataset.data.matches),
+      champs: championships(allGames, corpus.data.matches),
     } as const
-  }, [dataset, rows, aliases, id, from])
+  }, [dataset, corpus, rows, aliases, id, from])
 
   const applyFilters = (next: typeof filter) => {
     const params = new URLSearchParams(filterSearch(next))
@@ -130,9 +132,13 @@ export default function PlayerDetail() {
     setSearchParams(new URLSearchParams(filterSearch(filter)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
 
   if (!prepared?.player) {
     return (

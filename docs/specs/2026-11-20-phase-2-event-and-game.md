@@ -66,19 +66,24 @@ drawn from it and must not be faked from the final gold.
 ## Constraints
 
 - No server. The artifacts are static files, fetched once and held in memory.
-- Payload budget: the four existing artifacts plus `games.json` stay under
-  ~200 KB gzip for a first visit. `player-games.json` (661 KB) and `bans.json`
-  (134 KB) load lazily on the first game page and are cached for the session, so
-  an era page never pays for them.
+- Payload budget: the eager set stays well under ~200 KB gzip for a first visit.
+  Measured today it is 45 KB: eras, events, totals, the pin and the name files.
+  The two game-level artifacts — `games.json` (83 KB gzip) and `matches.json`
+  (50 KB) — are fetched by the pages that draw games, and `player-games.json`
+  (688 KB) and `bans.json` (140 KB) load lazily on the first game page; all four
+  are cached for the session, so an era page never pays for any of them.
 - Every game in the corpus must be reachable from its event; none may become
   unreachable because it lacks a series, a patch or a draft.
 
 ## Design decisions
 
-- **`games.json` is eager, `player-games.json` is lazy.** The event page needs the
-  game list to draw its table, and 140 KB is affordable on top of the existing
-  37 KB; 661 KB is not affordable for a visitor who only reads an era page, and a
-  game page is a deliberate navigation.
+- **`games.json` and `matches.json` are game-level, not eager.** The event page
+  needs the game list to draw its table, and 133 KB gzip is affordable for a page
+  that draws games; it is not affordable for an era page, which reads 26 events
+  and no games at all — the largest era holds 1,325 games, which is why the era
+  page lists events. The two files were eager at first and made an era page pay
+  178 KB for figures it already had in `eras.json`; they now load as one pair, once
+  per session, behind `useGameCorpus()`.
 - **Picks are not in `bans.json`.** Every player row already states the champion
   that player played, so picks come from `fact_player_game` and only bans come
   from `fact_draft_slot` — 28,306 rows instead of 59,214 slots. One artifact and
@@ -108,8 +113,9 @@ drawn from it and must not be faked from the final gold.
 
 - [ ] Every one of the 3,091 games is reachable by clicking from its era, and a
       data test proves the count rather than a spot check.
-- [ ] An era page loads no game-level artifact: its network tab shows only the
-      four existing files.
+- [ ] An era page loads no game-level artifact: its network tab shows the eras,
+      events, totals, its pin and the name files, and neither `games.json` nor
+      `matches.json`.
 - [ ] A best-of-one event shows no series level anywhere in its pages.
 - [ ] An unordered draft never renders an implied pick order.
 - [ ] A game with no pick-ban phase says so and shows no champion.
