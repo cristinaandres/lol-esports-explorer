@@ -1,0 +1,22 @@
+name: pull request
+
+# Review is where the gate has to bite. A pull request that breaks a test, a pipeline
+# refusal, an artifact or the build turns red here, before it can be merged, instead
+# of resting on whoever ran `npm run check` locally.
+on:
+  pull_request:
+    branches: [dev, main]
+
+# Read only, and no Pages or id-token scope: nothing in this run can publish. The
+# steps themselves come from check.yml, which declares no permissions of its own.
+permissions:
+  contents: read
+
+# A push to the same pull request supersedes the run it replaced.
+concurrency:
+  group: pull-request-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    uses: ./.github/workflows/check.yml
