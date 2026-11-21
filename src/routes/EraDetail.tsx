@@ -73,6 +73,7 @@ export default function EraDetail() {
             <Stat
               label="Avg length"
               value={<span className="text-lg">{duration(era.avg_duration_seconds)}</span>}
+              hint={`${count(era.games_duration_stated)} of ${count(era.games)} games state a length`}
             />
           </StatRow>
 

@@ -121,6 +121,7 @@ export default function EventDetail() {
         <Stat
           label="Avg length"
           value={<span className="text-lg">{duration(event.avg_duration_seconds)}</span>}
+          hint={`${count(event.games_duration_stated)} of ${count(event.games)} games state a length`}
         />
         <Stat label="Blue side won" value={<Ratio part={event.blue_wins} total={event.games} />} />
       </StatRow>

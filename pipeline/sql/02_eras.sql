@@ -45,6 +45,9 @@ with games as (
     count(*) filter (where draft_coverage = 'complete')        as games_draft_complete,
     count(*) filter (where player_stats_coverage = 'complete') as games_player_complete,
     count(*) filter (where team_stats_coverage = 'complete')   as games_team_complete,
+    -- The average is over the games that state a length, not over the era. count(expr)
+    -- skips nulls, so this is exactly the row set avg() divides by; the page prints it.
+    count(duration_seconds)                           as games_duration_stated,
     round(avg(duration_seconds))                      as avg_duration_seconds,
     count(distinct patch_key) filter (where patch_key <> 0) as patches
   from game_facts
@@ -78,6 +81,7 @@ select
   games.games_draft_complete,
   games.games_player_complete,
   games.games_team_complete,
+  games.games_duration_stated,
   games.avg_duration_seconds,
   games.patches
 from games

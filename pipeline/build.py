@@ -99,7 +99,7 @@ ARTIFACTS: dict[str, str] = {
 ERA_FIELDS = (
     "first_date", "last_date", "games", "series", "events", "teams", "players",
     "blue_wins", "red_wins", "games_draft_complete", "games_player_complete",
-    "games_team_complete", "avg_duration_seconds", "patches",
+    "games_team_complete", "games_duration_stated", "avg_duration_seconds", "patches",
 )
 
 

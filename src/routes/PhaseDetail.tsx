@@ -39,7 +39,9 @@ export default function PhaseDetail() {
         .map((match) => [match.match_key, match]),
     )
     const grouped = groupGamesBySeries(games)
-    const wanted = phase ? decodeURIComponent(phase) : ''
+    // react-router hands a route param over already decoded, so a tab like
+    // "Day 1 (100%)" arrives as itself. Decoding it a second time throws URIError.
+    const wanted = phase ?? ''
     const found = groupByPhase(grouped.series, matches).find((entry) => entry.tab === wanted)
 
     return {
