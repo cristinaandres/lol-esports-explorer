@@ -40,6 +40,11 @@ A champion's shares count only the games played on or after its release date. A
 champion cannot be picked before it exists, so those games leave the denominator
 rather than counting as absences.
 
+A champion's era table lists only the eras it could be drafted in: an era that
+ended before its release date is not a row at all. Inside a listed era a pick
+count of zero is measured against that era's games, so it reads as `0`; the dash
+stays for a figure with no denominator, such as a win rate over no picks.
+
 ## Ratios that are not shares
 
 | Metric | Definition | Denominator |
