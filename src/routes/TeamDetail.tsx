@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
 import { CareerFilters } from '../components/CareerFilters'
 import { EmptyFilter } from '../components/EmptyFilter'
 import { PageHeader } from '../components/PageHeader'
@@ -73,7 +73,7 @@ export default function TeamDetail() {
     setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <PageSkeleton />
+  if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
 

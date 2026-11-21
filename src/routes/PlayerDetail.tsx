@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
 import { CareerFilters } from '../components/CareerFilters'
 import { DataTable } from '../components/DataTable'
 import { EmptyFilter } from '../components/EmptyFilter'
@@ -132,7 +132,7 @@ export default function PlayerDetail() {
     setSearchParams(new URLSearchParams(filterSearch(filter)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <PageSkeleton />
+  if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
 
@@ -240,10 +240,7 @@ export default function PlayerDetail() {
       ) : null}
 
       {career === null ? (
-        <div className="space-y-3">
-          <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
-          <div className="bg-ink-900 border-line h-48 animate-pulse rounded-xl border" />
-        </div>
+        <Skeleton shape="table" tableHeight="h-48" />
       ) : career.games === 0 && all.length > 0 ? (
         <EmptyFilter
           title={
