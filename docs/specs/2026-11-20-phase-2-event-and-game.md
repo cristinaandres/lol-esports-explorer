@@ -162,7 +162,7 @@ diverged, and why.
   timestamp through DuckDB produced `2011-06-18 08:30:00+00` instead of the ISO
   string the site parses, and the page printed "NaN Sep 2020". The second, and the
   serious one: 250 games state their draft with the two sides exchanged
-  (`draft_switched_sides`), and reading the slots without that flag puts 2,506
+  (`draft_switched_sides`), and reading the slots without that flag puts 2,500
   picks on the wrong side. `src/lib/data.test.ts` now asserts that every one of
   the 24,500 picks names a champion a player on that side actually played. It is
   the single most valuable test in the repository.
