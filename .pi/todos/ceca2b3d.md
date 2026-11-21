@@ -51,7 +51,8 @@ the tampered and missing cases); with it restored and the `raise SystemExit` in
 `pinned_files` replaced by `continue`, `2 failed, 3 passed` again, both parameters
 of the non-regular case.
 
-Found, not fixed: `deploy.yml` runs `npm run lint`, `npm run test`,
-`build.py --check` and `npm run build` as separate steps rather than
-`npm run check`, so CI does not yet run the new Python suite. Adding a step there
-is a CI change of its own.
+CI runs it. `deploy.yml` runs the check's steps individually rather than through
+`npm run check`, so a step of its own was needed and was added: the pytest suite
+runs before the artifact check, which is the order that fails fastest. The two
+commands are the same ones `npm run check` runs, so a local green and a CI green
+mean the same thing.
