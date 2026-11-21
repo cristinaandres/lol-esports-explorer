@@ -1,8 +1,10 @@
 # Provenance
 
 Every number on the site is derived from the files in this directory, which are
-copied byte-for-byte from one pinned build of the upstream dataset. Nothing here
-is hand-written, and nothing here is fetched at runtime.
+pinned to one upstream build or, where the model has no such column, to the wiki it
+crawls. The model and the tables are copies; the two curated audit files are the
+upstream JSONL wrapped with their source and pin date by the refresh script.
+Nothing here is hand-written, and nothing here is fetched at runtime.
 
 | Field | Value |
 |---|---|
@@ -24,8 +26,10 @@ data/upstream/manifest.json
                           the upstream build manifest, for cross-checking hashes
 data/upstream/event-selection.json
                           every candidate event the rule considered, with its decision
+                          (upstream data/curated/event-selection.jsonl, rewrapped)
 data/upstream/event-coverage.json
                           coverage per event, as the dataset measured it
+                          (upstream data/curated/event-coverage.jsonl, rewrapped)
 data/upstream/team-shortnames.json
                           team short names for search ("KC" must find Karmine Corp)
 data/upstream/champion-releases.json
@@ -54,10 +58,13 @@ pipeline/refresh-data.sh v1.2.0
 npm run data:build
 ```
 
-The script re-copies the model, rewrites `pipeline/source.json` from the tag it
-checked out, and prints what changed. Refreshing is deliberate, not automatic: a
-new upstream tag can move counts, and a site that silently renumbers itself is a
-site whose history cannot be cited.
+The script re-copies the model, the era table, the manifest and the two curated
+audit files, rewrites `pipeline/source.json` from the tag it checked out, and prints
+what changed. Refreshing the current pin is a no-op: when the tag and the records
+have not moved, the audit files keep their pin date and the bytes do not change.
+
+Refreshing is deliberate, not automatic: a new upstream tag can move counts, and a
+site that silently renumbers itself is a site whose history cannot be cited.
 
 ## Licence
 
