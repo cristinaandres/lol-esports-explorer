@@ -122,6 +122,39 @@ describe('lazy loading', () => {
     expect(urls.filter((url) => url.endsWith('picks.json'))).toHaveLength(0)
   })
 
+  it('asks for no game-level artifact on an era page', async () => {
+    // The era page draws its events and its era's own figures; a game list belongs
+    // to an event. The two files are 133 KB gzip between them, and the page that
+    // reads neither must not pay for them.
+    const fetchMock = stubFetch([])
+    const { loadDataset } = await freshData()
+
+    await loadDataset()
+
+    const urls = urlsOf(fetchMock)
+    expect(urls.filter((url) => url.endsWith('games.json'))).toHaveLength(0)
+    expect(urls.filter((url) => url.endsWith('matches.json'))).toHaveLength(0)
+    // The artifacts it does read are still fetched exactly once.
+    for (const file of ['eras.json', 'events.json', 'totals.json', 'teams.json']) {
+      expect(urls.filter((url) => url.endsWith(file)), file).toHaveLength(1)
+    }
+  })
+
+  it('asks for the two game-level artifacts once, and reuses the games alone', async () => {
+    // A champion page counts games across the corpus; a game or series page needs
+    // the series too. Both compose, so whichever asks first pays, and the second
+    // reuses the answer instead of downloading a megabyte again.
+    const fetchMock = stubFetch([])
+    const { loadGameCorpus, loadGames } = await freshData()
+
+    await loadGameCorpus()
+    await loadGames()
+
+    const urls = urlsOf(fetchMock)
+    expect(urls.filter((url) => url.endsWith('games.json'))).toHaveLength(1)
+    expect(urls.filter((url) => url.endsWith('matches.json'))).toHaveLength(1)
+  })
+
   it('asks for the player rows and nothing heavier on a career page', async () => {
     const fetchMock = stubFetch([])
     const { loadAliases, loadPlayerGames } = await freshData()
@@ -203,8 +236,8 @@ describe('retrying a failed load', () => {
     await expect(loadDataset()).rejects.toThrow('data/eras.json: HTTP 503')
     await expect(loadDataset()).resolves.toMatchObject({ eras: [] })
 
-    // The eager set is ten files; a second attempt is another ten, not nine.
+    // The eager set is eight files; a second attempt is another eight, not seven.
     expect(urlsOf(fetchMock).filter((url) => url.endsWith('eras.json'))).toHaveLength(2)
-    expect(fetchMock).toHaveBeenCalledTimes(20)
+    expect(fetchMock).toHaveBeenCalledTimes(16)
   })
 })

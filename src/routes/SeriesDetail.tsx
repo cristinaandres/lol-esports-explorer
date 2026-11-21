@@ -4,7 +4,8 @@ import { Link, Navigate, useParams } from 'react-router'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Skeleton } from '../components/Skeleton'
 import { PageHeader } from '../components/PageHeader'
-import { useDataset } from '../lib/data'
+import { LoadFailure } from '../components/LoadFailure'
+import { useDataset, useGameCorpus } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, dateRange, duration, stripDateSuffix } from '../lib/format'
 import { buildIndexes, patchLabel, teamName, teamPath } from '../lib/indexes'
@@ -19,26 +20,40 @@ import { phasePath } from '../lib/phases'
  */
 export default function SeriesDetail() {
   const { series: id } = useParams()
-  const { status, data } = useDataset()
+  const dataset = useDataset()
+  const corpus = useGameCorpus()
 
   const prepared = useMemo(() => {
-    if (status !== 'ready') return null
-    const match = data.matches.find((row) => row.match_id === id)
+    if (dataset.status !== 'ready' || corpus.status !== 'ready') return null
+    const match = corpus.data.matches.find((row) => row.match_id === id)
     if (!match) return { match: undefined } as const
 
-    const games = data.games
+    const games = corpus.data.games
       .filter((game) => game.match_key === match.match_key)
       .sort((a, b) => a.date_time_utc.localeCompare(b.date_time_utc))
-    const event = data.events.find((row) => row.event_key === match.event_key)
+    const event = dataset.data.events.find((row) => row.event_key === match.event_key)
     const wins = new Map<number, number>()
     for (const game of games) {
       const winner = game.blue_win === 1 ? game.blue_team_key : game.red_team_key
       wins.set(winner, (wins.get(winner) ?? 0) + 1)
     }
-    return { match, games, event, wins, index: buildIndexes(data) } as const
-  }, [status, data, id])
+    return { match, games, event, wins, index: buildIndexes(dataset.data) } as const
+  }, [dataset, corpus, id])
 
-  if (status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
+  // A failed load is not an unknown series: "No series called X" would blame the
+  // reader's link for the network. This page had no failed branch at all.
+  if (dataset.status === 'failed')
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: dataset.error }]}
+        onRetry={dataset.retry}
+      />
+    )
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the series', error: corpus.error }]} onRetry={corpus.retry} />
+    )
   if (!prepared?.match) {
     return (
       <p className="text-fog-300">

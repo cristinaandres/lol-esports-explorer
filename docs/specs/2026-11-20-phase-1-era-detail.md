@@ -39,8 +39,10 @@ reader cannot answer from the card alone:
   navigation does not show.
 - **R7** An era with no game renders an explanation of why it is empty instead of a
   page of zeroes.
-- **R8** The page loads no game-level artifact: it is served from the era and event
-  artifacts alone.
+- **R8** The page loads no game-level artifact. It is served from the era and event
+  artifacts, plus the pin and the name files the header's search needs on every
+  page: measured at 45 KB gzip, against 178 KB when the two game-level files came
+  with the eager set.
 - **R9** An unknown era id renders an instructive state with a link back to the
   spine, not a blank page.
 

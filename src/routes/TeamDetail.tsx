@@ -10,7 +10,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { useAliases, useDataset, usePlayerGames } from '../lib/data'
+import { useAliases, useDataset, useGameCorpus, usePlayerGames } from '../lib/data'
 import {
   applyFilter,
   emptyReason,
@@ -37,13 +37,14 @@ import { championships, groupTitlesByCompetition, titlesForTeam } from '../lib/t
 export default function TeamDetail() {
   const { team: id } = useParams()
   const dataset = useDataset()
+  const corpus = useGameCorpus()
   const rows = usePlayerGames()
   const aliases = useAliases()
   const [searchParams, setSearchParams] = useSearchParams()
   const filter = parseFilter(searchParams)
 
   const prepared = useMemo(() => {
-    if (dataset.status !== 'ready') return null
+    if (dataset.status !== 'ready' || corpus.status !== 'ready') return null
     const team = dataset.data.teams.find((row) => row.team_id === id)
     if (!team) return { team: undefined } as const
 
@@ -52,7 +53,7 @@ export default function TeamDetail() {
     return {
       team,
       ready: rows.status === 'ready',
-      appearances: teamAppearancesFor(dataset.data.games, index.competitions, team.team_key),
+      appearances: teamAppearancesFor(corpus.data.games, index.competitions, team.team_key),
       playerGames: rows.status === 'ready' ? rows.data : [],
       former:
         aliases.status === 'ready'
@@ -62,18 +63,22 @@ export default function TeamDetail() {
               to: row.valid_to,
             }))
           : [],
-      champs: championships(dataset.data.games, dataset.data.matches),
+      champs: championships(corpus.data.games, corpus.data.matches),
       index,
     } as const
-  }, [dataset, rows, aliases, id])
+  }, [dataset, corpus, rows, aliases, id])
 
   const applyFilters = (next: typeof filter) => {
     setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
 
   if (!prepared?.team) {
     return (
