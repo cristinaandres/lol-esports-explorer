@@ -19,19 +19,25 @@ The two axes meet at a game page, where every name is a link into Axis B that
 carries its context.
 
 ```
-/                       the era spine
+/                       the era spine: every era, as cards
+/eras                   index: every era, with its span and games
 /eras/:era              coverage, boundaries, the events in it
-/events/:id             teams, coverage, series by phase, series-less games
-/series/:id             only for best-of-three and above
-/games/:id              scoreboard, draft, player rows
+/events                 index: every event, grouped by competition
+/events/:event         teams, coverage, series by phase, series-less games
+/events/:event/phases/:phase
+                        the series of one phase of an event (its `tab`)
+/series/:series         only for best-of-three and above
+/games/:game            scoreboard, draft, player rows
 /players                index: every player, with the games they appear in
+/players/:player        context (if arrived from a game) + career with filters
 /teams                  index: every team, grouped by region
+/teams/:team            same shape as a player, with its renames
 /champions              index: every champion, with the games it appears in
-/players/:id            context (if arrived from a game) + career with filters
-/teams/:id              same shape
-/champions/:id          pick and ban record across eras
-/compare                two teams side by side: the pick'em view
+/champions/:champion    pick and ban record across eras
 /glossary               every term, including the absent ones
+/selection              the audit: every candidate event and the rule that decided
+/compare                (not built) two teams side by side: the pick'em view
+*                       not found: the only route that claims nothing
 ```
 
 ## Level 0 — the era spine

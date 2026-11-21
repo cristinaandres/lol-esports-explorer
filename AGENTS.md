@@ -19,9 +19,9 @@ glossary and the selection audit, over the DuckDB pipeline and the deploy. Phase
 1. **No share without its denominator.** Percentages render through the `Ratio`
    component, which always prints `part` and `total`. A table that shows `67%`
    alone is a bug, not a style choice.
-2. **No dead links.** A route is linked only when it exists. The era page lists
-   events as rows and says where they open, rather than linking to a page that
-   404s.
+2. **No dead links.** A route is linked only when it exists, and a link's label
+   names where it actually goes. When a level is not built yet, the row says where
+   it opens rather than offering a link that would 404.
 3. **Data is pinned, never hand-edited.** `data/` holds one upstream tag. The
    model's CSVs, its data dictionary and DDL, the era table and the build manifest
    are byte-for-byte copies of it; the two curated audit files are that tag's JSONL
