@@ -122,8 +122,3 @@ export function perGame(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—'
   return value < 100 ? value.toFixed(1) : count(Math.round(value))
 }
-
-/** A percentage already computed, with no denominator attached. Prefer Ratio. */
-export function fixed(value: number, digits = 1): string {
-  return value.toFixed(digits)
-}

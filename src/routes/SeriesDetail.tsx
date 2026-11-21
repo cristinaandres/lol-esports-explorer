@@ -8,6 +8,7 @@ import { LoadFailure } from '../components/LoadFailure'
 import { useDataset, useGameCorpus } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, dateRange, duration, stripDateSuffix } from '../lib/format'
+import { winnerKey } from '../lib/game'
 import { buildIndexes, patchLabel, teamName, teamPath } from '../lib/indexes'
 import { phasePath } from '../lib/phases'
 
@@ -34,7 +35,7 @@ export default function SeriesDetail() {
     const event = dataset.data.events.find((row) => row.event_key === match.event_key)
     const wins = new Map<number, number>()
     for (const game of games) {
-      const winner = game.blue_win === 1 ? game.blue_team_key : game.red_team_key
+      const winner = winnerKey(game)
       wins.set(winner, (wins.get(winner) ?? 0) + 1)
     }
     return { match, games, event, wins, index: buildIndexes(dataset.data) } as const
@@ -137,7 +138,7 @@ export default function SeriesDetail() {
 
           <ol className="divide-line border-line divide-y border-y">
             {games.map((game, position) => {
-              const winner = game.blue_win === 1 ? game.blue_team_key : game.red_team_key
+              const winner = winnerKey(game)
               return (
                 <li key={game.game_key} className="grid gap-2 py-4 sm:grid-cols-[5rem_1fr_auto] sm:items-center sm:gap-4">
                   <span className="text-fog-600 font-mono text-xs">Game {position + 1}</span>

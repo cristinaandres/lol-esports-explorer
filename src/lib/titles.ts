@@ -1,4 +1,5 @@
 import type { Appearance } from './career'
+import { winnerKey } from './game'
 import type { Game, Match } from './types'
 
 /**
@@ -62,7 +63,7 @@ export function championships(games: Game[], matches: Match[]): Map<number, Cham
     let played = 0
     for (const game of games) {
       if (game.match_key !== final.match_key) continue
-      const winner = game.blue_win === 1 ? game.blue_team_key : game.red_team_key
+      const winner = winnerKey(game)
       wins.set(winner, (wins.get(winner) ?? 0) + 1)
       played += 1
     }

@@ -52,8 +52,3 @@ export function groupByPhase(
     })
     .sort((a, b) => a.firstDate.localeCompare(b.firstDate) || a.tab.localeCompare(b.tab))
 }
-
-/** Every phase of an event, deduplicated and in playing order. */
-export function phasesOf(series: SeriesSummary[], matches: Map<number, Match>): PhaseGroup[] {
-  return groupByPhase(series, matches)
-}

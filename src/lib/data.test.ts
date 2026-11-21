@@ -3,10 +3,23 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { namesFor, resolve } from './aliases'
-import { careerFor } from './career'
+import { namesFor } from './aliases'
+import { appearancesFor, careerFrom } from './career'
 import { slotSide } from './draft'
-import type { AliasRow, DraftSlot, Era, EventRow, Game, Match, Meta, Player, PlayerGame } from './types'
+import { buildSearchIndex, search } from './search'
+import type {
+  AliasRow,
+  Champion,
+  DraftSlot,
+  Era,
+  EventRow,
+  Game,
+  Match,
+  Meta,
+  Player,
+  PlayerGame,
+  Team,
+} from './types'
 
 /**
  * Invariants over the committed artifacts, not over a fixture.
@@ -28,6 +41,8 @@ const picks = read<DraftSlot[]>('picks.json')
 const bans = read<DraftSlot[]>('bans.json')
 const aliases = read<AliasRow[]>('aliases.json')
 const players = read<Player[]>('players.json')
+const teams = read<Team[]>('teams.json')
+const champions = read<Champion[]>('champions.json')
 const meta = read<Meta>('meta.json')
 
 describe('meta.json', () => {
@@ -161,6 +176,10 @@ describe('draft artifacts', () => {
 })
 
 describe('aliases.json', () => {
+  // The index the search box builds, so these assertions test the path a reader
+  // actually uses rather than a second lookup that only the tests call.
+  const aliasIndex = buildSearchIndex(players, teams, champions, aliases)
+
   it('carries every alias the model recorded, plus the pinned short names', () => {
     // 3,791 rows from the bridge and all 194 team short names pinned from the wiki.
     // The pin states one of them against a spelling the model does not use ('Pain
@@ -182,25 +201,25 @@ describe('aliases.json', () => {
    */
   it('resolves every name Movistar KOI played under to one team', () => {
     for (const name of ['MAD Lions', 'MAD Lions KOI', 'Mad Lions', 'MKOI', 'Movistar KOI']) {
-      const matches = resolve(aliases, name).filter((match) => match.kind === 'team')
-      expect(matches.map((match) => match.entityId), name).toEqual(['tm-d0d4a4d767cd'])
-      expect(matches[0]?.entityName, name).toBe('Movistar KOI')
+      const matches = search(aliasIndex, name).filter((match) => match.kind === 'team')
+      expect(matches.map((match) => match.id), name).toEqual(['tm-d0d4a4d767cd'])
+      expect(matches[0]?.name, name).toBe('Movistar KOI')
     }
   })
 
   it('keeps MAD Team a different organisation', () => {
-    const matches = resolve(aliases, 'MAD Team').filter((match) => match.kind === 'team')
-    expect(matches.map((match) => match.entityId)).toEqual(['tm-017ed54b4572'])
-    expect(matches[0]?.entityName).toBe('MAD Team')
+    const matches = search(aliasIndex, 'MAD Team').filter((match) => match.kind === 'team')
+    expect(matches.map((match) => match.id)).toEqual(['tm-017ed54b4572'])
+    expect(matches[0]?.name).toBe('MAD Team')
   })
 
   it('resolves a team by the short name people use', () => {
-    expect(resolve(aliases, 'KC').filter((m) => m.kind === 'team')[0]).toMatchObject({
-      entityName: 'Karmine Corp',
+    expect(search(aliasIndex, 'KC').filter((m) => m.kind === 'team')[0]).toMatchObject({
+      name: 'Karmine Corp',
       matched: 'KC',
     })
-    expect(resolve(aliases, 'GEN').filter((m) => m.kind === 'team')[0]?.entityName).toBe('Gen.G')
-    expect(resolve(aliases, 'BLG').filter((m) => m.kind === 'team')[0]?.entityName).toBe(
+    expect(search(aliasIndex, 'GEN').filter((m) => m.kind === 'team')[0]?.name).toBe('Gen.G')
+    expect(search(aliasIndex, 'BLG').filter((m) => m.kind === 'team')[0]?.name).toBe(
       'Bilibili Gaming',
     )
   })
@@ -209,9 +228,11 @@ describe('aliases.json', () => {
     // The pin states 'Pain Gaming' -> PG; the model calls the team 'paiN Gaming'. The
     // pipeline joins those names folded, so the abbreviation resolves instead of
     // vanishing, and the team keeps the short name the model's own spelling states.
-    expect(resolve(aliases, 'PG').filter((match) => match.kind === 'team')).toMatchObject([
-      { entityId: 'tm-f642dbf0692c', entityName: 'paiN Gaming', matched: 'PG' },
-    ])
+    expect(search(aliasIndex, 'PG').filter((match) => match.kind === 'team')[0]).toMatchObject({
+      id: 'tm-f642dbf0692c',
+      name: 'paiN Gaming',
+      matched: 'PG',
+    })
   })
 
   it('lists the dated names it played under, and no redirects', () => {
@@ -231,8 +252,9 @@ describe('aliases.json', () => {
   })
 
   it('really does contain names two entities share', () => {
-    // Not a defect: short handles collide. It is why resolve returns a list.
-    const matches = resolve(aliases, 'APA').filter((match) => match.kind === 'player')
+    // Not a defect: short handles collide. It is why search returns one result per
+    // entity and not one per name.
+    const matches = search(aliasIndex, 'APA').filter((match) => match.kind === 'player')
     expect(matches.length).toBeGreaterThan(1)
   })
 })
@@ -249,7 +271,7 @@ describe('career aggregation', () => {
    *   from fact_player_game where player_key = 753
    */
   it('matches SQL for the most-modelled player in the corpus', () => {
-    const career = careerFor(games, playerGames, faker.player_key)
+    const career = careerFrom(appearancesFor(games, playerGames, faker.player_key))
 
     expect(career.games).toBe(410)
     expect(career.wins + career.losses).toBe(410)
@@ -260,7 +282,7 @@ describe('career aggregation', () => {
   })
 
   it('averages a measure over the rows that state it', () => {
-    const career = careerFor(games, playerGames, faker.player_key)
+    const career = careerFrom(appearancesFor(games, playerGames, faker.player_key))
     // 248 of Faker's 410 rows state damage; the rest would otherwise divide the
     // average down towards zero.
     expect(career.measures.damage.measured).toBe(248)
@@ -271,7 +293,7 @@ describe('career aggregation', () => {
     const counts = new Map<number, number>()
     for (const row of playerGames) counts.set(row.player_key, (counts.get(row.player_key) ?? 0) + 1)
     const [key] = [...counts.entries()].find(([, n]) => n === 1)!
-    const career = careerFor(games, playerGames, key)
+    const career = careerFrom(appearancesFor(games, playerGames, key))
 
     expect(career.games).toBe(1)
     expect(career.kda).not.toBeNull()
