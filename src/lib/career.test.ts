@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { byRole, careerFor, MIN_GAMES_FOR_RATE, rankByWinRate, recentForm, RECENT_FORM } from './career'
+import {
+  appearancesFor,
+  byRole,
+  careerFrom,
+  MIN_GAMES_FOR_RATE,
+  rankByWinRate,
+  recentForm,
+  RECENT_FORM,
+} from './career'
 import type { Appearance } from './career'
 import type { Game, PlayerGame } from './types'
 
@@ -82,9 +90,17 @@ describe('rankByWinRate', () => {
   })
 })
 
-describe('careerFor', () => {
+describe('career aggregation', () => {
+  /**
+   * The path the player page takes: its games in, then the summary over them.
+   * Composed here rather than behind an export of its own, so the tests exercise
+   * the two functions the page actually calls.
+   */
+  const careerOf = (games: Game[], rows: PlayerGame[], playerKey: number) =>
+    careerFrom(appearancesFor(games, rows, playerKey))
+
   it('adds up a career and divides once, at the end', () => {
-    const career = careerFor(
+    const career = careerOf(
       [game({ game_key: 1 }), game({ game_key: 2, date_time_utc: '2020-01-02T00:00:00Z' })],
       [
         row({ game_key: 1, kills: 10, deaths: 2, assists: 5 }),
@@ -102,12 +118,12 @@ describe('careerFor', () => {
   })
 
   it('does not divide by zero deaths', () => {
-    const career = careerFor([game()], [row({ kills: 5, deaths: 0, assists: 7 })], 7)
+    const career = careerOf([game()], [row({ kills: 5, deaths: 0, assists: 7 })], 7)
     expect(career.kda).toBe(12)
   })
 
   it('counts a win from the side the player was on, not from the blue side', () => {
-    const career = careerFor(
+    const career = careerOf(
       [
         game({ game_key: 1, blue_win: 1 }),
         game({ game_key: 2, blue_win: 0, date_time_utc: '2020-01-02T00:00:00Z' }),
@@ -124,7 +140,7 @@ describe('careerFor', () => {
   })
 
   it('renders a single-game career without dividing by nothing', () => {
-    const career = careerFor(
+    const career = careerOf(
       [game()],
       [row({ kills: 3, deaths: 1, assists: 4, cs: 200, gold: 12000, damage: 9000, vision: 20 })],
       7,
@@ -137,7 +153,7 @@ describe('careerFor', () => {
   })
 
   it('returns an empty career for a player with no games', () => {
-    const career = careerFor([game()], [row()], 999)
+    const career = careerOf([game()], [row()], 999)
 
     expect(career.games).toBe(0)
     expect(career.kda).toBeNull()
@@ -153,7 +169,7 @@ describe('careerFor', () => {
    * never stated one.
    */
   it('averages a measure over the rows that state it, not over games', () => {
-    const career = careerFor(
+    const career = careerOf(
       [game({ game_key: 1 }), game({ game_key: 2, date_time_utc: '2020-01-02T00:00:00Z' })],
       [row({ game_key: 1, damage: 10000 }), row({ game_key: 2, damage: null })],
       7,
@@ -169,12 +185,12 @@ describe('careerFor', () => {
   })
 
   it('keeps the request for the player being asked about', () => {
-    const career = careerFor([game()], [row({ player_key: 7 }), row({ player_key: 8, kills: 99 })], 7)
+    const career = careerOf([game()], [row({ player_key: 7 }), row({ player_key: 8, kills: 99 })], 7)
     expect(career.kills).toBe(0)
   })
 
   it('orders champions by games played', () => {
-    const career = careerFor(
+    const career = careerOf(
       [
         game({ game_key: 1 }),
         game({ game_key: 2, date_time_utc: '2020-01-02T00:00:00Z' }),
@@ -197,7 +213,7 @@ describe('careerFor', () => {
    * in the corpus are like this: Perkz's Kai'Sa, Bwipo's Ornn.
    */
   it('keeps a champion played in two roles as two entries', () => {
-    const career = careerFor(
+    const career = careerOf(
       [game({ game_key: 1 }), game({ game_key: 2, date_time_utc: '2020-01-02T00:00:00Z' })],
       [
         row({ game_key: 1, champion_key: 5, role: 'Mid' }),
@@ -212,7 +228,7 @@ describe('careerFor', () => {
   })
 
   it('lists the eras the player appears in, oldest first', () => {
-    const career = careerFor(
+    const career = careerOf(
       [
         game({ game_key: 1, era: 'atakhan', date_time_utc: '2025-03-10T00:00:00Z' }),
         game({ game_key: 2, era: 'pre-herald', date_time_utc: '2013-09-15T00:00:00Z' }),
@@ -228,7 +244,7 @@ describe('careerFor', () => {
   })
 
   it('records when a measure starts being stated', () => {
-    const career = careerFor(
+    const career = careerOf(
       [
         game({ game_key: 1, date_time_utc: '2020-01-01T00:00:00Z' }),
         game({ game_key: 2, date_time_utc: '2021-01-01T00:00:00Z' }),
@@ -241,7 +257,7 @@ describe('careerFor', () => {
   })
 
   it('ignores a row whose game is not in the corpus', () => {
-    const career = careerFor([game({ game_key: 1 })], [row({ game_key: 99 })], 7)
+    const career = careerOf([game({ game_key: 1 })], [row({ game_key: 99 })], 7)
     expect(career.games).toBe(0)
   })
 })

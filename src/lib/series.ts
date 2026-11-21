@@ -1,3 +1,4 @@
+import { winnerKey } from './game'
 import type { Game } from './types'
 
 /**
@@ -63,7 +64,7 @@ function teamsOf(games: Game[]): [number, number] {
 function winsOf(games: Game[]): Map<number, number> {
   const wins = new Map<number, number>()
   for (const game of games) {
-    const winner = game.blue_win === 1 ? game.blue_team_key : game.red_team_key
+    const winner = winnerKey(game)
     wins.set(winner, (wins.get(winner) ?? 0) + 1)
   }
   return wins

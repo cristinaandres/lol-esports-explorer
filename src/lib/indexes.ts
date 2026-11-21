@@ -75,12 +75,3 @@ export function patchLabel(index: Indexes, key: number): string {
   if (key === 0) return '—'
   return index.patches.get(key)?.patch || '—'
 }
-
-/** Which team won a game, from the side flag rather than from the scoreboard. */
-export function winnerKey(game: {
-  blue_team_key: number
-  red_team_key: number
-  blue_win: number
-}): number {
-  return game.blue_win === 1 ? game.blue_team_key : game.red_team_key
-}

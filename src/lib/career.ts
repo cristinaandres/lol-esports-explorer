@@ -202,16 +202,6 @@ export function careerFrom(appearances: Appearance[]): Career {
   }
 }
 
-/** The whole career of one player, for callers that need no filtering. */
-export function careerFor(
-  games: Game[],
-  rows: PlayerGame[],
-  playerKey: number,
-  competitions: Map<number, string> = new Map(),
-): Career {
-  return careerFrom(appearancesFor(games, rows, playerKey, competitions))
-}
-
 /**
  * How many games a champion needs before its win rate may rank it.
  *

@@ -12,6 +12,7 @@ import { Scoreboard } from '../components/Scoreboard'
 import { useDataset, useGameCorpus, useGameDetail, type Dataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { dayMonthYear, duration } from '../lib/format'
+import { winnerKey } from '../lib/game'
 import { buildIndexes, patchLabel, teamName, teamPath } from '../lib/indexes'
 import { phasePath } from '../lib/phases'
 
@@ -218,7 +219,7 @@ function scoreOf(games: { blue_win: number; blue_team_key: number; red_team_key:
   let winsA = 0
   let winsB = 0
   for (const game of games) {
-    const winner = game.blue_win === 1 ? game.blue_team_key : game.red_team_key
+    const winner = winnerKey(game)
     if (winner === a) winsA += 1
     else if (winner === b) winsB += 1
   }
