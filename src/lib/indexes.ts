@@ -15,6 +15,8 @@ export type Indexes = {
   champions: Map<number, Champion>
   patches: Map<number, Patch>
   events: Map<number, EventRow>
+  /** The canonical competition of an event ('Worlds', 'MSI', ...), read once per dataset. */
+  competitions: Map<number, string>
 }
 
 const UNKNOWN = 'Unknown'
@@ -26,6 +28,7 @@ export function buildIndexes(dataset: Dataset): Indexes {
     champions: new Map(dataset.champions.map((row) => [row.champion_key, row])),
     patches: new Map(dataset.patches.map((row) => [row.patch_key, row])),
     events: new Map(dataset.events.map((row) => [row.event_key, row])),
+    competitions: new Map(dataset.events.map((row) => [row.event_key, row.competition])),
   }
 }
 

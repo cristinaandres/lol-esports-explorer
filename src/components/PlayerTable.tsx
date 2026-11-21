@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 
 import { DataTable, type Column } from './DataTable'
-import { ROLE_ORDER } from '../lib/draft'
+import { playersByRole } from '../lib/draft'
 import { count, orDash } from '../lib/format'
 import { championName, championPath, playerName, playerPath, teamName, type Indexes } from '../lib/indexes'
 import { fromParam } from '../lib/context'
@@ -19,22 +19,19 @@ import type { PlayerGame } from '../lib/types'
  */
 export function PlayerTable({
   playerGames,
+  gameKey,
   index,
   gameId,
 }: {
   playerGames: PlayerGame[]
+  /** The game the rows belong to, so reading a side cannot pick up another game's rows. */
+  gameKey: number
   index: Indexes
   /** The game page's id, so a name links back with the game it came from. */
   gameId?: string
 }) {
-  const order = new Map<string, number>(ROLE_ORDER.map((role, i) => [role, i]))
-  const byRole = (side: 'blue' | 'red') =>
-    playerGames
-      .filter((row) => row.side === side)
-      .sort((a, b) => (order.get(a.role) ?? 99) - (order.get(b.role) ?? 99))
-
-  const blue = byRole('blue')
-  const red = byRole('red')
+  const blue = playersByRole(playerGames, gameKey, 'blue')
+  const red = playersByRole(playerGames, gameKey, 'red')
 
   if (blue.length === 0 && red.length === 0) {
     return (

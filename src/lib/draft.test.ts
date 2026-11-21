@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
-import { playersByRole, readDraftState, sidesSwapped, slotSide, slotsFor, sortSlots } from './draft'
+import { playersByRole, readDraftState, ROLE_ORDER, sidesSwapped, slotSide, slotsFor, sortSlots } from './draft'
 import type { DraftSlot, Game, PlayerGame } from './types'
 
 function game(overrides: Partial<Game> = {}): Game {
@@ -144,5 +147,25 @@ describe('playersByRole', () => {
       playerGame({ role: 'Top', player_key: 8 }),
     ]
     expect(playersByRole(rows, 1, 'blue').map((row) => row.player_key)).toEqual([7, 8])
+  })
+
+  it('reads the game page table exactly as the table used to read it itself', () => {
+    // PlayerTable rendered its sides with an inline copy of this sort until it was
+    // pointed at the shared function. This pins the rendered column order over the
+    // real rows of one game, so the shared function cannot drift from what the
+    // page showed when the copy lived in the component.
+    const playerGames = JSON.parse(
+      readFileSync(join(import.meta.dirname, '../../public/data/player-games.json'), 'utf-8'),
+    ) as PlayerGame[]
+    const gameKey = playerGames[0]!.game_key
+    const gameRows = playerGames.filter((row) => row.game_key === gameKey)
+
+    for (const side of ['blue', 'red'] as const) {
+      const order = new Map<string, number>(ROLE_ORDER.map((role, i) => [role, i]))
+      const byTable = [...gameRows]
+        .filter((row) => row.side === side)
+        .sort((a, b) => (order.get(a.role) ?? 99) - (order.get(b.role) ?? 99))
+      expect(playersByRole(gameRows, gameKey, side)).toEqual(byTable)
+    }
   })
 })

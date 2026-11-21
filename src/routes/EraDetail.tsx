@@ -2,13 +2,14 @@ import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Skeleton } from '../components/Skeleton'
+import { CoverageRow } from '../components/Coverage'
 import { DataTable } from '../components/DataTable'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { useDataset } from '../lib/data'
-import { eraCopy } from '../lib/eras'
-import { count, duration, isoDate, monthYear } from '../lib/format'
+import { eraCopy, eraSpan } from '../lib/eras'
+import { count, duration, isoDate } from '../lib/format'
 import type { Era } from '../lib/types'
 
 export default function EraDetail() {
@@ -46,7 +47,7 @@ export default function EraDetail() {
       <Breadcrumbs items={[{ label: 'Eras', to: '/eras' }, { label: copy.title }]} />
 
       <PageHeader
-        eyebrow={span(era)}
+        eyebrow={eraSpan(era)}
         title={copy.title}
         lead={copy.whatChanged}
         aside={
@@ -178,17 +179,6 @@ export default function EraDetail() {
   )
 }
 
-function CoverageRow({ label, part, total }: { label: string; part: number; total: number }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 py-3">
-      <dt className="text-fog-300 text-sm">{label}</dt>
-      <dd>
-        <Ratio part={part} total={total} />
-      </dd>
-    </div>
-  )
-}
-
 function EraStep({
   era,
   direction,
@@ -207,14 +197,7 @@ function EraStep({
     >
       <div className="text-fog-600 text-[10px] tracking-[0.14em] uppercase">{direction}</div>
       <div className="text-fog-100 group-hover:text-gold mt-1 font-semibold">{eraCopy(era.era).title}</div>
-      <div className="text-fog-600 font-mono text-xs">{span(era)}</div>
+      <div className="text-fog-600 font-mono text-xs">{eraSpan(era)}</div>
     </Link>
   )
-}
-
-function span(era: Era): string {
-  if (!era.first_date || !era.last_date) return `from ${monthYear(era.from)}`
-  const from = era.first_date.slice(0, 4)
-  const to = era.last_date.slice(0, 4)
-  return from === to ? from : `${from} – ${to}`
 }

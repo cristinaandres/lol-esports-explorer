@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Skeleton } from '../components/Skeleton'
+import { CoverageRow } from '../components/Coverage'
 import { SeriesList } from '../components/SeriesList'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
@@ -127,13 +128,13 @@ export default function EventDetail() {
           </p>
 
           <dl className="divide-line border-line max-w-2xl divide-y border-y">
-            <CoverageLine label="Draft" part={event.draft_complete ?? 0} total={event.coverage_games} />
-            <CoverageLine
+            <CoverageRow label="Draft" part={event.draft_complete ?? 0} total={event.coverage_games} />
+            <CoverageRow
               label="Player statistics"
               part={event.player_complete ?? 0}
               total={event.coverage_games}
             />
-            <CoverageLine
+            <CoverageRow
               label="Team statistics"
               part={event.team_complete ?? 0}
               total={event.coverage_games}
@@ -239,16 +240,5 @@ export default function EventDetail() {
         </section>
       ) : null}
     </>
-  )
-}
-
-function CoverageLine({ label, part, total }: { label: string; part: number; total: number }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 py-3">
-      <dt className="text-fog-300 text-sm">{label}</dt>
-      <dd>
-        <Ratio part={part} total={total} />
-      </dd>
-    </div>
   )
 }
