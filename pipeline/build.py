@@ -170,6 +170,65 @@ def verify_manifest(source: dict[str, object]) -> None:
         )
 
 
+def verify_pin(source: dict[str, object]) -> None:
+    """Every pinned file must be the one `pipeline/source.json` records.
+
+    The manifest used to be the only pinned file this build checked. It refused a
+    manifest that was not the pin's, then hashed whatever else it found into
+    meta.json -- so a hand-edited CSV rewrote the artifacts and the new meta.json
+    described the drift instead of the pin. `pipeline/refresh-data.sh` now records
+    the sha256 of every file it installs, keyed by its path from the repository
+    root, and this is the comparison that makes the record a proof.
+
+    Three refusals, because a pin is only worth what it can reject:
+
+      * a recorded file that is missing from the disk;
+      * a recorded file whose bytes moved, which names both hashes;
+      * a file on disk that the record does not name. This is a refusal rather than
+        a warning because `pinned_files()` already decides meta.json by the
+        directory: a file the pin does not record would otherwise be described by
+        the artifact and not by the pin, which is the same gap in a new place.
+
+    Recorded paths are read as repository-relative, and sorted, so the refusal a
+    reader sees is the first file in the pin and not the first the filesystem
+    happened to list.
+    """
+    recorded = source.get("files")
+    if not isinstance(recorded, dict) or not recorded:
+        raise SystemExit(
+            "error: pipeline/source.json records no per-file hashes\n"
+            "  re-pin with pipeline/refresh-data.sh <tag>"
+        )
+
+    for relative in sorted(recorded):
+        expected = recorded[relative]
+        path = ROOT / relative
+        if not path.is_file():
+            raise SystemExit(
+                f"error: {relative} is missing; run pipeline/refresh-data.sh"
+            )
+        actual = sha256(path)
+        if actual != expected:
+            raise SystemExit(
+                f"error: {relative} is not the file pipeline/source.json pins\n"
+                f"  pinned:    {expected}\n"
+                f"  on disk:   {actual}\n"
+                "  re-pin with pipeline/refresh-data.sh <tag>, then rebuild"
+            )
+
+    on_disk: set[str] = set()
+    for directory in (MODEL_DIR, UPSTREAM_DIR):
+        prefix = directory.relative_to(ROOT).as_posix()
+        on_disk.update(f"{prefix}/{name}" for name in pinned_files(directory))
+    unrecorded = sorted(on_disk - set(recorded))
+    if unrecorded:
+        raise SystemExit(
+            f"error: {unrecorded[0]} is not recorded in pipeline/source.json\n"
+            "  the pin names every file it installs; a file it does not name is not part of it\n"
+            "  re-pin with pipeline/refresh-data.sh <tag>, or remove the file"
+        )
+
+
 def plain(value: object) -> object:
     """Coerce DuckDB's decimal/date values into JSON-native ones."""
     if isinstance(value, decimal.Decimal):
@@ -290,12 +349,28 @@ def dumps(rows: list[dict[str, object]]) -> str:
     return "[\n" + body + "\n]\n"
 
 
-def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
-    """Return artifact name -> serialised UTF-8 JSON text."""
-    # Read and verify the pin first: a manifest that disagrees with source.json makes
-    # every artifact below untrustworthy, so the build stops before writing any.
+def read_pin() -> dict[str, object]:
+    """Read the pin and prove it, before anything reads a pinned file.
+
+    Every refusal here happens before DuckDB opens a CSV, so a file whose bytes
+    moved is the pin's refusal even when the edit would not load: the same bytes
+    that make a view fail are the bytes `source.json` does not record. Reading it a
+    second time in `render()` costs a few milliseconds and keeps the refusal where
+    a caller of `render()` expects it.
+    """
     source = json.loads(SOURCE_FILE.read_text(encoding="utf-8"))
     verify_manifest(source)
+    verify_pin(source)
+    return source
+
+
+def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
+    """Return artifact name -> serialised UTF-8 JSON text."""
+    # Read and verify the pin first: a pinned file that disagrees with source.json
+    # makes every artifact below untrustworthy, so the build stops before writing
+    # any. The manifest is checked on its own as well, because its refusal is the
+    # one a reader already knows and it names the file a refresh moves first.
+    source = read_pin()
 
     rendered: dict[str, str] = {
         "eras.json": dumps(build_eras(con))
@@ -330,6 +405,10 @@ def main(argv: list[str]) -> int:
     if not MODEL_DIR.is_dir():
         print(f"error: {MODEL_DIR} is missing; run pipeline/refresh-data.sh", file=sys.stderr)
         return 2
+
+    # The pin is checked before DuckDB reads a CSV, so a missing or edited model
+    # file is the refusal in read_pin() rather than a DuckDB binder or IO error.
+    read_pin()
 
     # read_csv() resolves paths relative to the process working directory, and
     # the SQL files spell them relative to the repository root on purpose, so the

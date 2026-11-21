@@ -1,10 +1,11 @@
 """The refusals that keep a stale pin or an unrecorded file out of the build.
 
 `pipeline/build.py` stops when `data/upstream/manifest.json` is not the file
-`pipeline/source.json` pins, when it is missing, and when a pinned directory holds
-something that is not a plain regular file. Each refusal was proved by hand in
-`/tmp`; nothing in the repository failed if a later edit deleted a call, so these
-tests are the proof rather than the transcript of one.
+`pipeline/source.json` pins, when it is missing, when a recorded file is missing or
+has moved, when a file in a pinned directory is on disk but unrecorded, and when a
+pinned directory holds something that is not a plain regular file. Each refusal was
+proved by hand in `/tmp`; nothing in the repository failed if a later edit deleted a
+call, so these tests are the proof rather than the transcript of one.
 
 Three choices keep them cheap and honest:
 
@@ -14,7 +15,8 @@ Three choices keep them cheap and honest:
     run -- seconds per case -- and would cover the refusal no better.
   * The root is temporary and the paths are patched, so nothing here can write to
     the repository's `data/` or `public/data/`. `pipeline/source.json` is copied,
-    which means the hash the tests compare against is the pin's real one.
+    which means the hash the tests compare against is the pin's real one until a
+    test records the fixture's own files in it.
   * A refusal is `SystemExit(str)`: the string is what the CLI prints to stderr and
     the status is 1 because the interpreter says so. Asserting the full message
     therefore covers what a reader sees and what a caller can rely on.
@@ -48,6 +50,9 @@ TINY_MANIFEST_HASH = hashlib.sha256(TINY_MANIFEST).hexdigest()
 # render() reads the era spine past the refusals; an empty spine is enough for a
 # test that stops while rendering.
 TINY_ERAS = b'{"groups":{"team-stats":[]}}\n'
+# One model file, so the pin records a file in data/model/ as well as data/upstream/.
+# A fixture is enough: the refusals compare hashes, not rows.
+TINY_TEAM = b"team_key,team_name\nT1,T1 Esports\n"
 
 
 class EmptyCursor:
@@ -79,6 +84,7 @@ def root(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> pathlib.Pat
         (repo / directory).mkdir(parents=True)
     eras = repo / "data" / "upstream" / "game-eras.json"
     eras.write_bytes(TINY_ERAS)
+    (repo / "data" / "model" / "dim_team.csv").write_bytes(TINY_TEAM)
     # The real pin, copied: its manifestSha256 still names the upstream manifest,
     # which is what makes writing a different file a tampered manifest.
     shutil.copyfile(REAL_SOURCE, repo / "pipeline" / "source.json")
@@ -94,15 +100,28 @@ def root(tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch) -> pathlib.Pat
     return repo
 
 
-def pin_manifest(repo: pathlib.Path, content: bytes = TINY_MANIFEST) -> pathlib.Path:
-    """Write a manifest, and state its hash in the copied source.json."""
+def pin_tree(repo: pathlib.Path, content: bytes = TINY_MANIFEST) -> dict[str, str]:
+    """Write a manifest and record every pinned file, as a refresh does.
+
+    `files` is the per-file map `pipeline/refresh-data.sh` writes into
+    `pipeline/source.json`: each pinned file's sha256, keyed by its path from the
+    repository root. A test that tampers with a file moves it without recording it
+    again, which is exactly the state the build must refuse.
+    """
     manifest = repo / "data" / "upstream" / "manifest.json"
     manifest.write_bytes(content)
+    files: dict[str, str] = {}
+    for directory in (repo / "data" / "model", repo / "data" / "upstream"):
+        for path in sorted(directory.iterdir()):
+            files[path.relative_to(repo).as_posix()] = hashlib.sha256(
+                path.read_bytes()
+            ).hexdigest()
     source_path = repo / "pipeline" / "source.json"
     source = json.loads(source_path.read_text(encoding="utf-8"))
-    source["manifestSha256"] = hashlib.sha256(content).hexdigest()
+    source["manifestSha256"] = files["data/upstream/manifest.json"]
+    source["files"] = files
     source_path.write_text(json.dumps(source, indent=2) + "\n", encoding="utf-8")
-    return manifest
+    return files
 
 
 def refused(call: Callable[[], object]) -> str:
@@ -118,7 +137,7 @@ def refused(call: Callable[[], object]) -> str:
 def test_render_accepts_the_manifest_the_pin_names(root: pathlib.Path) -> None:
     """The control: with a matching manifest the same paths render."""
 
-    pin_manifest(root)
+    pin_tree(root)
     rendered = build.render(NoRowsConnection())
 
     meta = json.loads(rendered["meta.json"])
@@ -161,7 +180,7 @@ def test_render_refuses_what_is_not_a_regular_file(
     the `is_symlink()` half of the test refuses it. Both would otherwise leave a
     file in a pinned directory recorded nowhere.
     """
-    pin_manifest(root)
+    pin_tree(root)
     upstream = root / "data" / "upstream"
     if intruder == "directory":
         (upstream / "notes").mkdir()
@@ -179,3 +198,94 @@ def test_render_refuses_what_is_not_a_regular_file(
         f"error: data/upstream/{name} is not a regular file; "
         "a pinned directory holds pinned files only" in message
     )
+
+
+def test_render_refuses_a_pinned_file_whose_bytes_moved(root: pathlib.Path) -> None:
+    """The defect the per-file map closes: a hand-edited CSV, manifest intact.
+
+    The build used to hash whatever it found into meta.json and call that
+    provenance, so this file would have produced a new artifact set describing the
+    edit. Now the pin's own record is what the file is compared against.
+    """
+    pinned = pin_tree(root)
+    target = root / "data" / "model" / "dim_team.csv"
+    target.write_bytes(TINY_TEAM + b"T2,T2 Esports\n")
+
+    message = refused(lambda: build.render(NoRowsConnection()))
+
+    assert (
+        "error: data/model/dim_team.csv is not the file pipeline/source.json pins"
+        in message
+    )
+    assert f"  pinned:    {pinned['data/model/dim_team.csv']}" in message
+    assert f"  on disk:   {hashlib.sha256(target.read_bytes()).hexdigest()}" in message
+    assert "re-pin with pipeline/refresh-data.sh <tag>, then rebuild" in message
+
+
+def test_main_refuses_before_duckdb_reads_the_model(
+    root: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A changed CSV must be the pin's message, not a DuckDB exception.
+
+    main() used to connect first, and the connection creates the views that read the
+    pinned CSVs: a hand-edited file could fail with a binder error, and a missing one
+    with an IOException, before `render()` reached the comparison. Verifying the pin
+    first makes either edit the documented refusal, whatever the edit does to the
+    CSV parser.
+    """
+    pin_tree(root)
+    (root / "data" / "model" / "dim_team.csv").write_bytes(TINY_TEAM + b"T2,T2 Esports\n")
+
+    def no_duckdb() -> object:
+        raise AssertionError("DuckDB was asked to read the model before the pin was verified")
+
+    monkeypatch.setattr(build, "connect", no_duckdb)
+
+    message = refused(lambda: build.main([]))
+
+    assert (
+        "error: data/model/dim_team.csv is not the file pipeline/source.json pins"
+        in message
+    )
+
+
+def test_render_refuses_a_recorded_file_that_is_missing(root: pathlib.Path) -> None:
+    pin_tree(root)
+    (root / "data" / "model" / "dim_team.csv").unlink()
+
+    message = refused(lambda: build.render(NoRowsConnection()))
+
+    assert (
+        "error: data/model/dim_team.csv is missing; run pipeline/refresh-data.sh"
+        in message
+    )
+
+
+def test_render_refuses_a_file_the_pin_does_not_record(root: pathlib.Path) -> None:
+    """A file the pin does not name is refused, not warned about.
+
+    meta.json would record it -- the pinned directory is the rule -- so the pin and
+    the artifact would disagree about what this tag contains, which is how the
+    unrecorded file gets cited back to a tag that never shipped it.
+    """
+    pin_tree(root)
+    (root / "data" / "model" / "notes.csv").write_bytes(b"a\n")
+
+    message = refused(lambda: build.render(NoRowsConnection()))
+
+    assert "error: data/model/notes.csv is not recorded in pipeline/source.json" in message
+    assert "re-pin with pipeline/refresh-data.sh <tag>, or remove the file" in message
+
+
+def test_render_refuses_a_pin_that_records_no_files(root: pathlib.Path) -> None:
+    """An older pin, or an edit that drops the map, is not silently unchecked."""
+    pin_tree(root)
+    source_path = root / "pipeline" / "source.json"
+    source = json.loads(source_path.read_text(encoding="utf-8"))
+    del source["files"]
+    source_path.write_text(json.dumps(source, indent=2) + "\n", encoding="utf-8")
+
+    message = refused(lambda: build.render(NoRowsConnection()))
+
+    assert "error: pipeline/source.json records no per-file hashes" in message
+    assert "re-pin with pipeline/refresh-data.sh <tag>" in message

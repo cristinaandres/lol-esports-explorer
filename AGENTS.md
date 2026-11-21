@@ -29,9 +29,10 @@ glossary and the selection audit, over the DuckDB pipeline and the deploy. Phase
    pipeline reads a wrapper. Everything is pinned, nothing is hand-edited:
    changing any of it means running `pipeline/refresh-data.sh <tag>` and committing
    the diff, so `pipeline/source.json`, the files and `public/data/meta.json` stay
-   in agreement. The build refuses to run if `data/upstream/manifest.json` is not
-   the manifest the pin names, and `meta.json` records the hash of every file in
-   `data/model/` and `data/upstream/`.
+   in agreement. The build verifies the recorded sha256 of every pinned file before
+   it renders: a recorded file that is missing, a recorded file whose bytes moved,
+   and a file on disk the pin does not record are each a refusal naming the file,
+   and `meta.json` copies the record.
 4. **Artifacts are generated and committed.** `public/data/*.json` is written by
    `pipeline/build.py` and is deterministic: no timestamps, no dictionary
    ordering surprises. `npm run data:check` fails if a committed file is stale.
