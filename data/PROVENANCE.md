@@ -56,13 +56,19 @@ JSONL, but the two files pinned here are those records rewrapped, so their bytes
 are not the JSONL's. The manifest is the pin's own receipts, not a second copy of
 the files.
 
-## The one file that is not from the model
+## The files that are not from the model
 
 `champion-releases.json` is fetched from the same wiki the upstream dataset
 crawls, with the query recorded inside the file and the date it was pinned. It
 exists because a champion without a release date cannot be read: "picked in 21 of
 495 games" means one thing for a champion released in 2011 and another for one
 released in 2014. Refresh it with `pipeline/refresh-releases.sh` and read the diff.
+
+`team-shortnames.json` is fetched the same way. The wiki's Teams table states the
+short name ("KC" for Karmine Corp) and the dimensional model carries neither it
+nor the field; search needs it because nobody types the full name. Refresh it with
+`pipeline/refresh-shortnames.sh` and read the diff: a new pin can add a short name
+or move one, and the build refuses rather than drop a row that folds to no team.
 
 ## Refreshing the pin
 

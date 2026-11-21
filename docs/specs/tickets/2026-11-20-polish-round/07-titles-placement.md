@@ -31,5 +31,6 @@ A browser check of the section headings on both pages, in order.
 ## Built
 
 Titles moved above the per-game table on the player page, so both entity pages now
-read Titles first. Verified: player → Titles, Per game, Champions, Events, Teams,
-Roles; team → Titles, Events, Current roster, Everyone who played.
+read Titles first. Verified: player → Titles, Recent form, By role (only when the
+player has more than one), Per game, Champions, Events, Teams; team → Titles,
+Events, Current roster, Everyone who played.

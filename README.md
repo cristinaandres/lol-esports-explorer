@@ -35,14 +35,15 @@ The data flows one way:
 
 ```
 lol-dataset (pinned tag)
-  └─ data/model/*.csv            5.4 MB, committed, hashed
+  └─ data/model/*.csv            5.3 MB, committed, hashed
        └─ pipeline/sql/*.sql     DuckDB views: eras, events, coverage
-            └─ public/data/*.json     37 KB, committed, deterministic
+            └─ public/data/*.json     13.5 MB raw, 1.3 MB gzip, committed
                  └─ src/         loads once, filters in memory
 ```
 
-There is no API and no database at runtime. The whole corpus is smaller than a
-medium JPEG, so the browser holds all of it and every filter is instant.
+There is no API and no database at runtime. A page's first fetch is 46 KB gzip;
+the game-level files load when a page draws games, and the 5 MB of player rows only
+when one opens a career or a game. Every filter after that is in memory.
 
 ## What makes the numbers trustworthy
 
@@ -63,7 +64,7 @@ medium JPEG, so the browser holds all of it and every filter is instant.
 npm install
 npm run dev          # http://localhost:5173/lol-esports-explorer/
 
-npm run check        # lint + tests + artifact freshness + build
+npm run check        # lint + tests + pipeline refusals + artifact freshness + build
 npm run data:build   # regenerate public/data/ from data/model/
 ```
 

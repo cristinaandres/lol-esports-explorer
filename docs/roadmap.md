@@ -3,8 +3,13 @@
 Each phase ends with something visible on the deployed site and green in
 `npm run check`. No phase links to a route that does not exist yet.
 
-Phases 2 to 5 each have a spec under `docs/specs/`. A spec is the plan; the phase
-is done when its acceptance criteria are ticked, not when the code exists.
+Phases 2 to 5 each have a spec under `docs/specs/`. A spec is the plan, and its
+acceptance criteria are the plan's checklist: phase 1 keeps them ticked, while the
+later specs leave the boxes as written and record the outcome in their "Built" or
+"Post-review changes" section, as every closed ticket does. Code alone is not done:
+a phase is done when it is built, `npm run check` is green, and the spec says what
+the build changed against the plan — a criterion that shipped differently is
+recorded there, not left as a silent unticked box.
 
 ## 0 — Foundation *(done)*
 

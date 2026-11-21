@@ -12,10 +12,11 @@ because Azir did not exist, which is the same distinction the scoreboard already
 makes for objectives.
 
 Champions get renamed too, though far less than teams. Measured on the bridge: of
-its 172 champion rows, 170 repeat the current name and **two** are real renames
-(Nunu → Nunu & Willump). So the page shows a former name when there is one and says
-nothing when there is not, rather than reserving a section for a case that occurs
-twice in sixteen years.
+its 172 champion rows, 170 repeat the current name exactly, one is that name with
+the source's `&amp;` left in it, and **one** is a real rename (Nunu → Nunu &
+Willump). So the page shows a former name when there is one and says nothing when
+there is not, rather than reserving a section for a case that occurs once in
+sixteen years.
 
 ## Scope
 
