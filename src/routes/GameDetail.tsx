@@ -186,10 +186,7 @@ function GamePage({ game, data, corpus }: { game: Game; data: Dataset; corpus: G
           onRetry={detail.retry}
         />
       ) : (
-        <div className="space-y-3">
-          <div className="bg-ink-900 border-line h-40 animate-pulse rounded-xl border" />
-          <div className="bg-ink-900 border-line h-56 animate-pulse rounded-xl border" />
-        </div>
+        <Skeleton shape="stack" heights={['h-40', 'h-56']} />
       )}
 
       {previous || next ? (

@@ -365,7 +365,7 @@ function TeamPage({ team, data }: { team: Team; data: Dataset }) {
                 </p>
 
                 {!prepared.ready ? (
-                  <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
+                  <Skeleton shape="stack" heights={['h-24']} />
                 ) : current.length === 0 ? (
                   <p className="text-fog-600 text-sm">No player rows for that game.</p>
                 ) : (
@@ -390,7 +390,7 @@ function TeamPage({ team, data }: { team: Team; data: Dataset }) {
                 </p>
 
                 {!prepared.ready ? (
-                  <div className="bg-ink-900 border-line h-32 animate-pulse rounded-xl border" />
+                  <Skeleton shape="stack" heights={['h-32']} />
                 ) : roster.length === 0 ? (
                   <p className="text-fog-600 text-sm">
                     No player rows are recorded for these games. Their player-statistics coverage is

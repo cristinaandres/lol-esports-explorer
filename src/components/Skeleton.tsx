@@ -5,7 +5,7 @@
  * nothing and then everything moves when the data lands. The blocks reserve roughly
  * the height of what is coming, so the page settles instead of jumping.
  *
- * There is one component because there is one idea, but three shapes because the
+ * There is one component because there is one idea, but four shapes because the
  * pages genuinely differ. Each shape is the layout of a page that exists, not a
  * knob per route:
  *
@@ -18,6 +18,13 @@
  *            size; a shared default would have made one of them jump. It is one
  *            of the utilities below rather than any string, so a page cannot ask
  *            for a height Tailwind never generated and render nothing.
+ *  - `stack` the cards inside a page that has already rendered its headings and
+ *            prose: the game page's scoreboard and draft board while their detail
+ *            arrives, and the team page's current roster and list of everyone who
+ *            played. One card per section, or two stacked with the page's own
+ *            gap, so the caller passes the heights it reserves, as literal
+ *            utilities for the same reason as the table's. A stack of one is how
+ *            a single list reserves its room.
  *
  * It is announced as busy rather than read as content, and the label is the only
  * text: nothing here is a claim about the data.
@@ -25,10 +32,14 @@
 /** The table heights in use, kept as literal utilities so Tailwind keeps both. */
 type TableHeight = 'h-48' | 'h-56'
 
+/** The card heights a stack reserves, again as literal utilities. */
+type StackHeight = 'h-24' | 'h-32' | 'h-40' | 'h-56'
+
 export type SkeletonProps =
   | { shape: 'page'; blocks?: number }
   | { shape: 'cards'; cards?: number }
   | { shape: 'table'; tableHeight: TableHeight }
+  | { shape: 'stack'; heights: readonly StackHeight[] }
 
 export function Skeleton(props: SkeletonProps) {
   return (
@@ -43,8 +54,10 @@ export function Skeleton(props: SkeletonProps) {
         <Page blocks={props.blocks} />
       ) : props.shape === 'cards' ? (
         <Cards cards={props.cards} />
-      ) : (
+      ) : props.shape === 'table' ? (
         <Table tableHeight={props.tableHeight} />
+      ) : (
+        <Stack heights={props.heights} />
       )}
     </div>
   )
@@ -94,6 +107,16 @@ function Table({ tableHeight }: { tableHeight: TableHeight }) {
     <div className="space-y-3">
       <div className="bg-ink-900 border-line h-24 rounded-xl border" />
       <div className={`bg-ink-900 border-line ${tableHeight} rounded-xl border`} />
+    </div>
+  )
+}
+
+function Stack({ heights }: { heights: readonly StackHeight[] }) {
+  return (
+    <div className="space-y-3">
+      {heights.map((height, index) => (
+        <div key={index} className={`bg-ink-900 border-line ${height} rounded-xl border`} />
+      ))}
     </div>
   )
 }
