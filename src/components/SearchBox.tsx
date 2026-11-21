@@ -22,7 +22,7 @@ type AliasLoad =
 /**
  * Search by any name an entity has ever had.
  *
- * The alias bridge is 63 KB and is fetched only after the reader touches the box:
+ * The alias bridge is 67 KB and is fetched only after the reader touches the box:
  * a page they are reading should not pay for a search they never start. The index
  * is built once and kept.
  *
