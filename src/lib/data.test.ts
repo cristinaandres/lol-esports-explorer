@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { namesFor, resolve } from './aliases'
 import { careerFor } from './career'
 import { slotSide } from './draft'
-import type { AliasRow, DraftSlot, EventRow, Game, Match, Meta, Player, PlayerGame } from './types'
+import type { AliasRow, DraftSlot, Era, EventRow, Game, Match, Meta, Player, PlayerGame } from './types'
 
 /**
  * Invariants over the committed artifacts, not over a fixture.
@@ -20,6 +20,7 @@ const read = <T,>(name: string): T =>
   JSON.parse(readFileSync(join(import.meta.dirname, '../../public/data', name), 'utf-8')) as T
 
 const games = read<Game[]>('games.json')
+const eras = read<Era[]>('eras.json')
 const events = read<EventRow[]>('events.json')
 const matches = read<Match[]>('matches.json')
 const playerGames = read<PlayerGame[]>('player-games.json')
@@ -79,6 +80,23 @@ describe('games.json', () => {
   it('keeps dates in the ISO form the site parses', () => {
     const malformed = games.filter((game) => !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(game.date_time_utc))
     expect(malformed).toEqual([])
+  })
+})
+
+describe('eras.json', () => {
+  /**
+   * The average length on the era and event pages is the one figure said to be
+   * measured over a row set the page did not state. It now prints its n; this pins
+   * that n to the rows it claims, so widening the filter in the SQL fails here.
+   */
+  it('counts the games that state a duration, and only those', () => {
+    const stated = eras.reduce((sum, era) => sum + era.games_duration_stated, 0)
+    expect(stated).toBe(games.filter((game) => game.duration_seconds !== null).length)
+    expect(stated).toBe(3_084)
+  })
+
+  it('never claims a duration on a game the era does not have', () => {
+    expect(eras.filter((era) => era.games_duration_stated > era.games)).toEqual([])
   })
 })
 

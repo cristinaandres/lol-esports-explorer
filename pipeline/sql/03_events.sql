@@ -54,6 +54,9 @@ with per_game as (
     min(substr(date_time_utc, 1, 10))                     as first_date,
     max(substr(date_time_utc, 1, 10))                     as last_date,
     count(*) filter (where blue_win = 1)                  as blue_wins,
+    -- count(expr) skips nulls, so this is the row set the average divides by:
+    -- an average states its n on the page, and this is the n.
+    count(duration_seconds)                               as games_duration_stated,
     round(avg(duration_seconds))                          as avg_duration_seconds,
     string_agg(distinct era, ', ' order by era)           as eras
   from game_facts
@@ -89,6 +92,9 @@ select
   per_game.first_date,
   per_game.last_date,
   per_game.blue_wins,
+  -- Coalesced like games and series: an admitted event with no game played has a
+  -- stated count of zero, not an absent one.
+  coalesce(per_game.games_duration_stated, 0) as games_duration_stated,
   per_game.avg_duration_seconds,
   per_game.eras
 from dim_event e

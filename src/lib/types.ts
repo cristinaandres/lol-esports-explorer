@@ -20,6 +20,8 @@ export type Era = {
   games_draft_complete: number
   games_player_complete: number
   games_team_complete: number
+  /** Games whose duration the source states; the n the average is over. */
+  games_duration_stated: number
   avg_duration_seconds: number | null
   patches: number
 }
@@ -43,6 +45,8 @@ export type EventRow = {
   first_date: string | null
   last_date: string | null
   blue_wins: number
+  /** Games whose duration the source states; the n the average is over. */
+  games_duration_stated: number
   avg_duration_seconds: number | null
   eras: string | null
   /** Coverage as the dataset measured it, null for an event with no game. */

@@ -16,7 +16,7 @@ component except a ratio of two displayed counts.
 | Series played | Distinct `match_key` on a game. Series admitted but never played are reported separately. | `game_facts` | all eras |
 | Events played | Distinct `event_key` on a game. Admitting an event does not mean a game was played in it. | `game_facts` | all eras |
 | Patches recorded | Distinct `patch_key` on a game. A game with no stated patch is not counted, so this is a floor, not a patch history. | `game_facts` | all eras |
-| Average length | Mean of `duration_seconds` over games that state one. | `fact_game_side` | all eras |
+| Average length | Mean of `duration_seconds` over games that state one. The count it was measured over is printed beside it, because an average states its n on this site the way a share states its denominator. | `fact_game_side` | all eras |
 | Titles | Events whose final is the single series named Finals, won by the team with more game wins in it. Events that name several such series — most Rift Rivals relays, whose winner is a region — award nothing. A relay with one decisive final does award its winner. | `fact_game_side`, `dim_match`; derived in `src/lib/titles.ts` | all eras |
 
 ## Shares
