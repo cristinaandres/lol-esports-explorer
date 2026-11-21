@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Link, Navigate, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
 import { PageHeader } from '../components/PageHeader'
 import { useDataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
@@ -38,7 +38,7 @@ export default function SeriesDetail() {
     return { match, games, event, wins, index: buildIndexes(data) } as const
   }, [status, data, id])
 
-  if (status === 'loading') return <PageSkeleton />
+  if (status === 'loading') return <Skeleton shape="page" />
   if (!prepared?.match) {
     return (
       <p className="text-fog-300">

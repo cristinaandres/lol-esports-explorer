@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
 import { EraGrid } from '../components/EraGrid'
 import { PageHeader } from '../components/PageHeader'
 import { useDataset } from '../lib/data'
@@ -18,7 +18,7 @@ import { count } from '../lib/format'
 export default function ErasIndex() {
   const { status, data, error } = useDataset()
 
-  if (status === 'loading') return <PageSkeleton />
+  if (status === 'loading') return <Skeleton shape="page" />
   if (status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {error.message}</p>
 

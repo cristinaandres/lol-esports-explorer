@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
 import { SeriesList } from '../components/SeriesList'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
@@ -43,7 +43,7 @@ export default function EventDetail() {
     } as const
   }, [state, id])
 
-  if (state.status === 'loading') return <PageSkeleton />
+  if (state.status === 'loading') return <Skeleton shape="page" />
   if (state.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {state.error.message}</p>
   if (!prepared?.event) {

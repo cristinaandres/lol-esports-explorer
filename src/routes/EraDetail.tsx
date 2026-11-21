@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
 import { DataTable } from '../components/DataTable'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
@@ -15,7 +15,7 @@ export default function EraDetail() {
   const { era: id } = useParams()
   const { status, data } = useDataset()
 
-  if (status === 'loading') return <PageSkeleton />
+  if (status === 'loading') return <Skeleton shape="page" />
   if (status !== 'ready') return <p className="text-fog-600">Nothing to show.</p>
 
   // Empty declared eras are documented in the glossary but are not part of the
