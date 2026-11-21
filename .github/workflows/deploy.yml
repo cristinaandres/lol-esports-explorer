@@ -33,6 +33,10 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           python-version: '3.12'
+      # The build's refusals are executable, so a change that turns one into a silent
+      # pass fails here rather than in review. Same command `npm run check` runs.
+      - name: pipeline refusals are covered
+        run: uv run --project pipeline python -m pytest pipeline/tests
       - name: artifacts are current
         run: uv run --project pipeline python pipeline/build.py --check
       - name: build

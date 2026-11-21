@@ -11,7 +11,8 @@
     "test": "vitest run",
     "data:build": "uv run --project pipeline python pipeline/build.py",
     "data:check": "uv run --project pipeline python pipeline/build.py --check",
-    "check": "npm run lint && npm run test && npm run data:check && npm run build"
+    "data:test": "uv run --project pipeline python -m pytest pipeline/tests",
+    "check": "npm run lint && npm run test && npm run data:test && npm run data:check && npm run build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.5",
