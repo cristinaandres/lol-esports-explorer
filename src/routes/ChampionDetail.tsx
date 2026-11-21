@@ -83,7 +83,7 @@ export default function ChampionDetail() {
         <p className="text-fog-300 mt-3 max-w-xl text-sm leading-relaxed">
           The id in the URL is the one the dataset uses, not a name. A champion is reachable from any
           draft that contains it.{' '}
-          <Link to="/" className="text-gold">
+          <Link to="/eras" className="text-gold">
             Back to the eras
           </Link>
           .

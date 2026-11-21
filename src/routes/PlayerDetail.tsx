@@ -148,7 +148,7 @@ export default function PlayerDetail() {
         <p className="text-fog-300 mt-3 max-w-xl text-sm leading-relaxed">
           The id in the URL is the one the dataset uses, not a name. A player is reachable from any
           game they played.{' '}
-          <Link to="/" className="text-gold">
+          <Link to="/eras" className="text-gold">
             Back to the eras
           </Link>
           .
