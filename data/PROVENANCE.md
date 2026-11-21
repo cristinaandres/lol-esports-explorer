@@ -40,16 +40,26 @@ data/upstream/champion-releases.json
 
 ```
 
-`public/data/meta.json` records the sha256 of every regular file in `data/model/`
-and `data/upstream/` at build time -- the directory is the rule, so a file added
-here cannot be pinned and unrecorded. The exceptions are stated in the build: a
-dotfile is the operating system's rather than the pin's (`.DS_Store` is ignored,
-or the artifact would depend on which laptop ran the build), and anything that is
-not a plain file -- a subdirectory, a symlink -- stops the build instead of being
-skipped. The build also refuses to run if `data/upstream/manifest.json` is not the
-manifest `pipeline/source.json` pins. A reader can walk from a figure on the site
-to the file it came from without trusting this document. If a pinned file is ever
-edited by hand, the artifact hashes change and `npm run data:check` fails.
+`pipeline/source.json` records the sha256 of every pinned file above -- all 20,
+keyed by their path from the repository root -- and `public/data/meta.json` copies
+that record into the artifact. The build verifies every hash before it renders
+anything: a recorded file that is missing, a recorded file whose bytes moved (the
+refusal names the file and both hashes), and a file on disk that the record does not
+name are each a refusal, not a new meta.json describing the drift. The directory is
+the rule in both directions: a file added here cannot be pinned and unrecorded, and
+a recorded file cannot vanish. The exceptions are stated in the build: a dotfile is
+the operating system's rather than the pin's (`.DS_Store` is ignored, or the
+artifact would depend on which laptop ran the build), and anything that is not a
+plain file -- a subdirectory, a symlink -- stops the build instead of being skipped.
+A reader can walk from a figure on the site to the file it came from without
+trusting this document, and a hand-edited pinned file fails the build before any
+artifact is rewritten.
+
+The two wiki-pinned files are recorded as installed: `refresh-data.sh` hashes the
+copies already in `data/upstream/`, because it does not fetch them --
+`refresh-shortnames.sh` and `refresh-releases.sh` do. A pin refresh therefore records
+their current bytes, so refresh those first when they are due; from then on the build
+verifies them like every other pinned file.
 
 What the manifest can and cannot prove: it records a sha256 for each curated
 JSONL, but the two files pinned here are those records rewrapped, so their bytes
@@ -79,7 +89,8 @@ npm run data:build
 
 The script re-copies the model (its CSVs, the data dictionary and the DDL), the era
 table, the manifest and the two curated audit files, rewrites `pipeline/source.json`
-from the tag it checked out, and prints what changed. Refreshing the current pin is
+from the tag it checked out -- the tag, the commit, the manifest hash and a sha256
+for every pinned file -- and prints what changed. Refreshing the current pin is
 a no-op: when the tag and the records have not moved, the audit files keep their pin
 date and the bytes do not change.
 
