@@ -35,7 +35,12 @@ export default function ChampionDetail() {
 
   if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: dataset.error }]}
+        onRetry={dataset.retry}
+      />
+    )
 
   const champion = dataset.data.champions.find((row) => row.champion_id === id)
   if (!champion) {

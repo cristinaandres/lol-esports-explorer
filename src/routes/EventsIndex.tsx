@@ -58,7 +58,12 @@ export default function EventsIndex() {
       <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
     )
   if (state.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {state.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: state.error }]}
+        onRetry={state.retry}
+      />
+    )
   if (!prepared) return null
 
   return (

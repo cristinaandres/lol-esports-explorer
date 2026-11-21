@@ -2,22 +2,21 @@ import { Link } from 'react-router'
 
 import { EraGrid } from '../components/EraGrid'
 import { PageHeader } from '../components/PageHeader'
+import { LoadFailure } from '../components/LoadFailure'
 import { Skeleton } from '../components/Skeleton'
 import { Stat, StatRow } from '../components/Stat'
 import { useDataset } from '../lib/data'
 import { count, monthYear } from '../lib/format'
 
 export default function Home() {
-  const { status, data, error } = useDataset()
+  const { status, data, error, retry } = useDataset()
 
   if (status === 'loading') return <Skeleton shape="cards" />
+  // The eager set is the one thing every page needs, so this is the failure a
+  // reader is most likely to meet; it gets the same block and retry as the rest
+  // rather than advice to reload by hand.
   if (status === 'failed')
-    return (
-      <p className="text-side-red">
-        Could not load the dataset: {error.message}. Reload the page to try again; if it keeps
-        failing, the artifacts may be mid-deploy.
-      </p>
-    )
+    return <LoadFailure failures={[{ what: 'the dataset', error }]} onRetry={retry} />
 
   const { eras, totals, champions } = data
   const championsPlayed = champions.filter((champion) => champion.games > 0).length

@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { LoadFailure } from '../components/LoadFailure'
 import { Skeleton } from '../components/Skeleton'
 import { EraGrid } from '../components/EraGrid'
 import { PageHeader } from '../components/PageHeader'
@@ -16,11 +17,11 @@ import { count } from '../lib/format'
  * corpus totals, and this page opens with the eras themselves.
  */
 export default function ErasIndex() {
-  const { status, data, error } = useDataset()
+  const { status, data, error, retry } = useDataset()
 
   if (status === 'loading') return <Skeleton shape="page" />
   if (status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {error.message}</p>
+    return <LoadFailure failures={[{ what: 'the dataset', error }]} onRetry={retry} />
 
   const { eras } = data
   const withGames = eras.filter((era) => era.games > 0)

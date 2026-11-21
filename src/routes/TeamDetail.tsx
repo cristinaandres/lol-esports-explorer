@@ -44,7 +44,12 @@ export default function TeamDetail() {
 
   if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: dataset.error }]}
+        onRetry={dataset.retry}
+      />
+    )
 
   const team = dataset.data.teams.find((row) => row.team_id === id)
   if (!team) {

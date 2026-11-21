@@ -70,7 +70,12 @@ export default function PlayerDetail() {
 
   if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: dataset.error }]}
+        onRetry={dataset.retry}
+      />
+    )
 
   const player = dataset.data.players.find((row) => row.player_id === id)
   if (!player) {
