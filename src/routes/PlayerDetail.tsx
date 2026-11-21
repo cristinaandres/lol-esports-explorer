@@ -37,7 +37,15 @@ import {
   recoverFilter,
 } from '../lib/filters'
 import { championships, groupTitlesByCompetition, titlesForPlayer } from '../lib/titles'
-import { count, dayMonthYear, duration, monthYear, perGame, stripDateSuffix } from '../lib/format'
+import {
+  count,
+  dayMonthYear,
+  duration,
+  measureWithUnit,
+  monthYear,
+  perGame,
+  stripDateSuffix,
+} from '../lib/format'
 import { buildIndexes, championName, championPath, teamName, teamPath } from '../lib/indexes'
 import type { EventRow, Match } from '../lib/types'
 
@@ -633,7 +641,8 @@ function ContextCard({
           </p>
           <p className="text-fog-500 mt-1 font-mono text-xs">
             {row.kills} / {row.deaths} / {row.assists}
-            <span className="text-fog-600"> · {row.cs} CS · {count(row.gold ?? 0)} gold</span>
+            <span className="text-fog-600"> · {measureWithUnit(row.cs, 'CS')}</span>
+            <span className="text-fog-600"> · {measureWithUnit(row.gold, 'gold')}</span>
           </p>
         </div>
       </div>
