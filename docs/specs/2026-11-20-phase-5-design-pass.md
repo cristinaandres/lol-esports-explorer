@@ -12,11 +12,12 @@ above will need.
 
 ## Current behavior
 
-- Tokens live in `src/index.css` under `@theme`: nine greys, one accent, two side
+- Tokens live in `src/index.css` under `@theme`: ten greys, one accent, two side
   colours, two font stacks.
-- There are three states in code (loading skeleton, 404, and one empty era page)
-  and no documented design for partial coverage, a zero-sample filter, or a failed
-  data fetch.
+- All five states exist in code — a loading skeleton, a zero-sample filter state
+  (`EmptyFilter`), partial coverage (`CoverageBadge`), a data-failure block
+  (`LoadFailure`) and 404 — but none has a documented design. The empty declared
+  eras are documented in the glossary rather than rendered as a sixth state.
 - The layout has been checked at 1440 px and 390 px by screenshot; contrast,
   focus order and keyboard traversal through the tables have not been checked at
   all.

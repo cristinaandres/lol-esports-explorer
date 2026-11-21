@@ -3,7 +3,7 @@ import { join } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-import { namesFor } from './aliases'
+import { namesFor, normalise } from './aliases'
 import { appearancesFor, careerFrom } from './career'
 import { slotSide } from './draft'
 import { buildSearchIndex, search } from './search'
@@ -550,6 +550,37 @@ describe('events.json', () => {
   })
 })
 
+describe('matches.json', () => {
+  /**
+   * Admitted is not played: 2,068 series were admitted upstream and 1,964 carry a
+   * game. The product spec's D8 states both denominators, so both are pinned here.
+   * The model's 2,069 rows include the key-0 sentinel, whose format is empty; no
+   * artifact publishes it, which is why the artifact holds 2,068 rows.
+   */
+  it('carries the admitted series, and the one with no format is not among them', () => {
+    expect(matches).toHaveLength(2_068)
+    expect(matches.filter((match) => match.best_of === 1)).toHaveLength(1_455)
+  })
+
+  it('is best-of-one for 1,389 of the 1,964 played series', () => {
+    const played = new Set(games.map((game) => game.match_key).filter((key) => key !== 0))
+    expect(played.size).toBe(1_964)
+    expect(
+      matches.filter((match) => match.best_of === 1 && played.has(match.match_key)),
+    ).toHaveLength(1_389)
+  })
+})
+
+describe('champions.json', () => {
+  it('carries the 171 champions the site can resolve', () => {
+    // The model's champion dimension has 172 rows: 171 champions and the key-0
+    // sentinel, which no artifact publishes. The release pin holds 173 names;
+    // Akshan and Briar are pinned there but never played in this corpus, so the
+    // champion index does not carry them.
+    expect(champions).toHaveLength(171)
+  })
+})
+
 describe('draft artifacts', () => {
   it('puts every ordered pick in the corpus in picks.json', () => {
     const ordered = games.filter((game) => game.draft_fidelity === 'ordered')
@@ -628,6 +659,44 @@ describe('aliases.json', () => {
 
   it('points every alias at an entity', () => {
     expect(aliases.filter((row) => !row.entity_id)).toEqual([])
+  })
+
+  /**
+   * The partition ticket 01 records, measured on the bridge rather than on the
+   * published artifact: 194 of the latter's rows are pinned short names with no
+   * window, and leaving them in would make every remainder below describe the
+   * wrong set. The folded counts are the module's, not a raw string comparison:
+   * "Nunu &amp; Willump" is the entity's own name with an HTML entity in it, and
+   * folding is what stops it being printed as a former name.
+   */
+  it('partitions the pinned bridge into its own names, renames and redirects', () => {
+    const bridge = aliases.filter((row) => row.evidence !== 'shortname')
+    expect(bridge).toHaveLength(3_791)
+
+    const exact = bridge.filter((row) => row.alias_string === row.entity_name)
+    expect(exact).toHaveLength(1_495)
+
+    const own = bridge.filter(
+      (row) => normalise(row.alias_string) === normalise(row.entity_name),
+    )
+    expect(own).toHaveLength(1_652)
+
+    const dated = bridge.filter((row) => row.valid_from !== null || row.valid_to !== null)
+    expect(dated).toHaveLength(1_816)
+    expect(bridge.filter((row) => row.valid_from === null && row.valid_to === null)).toHaveLength(
+      1_975,
+    )
+
+    const renames = bridge.filter(
+      (row) => normalise(row.alias_string) !== normalise(row.entity_name) && row.valid_from !== null,
+    )
+    expect(renames).toHaveLength(326)
+    expect(
+      bridge.filter(
+        (row) =>
+          normalise(row.alias_string) !== normalise(row.entity_name) && row.valid_from === null,
+      ),
+    ).toHaveLength(1_813)
   })
 
   /**

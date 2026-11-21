@@ -67,9 +67,9 @@ drawn from it and must not be faked from the final gold.
 
 - No server. The artifacts are static files, fetched once and held in memory.
 - Payload budget: the eager set stays well under ~200 KB gzip for a first visit.
-  Measured today it is 45 KB: eras, events, totals, the pin and the name files.
-  The two game-level artifacts — `games.json` (83 KB gzip) and `matches.json`
-  (50 KB) — are fetched by the pages that draw games, and `player-games.json`
+  Measured today it is ~46 KB: eras, events, totals, the pin and the name files.
+  The two game-level artifacts — `games.json` (91 KB gzip) and `matches.json`
+  (54 KB) — are fetched by the pages that draw games, and `player-games.json`
   (688 KB) and `bans.json` (140 KB) load lazily on the first game page; all four
   are cached for the session, so an era page never pays for any of them.
 - Every game in the corpus must be reachable from its event; none may become
@@ -78,11 +78,11 @@ drawn from it and must not be faked from the final gold.
 ## Design decisions
 
 - **`games.json` and `matches.json` are game-level, not eager.** The event page
-  needs the game list to draw its table, and 133 KB gzip is affordable for a page
+  needs the game list to draw its table, and 145 KB gzip is affordable for a page
   that draws games; it is not affordable for an era page, which reads 26 events
   and no games at all — the largest era holds 1,325 games, which is why the era
   page lists events. The two files were eager at first and made an era page pay
-  178 KB for figures it already had in `eras.json`; they now load as one pair, once
+  145 KB for figures it already had in `eras.json`; they now load as one pair, once
   per session, behind `useGameCorpus()`.
 - **Picks are not in `bans.json`.** Every player row already states the champion
   that player played, so picks come from `fact_player_game` and only bans come
@@ -143,15 +143,18 @@ diverged, and why.
 - **One more artifact than planned: `matches.json`.** The series route needs a
   natural id and the event page needs the format. `match_key` is build-local — it
   renumbers on the next rebuild — so a URL carrying it would break every shared
-  link. `matches.json` (448 KB raw, 51 KB gzip) carries `match_id`, and the eager
-  payload lands at ~171 KB gzip, inside the 200 KB budget.
+  link. `matches.json` (446 KB raw, 54 KB gzip) carries `match_id` and 2,068 rows:
+  the model's 2,069 include the key-0 "Unknown" sentinel, which no artifact
+  publishes. It is a game-level artifact like `games.json`, not part of the eager
+  set: the eager set is eight files at ~46 KB gzip, and a page that draws games
+  pays the 145 KB the pair adds, inside the 200 KB budget.
 - **Two draft artifacts instead of one.** A single `draft.json` was built first
   and came to 6.0 MB, because `is_ordered` was repeated on all 59,214 slots. It
   became `bans.json` (28,306 rows) plus `picks.json` (24,500 rows, ordered drafts
   only, no `is_ordered` — `games.json` already states the fidelity per game).
 - **A fourth lazy artifact, `sides.json`, was not in the plan.** The scoreboard
   needs the full per-side statistics, and putting them in `games.json` would have
-  added ~400 KB to what every visitor downloads. It is lazy, 99 KB gzip.
+  added ~400 KB to what every visitor downloads. It is lazy, 117 KB gzip.
 - **Eligibility is now published.** `eras.json` carries the upstream `eligible`
   field list, so the scoreboard drops an objective that did not exist in the era
   instead of printing an em dash that reads like a gap in the source.
@@ -161,20 +164,21 @@ diverged, and why.
   serious one: 250 games state their draft with the two sides exchanged
   (`draft_switched_sides`), and reading the slots without that flag puts 2,506
   picks on the wrong side. `src/lib/data.test.ts` now asserts that every one of
-  the 30,908 picks names a champion a player on that side actually played. It is
+  the 24,500 picks names a champion a player on that side actually played. It is
   the single most valuable test in the repository.
 
-Final payloads, measured:
+Final payloads, measured (`gzip -6` output over 1,024 bytes):
 
 | Artifact | Rows | gzip | When |
 |---|---|---|---|
-| `games.json` | 3,091 | 83 KB | eager |
-| `matches.json` | 2,069 | 51 KB | eager |
-| names (teams, players, champions, patches) | 1,554 | 32 KB | eager |
-| `sides.json` | 6,182 | 98 KB | lazy |
-| `player-games.json` | 30,910 | 620 KB | lazy |
-| `picks.json` | 24,500 | 107 KB | lazy |
-| `bans.json` | 28,306 | 126 KB | lazy |
+| `games.json` | 3,091 | 91 KB | game level |
+| `matches.json` | 2,068 | 54 KB | game level |
+| names (teams, players, champions, patches) | 1,550 | 39 KB | eager |
+| eras, events, totals, meta | 64 | 7 KB | eager |
+| `sides.json` | 6,182 | 117 KB | lazy |
+| `player-games.json` | 30,910 | 688 KB | lazy |
+| `picks.json` | 24,500 | 118 KB | lazy |
+| `bans.json` | 28,306 | 140 KB | lazy |
 
 ### Review amendments
 

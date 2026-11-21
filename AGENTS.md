@@ -44,6 +44,7 @@ glossary and the selection audit, over the DuckDB pipeline and the deploy. Phase
 ## Structure
 
 ```
+bin/           the devcontainer helper (`devc`), which the site does not use
 data/          pinned model + era table; see data/PROVENANCE.md
 pipeline/      DuckDB SQL and the build script (needs uv)
 public/data/   generated artifacts the site fetches (committed)
@@ -54,7 +55,7 @@ docs/          product spec, information architecture, metrics, roadmap
 ## Checks
 
 ```bash
-npm run check        # lint, vitest, artifact freshness, production build
+npm run check        # lint, vitest, pipeline tests, artifact freshness, production build
 npm run dev          # http://localhost:5173/lol-esports-explorer/
 ```
 
