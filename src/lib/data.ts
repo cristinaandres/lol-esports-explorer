@@ -27,8 +27,14 @@ import type {
  *    gzipped and holds everything a list needs: eras, events, games, and the
  *    name of every team, player, champion and patch.
  *  - The lazy set is fetched the first time somebody opens a game, and kept for
- *    the session. It is ~950 KB gzipped: the scoreboards, 30,910 player rows and
- *    every draft slot. A visitor who only reads an era never pays for it.
+ *    the session once it arrives. It is ~950 KB gzipped: the scoreboards, 30,910
+ *    player rows and every draft slot. A visitor who only reads an era never
+ *    pays for it.
+ *
+ * "Kept for the session" is a promise about a successful load, not about a
+ * failed one. A rejection is forgotten as it passes through, so the next page
+ * that needs the artifact asks the server again instead of replaying the error
+ * for as long as the tab is open. See `memoised`.
  */
 
 export type Dataset = {
@@ -59,10 +65,30 @@ async function getJson<T>(name: string): Promise<T> {
   return (await response.json()) as T
 }
 
-let eager: Promise<Dataset> | null = null
+/**
+ * A loader that fetches once, and only remembers an attempt that worked.
+ *
+ * Pages ask for an artifact every time they need it, so the first answer is kept
+ * and handed out again; that is what stops three pages from downloading the same
+ * 620 KB. A failure, though, describes the moment and not the file: a dropped
+ * connection, a flaky deploy or a network that is briefly down must not become
+ * permanent for the document. Clearing the slot before rethrowing means the next
+ * caller starts a fresh request, while a success stays cached for the session.
+ */
+function memoised<T>(load: () => Promise<T>): () => Promise<T> {
+  let kept: Promise<T> | null = null
 
-export function loadDataset(): Promise<Dataset> {
-  eager ??= Promise.all([
+  return () => {
+    kept ??= load().catch((error: unknown) => {
+      kept = null
+      throw error
+    })
+    return kept
+  }
+}
+
+const eager = memoised<Dataset>(() =>
+  Promise.all([
     getJson<Era[]>('eras.json'),
     getJson<EventRow[]>('events.json'),
     getJson<Totals[]>('totals.json'),
@@ -84,11 +110,12 @@ export function loadDataset(): Promise<Dataset> {
     players,
     champions,
     patches,
-  }))
-  return eager
-}
+  })),
+)
 
-let playerRows: Promise<PlayerGame[]> | null = null
+export function loadDataset(): Promise<Dataset> {
+  return eager()
+}
 
 /**
  * The player rows, on their own.
@@ -98,37 +125,46 @@ let playerRows: Promise<PlayerGame[]> | null = null
  * costs 620 KB gzip rather than 950, and the game page reuses the same promise
  * instead of fetching the file twice.
  */
-export function loadPlayerGames(): Promise<PlayerGame[]> {
-  playerRows ??= getJson<PlayerGame[]>('player-games.json')
-  return playerRows
-}
+const playerRows = memoised<PlayerGame[]>(() => getJson<PlayerGame[]>('player-games.json'))
 
-let selectionRows: Promise<SelectionCandidate[]> | null = null
+export function loadPlayerGames(): Promise<PlayerGame[]> {
+  return playerRows()
+}
 
 /** The candidate events the rule considered, fetched only by the selection page. */
-export function loadSelection(): Promise<SelectionCandidate[]> {
-  selectionRows ??= getJson<SelectionCandidate[]>('selection.json')
-  return selectionRows
-}
+const selectionRows = memoised<SelectionCandidate[]>(() =>
+  getJson<SelectionCandidate[]>('selection.json'),
+)
 
-let aliasRows: Promise<AliasRow[]> | null = null
+export function loadSelection(): Promise<SelectionCandidate[]> {
+  return selectionRows()
+}
 
 /** The alias bridge, fetched by entity pages and by search, never by a list. */
+const aliasRows = memoised<AliasRow[]>(() => getJson<AliasRow[]>('aliases.json'))
+
 export function loadAliases(): Promise<AliasRow[]> {
-  aliasRows ??= getJson<AliasRow[]>('aliases.json')
-  return aliasRows
+  return aliasRows()
 }
 
-let detail: Promise<GameDetail> | null = null
-
-export function loadGameDetail(): Promise<GameDetail> {
-  detail ??= Promise.all([
+/**
+ * The scoreboards, the player rows and the draft of one game, together.
+ *
+ * The player rows are their own artifact, so a game page that fails while the
+ * scoreboards are unreachable must not also leave the rows stuck on a rejection:
+ * each slot forgets its own failure, and the retry asks again for every piece.
+ */
+const detail = memoised<GameDetail>(() =>
+  Promise.all([
     getJson<Side[]>('sides.json'),
     loadPlayerGames(),
     getJson<DraftSlot[]>('bans.json'),
     getJson<DraftSlot[]>('picks.json'),
-  ]).then(([sides, playerGames, bans, picks]) => ({ sides, playerGames, bans, picks }))
-  return detail
+  ]).then(([sides, playerGames, bans, picks]) => ({ sides, playerGames, bans, picks })),
+)
+
+export function loadGameDetail(): Promise<GameDetail> {
+  return detail()
 }
 
 export type Async<T> =

@@ -1,12 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 /**
- * The lazy artifacts are fetched once per session.
+ * The lazy artifacts are fetched once per session, once they arrive.
  *
  * Asserted at the loader rather than in a browser, because it is a property of the
  * module and not of a click: three pages can ask for the player rows and only the
  * first should cause a request. A full document load starts a new session, and
  * paying again there is expected.
+ *
+ * The promise is "once", not "at most once": a request that failed is not an
+ * answer, so the loader must offer the artifact again instead of handing the same
+ * rejection to every later page. Both halves are asserted below.
  *
  * Each test imports a fresh copy of the module, because the cache it tests lives at
  * module scope: sharing it between tests would make the second test pass without
@@ -19,8 +23,29 @@ function stubFetch(payload: unknown) {
   return fetchMock
 }
 
-function urlsOf(fetchMock: ReturnType<typeof stubFetch>): string[] {
-  return fetchMock.mock.calls.map((call) => String((call as unknown[])[0]))
+/**
+ * A fetch stub that refuses the first request for one file and answers every other
+ * request, so a retry can be observed succeeding.
+ *
+ * Counted per file rather than per call: a composed load starts several requests at
+ * once, and the one that was refused is the one whose second attempt the test is
+ * looking for.
+ */
+function stubFetchRefusingOnce(file: string, payload: unknown, status = 503) {
+  const refused = new Set<string>()
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url.endsWith(file) && !refused.has(file)) {
+      refused.add(file)
+      return { ok: false, status }
+    }
+    return { ok: true, json: async () => payload }
+  })
+  vi.stubGlobal('fetch', fetchMock)
+  return fetchMock
+}
+
+function urlsOf(fetchMock: { mock: { calls: unknown[][] } }): string[] {
+  return fetchMock.mock.calls.map((call) => String(call[0]))
 }
 
 async function freshData() {
@@ -79,5 +104,76 @@ describe('lazy loading', () => {
     // pay 330 KB for them.
     expect(urls.filter((url) => url.endsWith('sides.json'))).toHaveLength(0)
     expect(urls.filter((url) => url.endsWith('picks.json'))).toHaveLength(0)
+  })
+})
+
+/**
+ * A failure is not an answer, so it must not be remembered.
+ *
+ * The reader whose network blipped on the way to a player page is the case that
+ * matters: a reload is the only escape from a cached rejection, and a static site
+ * has no other way to recover.
+ */
+describe('retrying a failed load', () => {
+  it('asks again for the alias bridge after a refusal, and keeps the answer', async () => {
+    const fetchMock = stubFetchRefusingOnce('aliases.json', [])
+    const { loadAliases } = await freshData()
+
+    await expect(loadAliases()).rejects.toThrow('data/aliases.json: HTTP 503')
+    await expect(loadAliases()).resolves.toEqual([])
+    // The attempt that worked is an answer, so the third ask is free again.
+    await loadAliases()
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('asks again for the whole game detail, scoreboards included', async () => {
+    const fetchMock = stubFetchRefusingOnce('sides.json', [])
+    const { loadGameDetail } = await freshData()
+
+    await expect(loadGameDetail()).rejects.toThrow('data/sides.json: HTTP 503')
+    await expect(loadGameDetail()).resolves.toEqual({
+      sides: [],
+      playerGames: [],
+      bans: [],
+      picks: [],
+    })
+    await loadGameDetail()
+
+    // Seven calls, not eight: the three artifacts the detail owns outright are
+    // asked for twice, while the player rows answered on the first attempt and are
+    // reused, which is the cache doing its job inside the retry.
+    const urls = urlsOf(fetchMock)
+    for (const file of ['sides.json', 'bans.json', 'picks.json']) {
+      expect(urls.filter((url) => url.endsWith(file)), file).toHaveLength(2)
+    }
+    expect(urls.filter((url) => url.endsWith('player-games.json'))).toHaveLength(1)
+    expect(fetchMock).toHaveBeenCalledTimes(7)
+  })
+
+  it('asks again for the player rows inside a game detail, not only the detail', async () => {
+    // The rows have their own slot, shared with career pages. If the detail's
+    // attempt left a rejection there, retrying the detail would reuse it and fail
+    // for a second reason.
+    const fetchMock = stubFetchRefusingOnce('player-games.json', [])
+    const { loadGameDetail, loadPlayerGames } = await freshData()
+
+    await expect(loadGameDetail()).rejects.toThrow('data/player-games.json: HTTP 503')
+    await expect(loadPlayerGames()).resolves.toEqual([])
+    await expect(loadGameDetail()).resolves.toMatchObject({ playerGames: [] })
+
+    expect(urlsOf(fetchMock).filter((url) => url.endsWith('player-games.json'))).toHaveLength(2)
+  })
+
+  it('asks again for the eager set when the first page load was refused', async () => {
+    const fetchMock = stubFetchRefusingOnce('eras.json', [])
+    const { loadDataset } = await freshData()
+
+    await expect(loadDataset()).rejects.toThrow('data/eras.json: HTTP 503')
+    await expect(loadDataset()).resolves.toMatchObject({ eras: [] })
+
+    // The eager set is ten files; a second attempt is another ten, not nine.
+    expect(urlsOf(fetchMock).filter((url) => url.endsWith('eras.json'))).toHaveLength(2)
+    expect(fetchMock).toHaveBeenCalledTimes(20)
   })
 })
