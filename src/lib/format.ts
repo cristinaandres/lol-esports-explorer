@@ -57,6 +57,19 @@ export function stripDateSuffix(name: string): string {
 }
 
 /**
+ * A series name, or the words for a game the source attaches to no series.
+ *
+ * `match_key` 0 is the model's placeholder match: `match_name` "Unknown" and
+ * every other field null. Printing that name would name a series that does not
+ * exist, so absence is worded here instead, the way a gold figure the source
+ * does not state reads "gold not stated" rather than "Unknown gold".
+ */
+export function seriesLabel(matchKey: number, name: string | null | undefined): string {
+  const named = matchKey !== 0 && name ? stripDateSuffix(name) : ''
+  return named || 'series not stated'
+}
+
+/**
  * A date, or a range when two days are involved.
  *
  * 1,931 of 1,964 played series fit on one day, so a date inside a series is

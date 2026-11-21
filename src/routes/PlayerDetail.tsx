@@ -45,7 +45,7 @@ import {
   measureWithUnit,
   monthYear,
   perGame,
-  stripDateSuffix,
+  seriesLabel,
 } from '../lib/format'
 import { buildIndexes, championName, championPath, teamName, teamPath } from '../lib/indexes'
 import type { EventRow, Match } from '../lib/types'
@@ -601,7 +601,7 @@ function ContextCard({
   const { appearance, event, match, position, seriesGames } = context
   const { game, row } = appearance
   const won = row.side === 'blue' ? game.blue_win === 1 : game.blue_win === 0
-  const series = match ? stripDateSuffix(match.match_name) : null
+  const series = seriesLabel(game.match_key, match?.match_name)
 
   return (
     <section className="border-line bg-ink-900/60 mb-6 rounded-xl border p-4">
@@ -618,7 +618,7 @@ function ContextCard({
             )}
             <span className="text-fog-600 m-2">·</span>
             <Link to={`/games/${game.game_id}`} className="hover:text-gold">
-              {series ?? 'Game'}
+              {series}
               {position !== null && seriesGames > 1 ? ` · Game ${position}` : ''}
             </Link>
           </p>
