@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Skeleton } from '../components/Skeleton'
+import { LoadFailure } from '../components/LoadFailure'
 import { DataTable } from '../components/DataTable'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
@@ -95,6 +96,16 @@ export default function ChampionDetail() {
     playerRows.status === 'ready' && banRows.status === 'ready'
       ? { playerGames: playerRows.data, bans: banRows.data }
       : null
+  const draftFailures = [
+    ...(playerRows.status === 'failed'
+      ? [{ what: 'the picks', error: playerRows.error }]
+      : []),
+    ...(banRows.status === 'failed' ? [{ what: 'the bans', error: banRows.error }] : []),
+  ]
+  const retryDraft = () => {
+    if (playerRows.status === 'failed') playerRows.retry()
+    if (banRows.status === 'failed') banRows.retry()
+  }
   const record = draft
     ? championRecord(
         visibleGames,
@@ -153,7 +164,9 @@ export default function ChampionDetail() {
         onClear={() => applyFilters(NO_FILTER)}
       />
 
-      {record === null ? (
+      {draftFailures.length > 0 ? (
+        <LoadFailure failures={draftFailures} onRetry={retryDraft} />
+      ) : record === null ? (
         <Skeleton shape="table" tableHeight="h-56" />
       ) : record.picked === 0 && record.banned === 0 && visibleGames.length !== scoped.length ? (
         <div className="border-line bg-ink-900 rounded-xl border p-6">

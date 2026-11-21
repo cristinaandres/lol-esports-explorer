@@ -5,6 +5,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Skeleton } from '../components/Skeleton'
 import { CoverageBadge } from '../components/CoverageBadge'
 import { DraftBoard } from '../components/DraftBoard'
+import { LoadFailure } from '../components/LoadFailure'
 import { PageHeader } from '../components/PageHeader'
 import { PlayerTable } from '../components/PlayerTable'
 import { Scoreboard } from '../components/Scoreboard'
@@ -153,9 +154,10 @@ export default function GameDetail() {
           </section>
         </div>
       ) : detail.status === 'failed' ? (
-        <p className="text-side-red text-sm">
-          Could not load the game detail: {detail.error.message}
-        </p>
+        <LoadFailure
+          failures={[{ what: 'the game detail', error: detail.error }]}
+          onRetry={detail.retry}
+        />
       ) : (
         <div className="space-y-3">
           <div className="bg-ink-900 border-line h-40 animate-pulse rounded-xl border" />

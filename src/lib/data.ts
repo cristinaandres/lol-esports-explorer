@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import type {
   AliasRow,
@@ -199,8 +199,26 @@ export type Async<T> =
   | { status: 'ready'; data: T; error: null }
   | { status: 'failed'; data: null; error: Error }
 
-export function useAsync<T>(load: () => Promise<T>): Async<T> {
+/**
+ * One attempt, plus the way to start another.
+ *
+ * The loaders are module-level functions, so a page cannot make one fail again by
+ * re-rendering: the same stable function would hand back the same rejected attempt
+ * (or, for a cached success, the same answer). `retry` is the state change the
+ * effect listens for, and it puts the state back to loading before asking, so the
+ * page shows its skeleton for the second attempt rather than the previous error.
+ * The loader itself is what makes that attempt a fresh request: `memoised` forgets
+ * a rejection as it passes through.
+ */
+export type AsyncState<T> = Async<T> & { retry: () => void }
+
+export function useAsync<T>(load: () => Promise<T>): AsyncState<T> {
   const [state, setState] = useState<Async<T>>({ status: 'loading', data: null, error: null })
+  const [attempt, setAttempt] = useState(0)
+  const retry = useCallback(() => {
+    setState({ status: 'loading', data: null, error: null })
+    setAttempt((count) => count + 1)
+  }, [])
 
   useEffect(() => {
     let live = true
@@ -211,31 +229,31 @@ export function useAsync<T>(load: () => Promise<T>): Async<T> {
     return () => {
       live = false
     }
-  }, [load])
+  }, [load, attempt])
 
-  return state
+  return { ...state, retry }
 }
 
-export function useDataset(): Async<Dataset> {
+export function useDataset(): AsyncState<Dataset> {
   return useAsync(loadDataset)
 }
 
-export function useGameDetail(): Async<GameDetail> {
+export function useGameDetail(): AsyncState<GameDetail> {
   return useAsync(loadGameDetail)
 }
 
-export function usePlayerGames(): Async<PlayerGame[]> {
+export function usePlayerGames(): AsyncState<PlayerGame[]> {
   return useAsync(loadPlayerGames)
 }
 
-export function useBans(): Async<DraftSlot[]> {
+export function useBans(): AsyncState<DraftSlot[]> {
   return useAsync(loadBans)
 }
 
-export function useAliases(): Async<AliasRow[]> {
+export function useAliases(): AsyncState<AliasRow[]> {
   return useAsync(loadAliases)
 }
 
-export function useSelection(): Async<SelectionCandidate[]> {
+export function useSelection(): AsyncState<SelectionCandidate[]> {
   return useAsync(loadSelection)
 }
