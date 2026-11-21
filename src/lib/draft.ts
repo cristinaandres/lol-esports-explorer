@@ -32,11 +32,24 @@ export function readDraftState(game: Game, playerRowCount: number): DraftState {
 
 /**
  * Sort by the slot, which is the position within the phase, falling back to the
- * order the source wrote the rows in. They agree for every ordered draft in the
- * corpus; the second key is there so the sort is total.
+ * order the source wrote the rows in.
+ *
+ * A null slot is not position zero. It means the source recorded the champion but
+ * not when it was taken, which is every ban of the 641 unordered-draft games, so
+ * comparing slots arithmetically would sort those bans first on a claim the data
+ * does not make. Nulls are ordered explicitly, after every recorded slot and among
+ * themselves by entry_index -- the order the source wrote them in. They agree for
+ * every ordered draft in the corpus; the second key keeps the sort total.
  */
 export function sortSlots(slots: DraftSlot[]): DraftSlot[] {
-  return [...slots].sort((a, b) => a.slot - b.slot || a.entry_index - b.entry_index)
+  return [...slots].sort((a, b) => {
+    if (a.slot !== b.slot) {
+      if (a.slot === null) return 1
+      if (b.slot === null) return -1
+      return a.slot - b.slot
+    }
+    return a.entry_index - b.entry_index
+  })
 }
 
 /** True when the source says the draft was listed with the two sides swapped. */

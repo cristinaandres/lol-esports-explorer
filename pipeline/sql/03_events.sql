@@ -32,6 +32,13 @@ from dim_event;
 -- Series metadata. The event page needs the format (best-of) and the series name,
 -- and the series route needs a natural id: match_key is build-local and would
 -- break every shared link on the next rebuild, so the route uses match_id.
+--
+-- The model's unknown member (match_key 0) is not published. It exists so a game
+-- that belongs to no series has somewhere to point, and 42 games carry match_key 0
+-- for that reason; no series route resolves it, and every reader words key 0 as
+-- "series not stated" before consulting this artifact. The row is the only one
+-- whose match_id, tab and date_time_utc are null, so dropping it is what makes the
+-- type's promise of three strings true.
 create or replace view match_rows as
 select
   match_key,
@@ -43,7 +50,8 @@ select
   tab,
   is_nullified,
   forfeit
-from dim_match;
+from dim_match
+where match_key <> 0;
 
 create or replace view event_summary as
 with per_game as (
