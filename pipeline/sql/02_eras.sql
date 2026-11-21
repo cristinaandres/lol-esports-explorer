@@ -11,7 +11,7 @@ create or replace view corpus_totals as
 select
   count(*)                                                  as games,
   count(distinct match_key) filter (where match_key <> 0)   as series,
-  count(distinct event_key)                                 as events,
+  count(distinct event_key) filter (where event_key <> 0)   as events,
   (select count(*) from (
      select blue_team_key as team_key from game_facts where blue_team_key <> 0
      union
@@ -36,8 +36,7 @@ with games as (
     era,
     count(*)                                          as games,
     count(distinct match_key) filter (where match_key <> 0) as series,
-    count(distinct event_key)                         as events,
-    count(distinct blue_team_key) + count(distinct red_team_key) as team_slots,
+    count(distinct event_key) filter (where event_key <> 0) as events,
     min(substr(date_time_utc, 1, 10))                 as first_date,
     max(substr(date_time_utc, 1, 10))                 as last_date,
     count(*) filter (where blue_win = 1)              as blue_wins,

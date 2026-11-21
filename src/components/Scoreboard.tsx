@@ -62,12 +62,14 @@ export function Scoreboard({
 
       <dl className="divide-line border-line divide-y border-t">
         {rows.map((row) => (
+          // `dt` first, as a description list requires; `order` keeps the visual
+          // arrangement (blue value, label, red value) without reordering the markup.
           <div key={row.label} className="grid grid-cols-[1fr_auto_1fr] items-center px-5 py-2">
-            <dd className="text-fog-100 text-sm tabular-nums">{row.blue}</dd>
-            <dt className="text-fog-600 w-32 text-center text-[11px] tracking-wider uppercase">
+            <dt className="text-fog-600 order-2 w-32 text-center text-[11px] tracking-wider uppercase">
               {row.label}
             </dt>
-            <dd className="text-fog-100 text-right text-sm tabular-nums">{row.red}</dd>
+            <dd className="text-fog-100 order-1 text-sm tabular-nums">{row.blue}</dd>
+            <dd className="text-fog-100 order-3 text-right text-sm tabular-nums">{row.red}</dd>
           </div>
         ))}
       </dl>

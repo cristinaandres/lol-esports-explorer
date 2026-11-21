@@ -122,18 +122,26 @@ export default function SeriesDetail() {
             <h2 id="series-score-heading" className="sr-only">
               Series score
             </h2>
-            <Link to={teamPath(index, a) ?? '#'} className="text-fog-100 hover:text-gold text-lg font-semibold">
-              {teamName(index, a)}
-            </Link>
+            {teamPath(index, a) ? (
+              <Link to={teamPath(index, a)!} className="text-fog-100 hover:text-gold text-lg font-semibold">
+                {teamName(index, a)}
+              </Link>
+            ) : (
+              <span className="text-fog-100 text-lg font-semibold">{teamName(index, a)}</span>
+            )}
             <span className="text-fog-300 font-mono tabular-nums">
               {wins.get(a) ?? 0} – {wins.get(b) ?? 0}
             </span>
-            <Link
-              to={teamPath(index, b) ?? '#'}
-              className="text-fog-100 hover:text-gold text-right text-lg font-semibold"
-            >
-              {teamName(index, b)}
-            </Link>
+            {teamPath(index, b) ? (
+              <Link
+                to={teamPath(index, b)!}
+                className="text-fog-100 hover:text-gold text-right text-lg font-semibold"
+              >
+                {teamName(index, b)}
+              </Link>
+            ) : (
+              <span className="text-fog-100 text-right text-lg font-semibold">{teamName(index, b)}</span>
+            )}
           </section>
 
           <ol className="divide-line border-line divide-y border-y">

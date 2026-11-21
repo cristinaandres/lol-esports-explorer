@@ -29,7 +29,13 @@ export function SeriesList({
         const [a, b] = entry.teamKeys
         const scoreA = entry.wins.get(a) ?? 0
         const scoreB = entry.wins.get(b) ?? 0
-        const href = single ? `/games/${entry.games[0]!.game_id}` : `/series/${match?.match_id ?? ''}`
+        // The placeholder match has a row and no id, so the guard is on the id, not on the
+        // row: without one there is no series page to link to, and the row reads as text.
+        const href = single
+          ? `/games/${entry.games[0]!.game_id}`
+          : match?.match_id
+            ? `/series/${match.match_id}`
+            : null
 
         return (
           <li
@@ -38,16 +44,24 @@ export function SeriesList({
           >
             <span className="text-fog-600 font-mono text-xs">{dayMonthYear(entry.firstDate)}</span>
 
-            <Link
-              to={href}
-              className="text-fog-100 hover:text-gold flex flex-wrap items-baseline gap-2 font-medium"
-            >
-              <span>{teamName(index, a)}</span>
-              <span className="text-fog-300 font-normal tabular-nums">
-                {single ? 'vs' : `${scoreA} – ${scoreB}`}
+            {href ? (
+              <Link
+                to={href}
+                className="text-fog-100 hover:text-gold flex flex-wrap items-baseline gap-2 font-medium"
+              >
+                <span>{teamName(index, a)}</span>
+                <span className="text-fog-300 font-normal tabular-nums">
+                  {single ? 'vs' : `${scoreA} – ${scoreB}`}
+                </span>
+                <span>{teamName(index, b)}</span>
+              </Link>
+            ) : (
+              <span className="text-fog-100 flex flex-wrap items-baseline gap-2 font-medium">
+                <span>{teamName(index, a)}</span>
+                <span className="text-fog-300 font-normal tabular-nums">{`${scoreA} – ${scoreB}`}</span>
+                <span>{teamName(index, b)}</span>
               </span>
-              <span>{teamName(index, b)}</span>
-            </Link>
+            )}
             <span className="flex flex-wrap items-center justify-end gap-3">
               <span className="text-fog-600 shrink-0 text-xs">
                 {match?.best_of ? `best of ${match.best_of}` : 'format not stated'}

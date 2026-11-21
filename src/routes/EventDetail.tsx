@@ -75,20 +75,18 @@ export default function EventDetail() {
   const { event, matches, grouped, phases, index, teams } = prepared
   const champion = prepared.champs.get(event.event_key)
   const eraId = event.eras?.split(', ')[0] ?? ''
-  const eraTitle = eraId ? eraCopy(eraId).title : '—'
+  // A crumb is a place. An event in no era has none, so it gets no crumb rather than
+  // one labelled with a dash that is not a link.
+  const eraCrumbs = eraId ? [{ label: eraCopy(eraId).title, to: `/eras/${eraId}` }] : []
 
   return (
     <>
       <Breadcrumbs
-        items={[
-          { label: 'Eras', to: '/eras' },
-          { label: eraTitle, to: eraId ? `/eras/${eraId}` : undefined },
-          { label: event.event_name },
-        ]}
+        items={[{ label: 'Eras', to: '/eras' }, ...eraCrumbs, { label: event.event_name }]}
       />
 
       <PageHeader
-        eyebrow={`${event.competition} · ${event.year}`}
+        eyebrow={`${event.competition === 'Unknown' ? 'competition not stated' : event.competition} · ${event.year}`}
         title={event.event_name}
         lead={undefined}
         aside={
@@ -109,10 +107,15 @@ export default function EventDetail() {
               </p>
             ) : null}
             <p className="text-fog-600 font-mono text-xs leading-relaxed">
-              {dayMonthYear(event.first_date)} → {dayMonthYear(event.last_date)}
+              {/* A game-less event has no span: say so rather than print a dash either side
+                  of an arrow, which reads like a date the source lost. */}
+              {event.first_date && event.last_date
+                ? `${dayMonthYear(event.first_date)} → ${dayMonthYear(event.last_date)}`
+                : 'no game played, so no span'}
               <br />
-              {eraTitle}
-              {event.eras && event.eras.includes(',') ? ' (spans more than one era)' : ''}
+              {eraId
+                ? `${eraCopy(eraId).title}${event.eras?.includes(',') ? ' (spans more than one era)' : ''}`
+                : 'no era declared'}
             </p>
           </div>
         }

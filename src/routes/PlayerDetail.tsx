@@ -373,7 +373,7 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
           <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Recent form</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              The last {RECENT_FORM} games in this selection, newest first. A career average says what
+              Up to the last {RECENT_FORM} games in this selection, newest first. A career average says what
               a player is; this says how they are playing now, which is the question before an event.
             </p>
 
@@ -642,10 +642,22 @@ function ContextCard({
               'Event'
             )}
             <span className="text-fog-600 m-2">·</span>
-            <Link to={`/games/${game.game_id}`} className="hover:text-gold">
-              {series}
-              {position !== null && seriesGames > 1 ? ` · Game ${position}` : ''}
-            </Link>
+            <span className="text-fog-100">{series}</span>
+            {position !== null && seriesGames > 1 ? (
+              <>
+                <span className="text-fog-600 m-2">·</span>
+                <Link to={`/games/${game.game_id}`} className="hover:text-gold">
+                  Game {position}
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="text-fog-600 m-2">·</span>
+                <Link to={`/games/${game.game_id}`} className="hover:text-gold">
+                  the game
+                </Link>
+              </>
+            )}
           </p>
           <p className="text-fog-500 mt-1 text-xs">
             {dayMonthYear(game.date_time_utc)} · {row.side} side ·{' '}
