@@ -32,10 +32,10 @@ Spec: `docs/specs/2026-11-20-phase-2-event-and-game.md`
 redirects to its game), `/games/:id` with the scoreboard, the draft board and the
 player rows, and the 42 series-less games reachable from their event.
 
-Player and team names are still text: the links arrive with phase 3, because a
-link to a route that does not exist yet is worse than plain text.
+Player and team names were text in this phase; phase 3 made them links, once the
+routes existed.
 
-## 3 — Entities
+## 3 — Entities *(done)*
 
 Spec: `docs/specs/2026-11-20-phase-3-entities.md`
 Tickets: `docs/specs/tickets/2026-11-20-phase-3-entities/` (seven, in dependency order)
@@ -44,14 +44,14 @@ The alias bridge first, then `/players/:id` with the competition → year filter
 the context/career split, `/teams/:id` with a derived roster and its renames,
 `/champions/:id` across eras, and search by any former name.
 
-## 4 — The pick'em view
+## 4 — The pick'em view *(not built)*
 
 Spec: `docs/specs/2026-11-20-phase-4-head-to-head.md`
 
 `/compare`: two teams, the head-to-head record with its `n`, recent form, and a
 champion pool overlap. No prediction, by design.
 
-## 3b — Polish round
+## 3b — Polish round *(done)*
 
 Tickets: `docs/specs/tickets/2026-11-20-polish-round/` (fourteen, in dependency order)
 
@@ -60,7 +60,7 @@ player's recent form and role split, the event's champion and teams, and eight
 consistency and accessibility fixes. Eleven can start immediately; three wait for the
 pages they touch.
 
-## 4b — Structure before phase 4
+## 4b — Structure before phase 4 *(done)*
 
 - `/eras` as a real index, so the breadcrumb can say `Home / Eras / …` without
   claiming the home page is the era list.
@@ -68,7 +68,7 @@ pages they touch.
   phase is a page of its own.
 - Every trail starts at Home; every entity trail passes through its index.
 
-## 5 — Design and polish
+## 5 — Design and polish *(not built)*
 
 Spec: `docs/specs/2026-11-20-phase-5-design-pass.md`
 
