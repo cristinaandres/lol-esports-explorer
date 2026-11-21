@@ -3,5 +3,5 @@
   "tag": "v1.1.0",
   "commit": "714ce6fd0812a69e649c9bf77fb510fb079a71b6",
   "manifestSha256": "872b43cff39683cca16cf84e8af42d9d2cf658932acb75c1f50a963130a968f0",
-  "note": "The model CSVs in data/model/ are a byte-for-byte copy of the pinned tag's build output. Refresh with pipeline/refresh-data.sh."
+  "note": "The files in data/model/ -- the CSVs, the data dictionary and the DDL -- are a byte-for-byte copy of the pinned tag's build output. Refresh with pipeline/refresh-data.sh."
 }

@@ -19,11 +19,13 @@ Nothing here is hand-written, and nothing here is fetched at runtime.
 data/model/*.csv          the dimensional model: dimensions, bridge and facts
 data/model/data-dictionary.md
                           the upstream data dictionary for those columns
+data/model/schema.sql     the DDL those CSVs load into, column for column
 data/upstream/game-eras.json
                           the declared era table: which fields could exist when,
                           with the patch citation for each boundary
 data/upstream/manifest.json
-                          the upstream build manifest, for cross-checking hashes
+                          the upstream build manifest: the curated files it was
+                          built from, and the raw wiki payloads behind them
 data/upstream/event-selection.json
                           every candidate event the rule considered, with its decision
                           (upstream data/curated/event-selection.jsonl, rewrapped)
@@ -38,18 +40,26 @@ data/upstream/champion-releases.json
 
 ```
 
-`public/data/meta.json` records the sha256 of every one of those files at build
-time, so a reader can walk from a figure on the site to the file it came from
-without trusting this document. If a pinned file is ever edited by hand, the
-artifact hashes change and `npm run data:check` fails.
+`public/data/meta.json` records the sha256 of every file in `data/model/` and
+`data/upstream/` at build time -- the directory is the rule, so a file added here
+cannot be pinned and unrecorded -- and the build refuses to run if
+`data/upstream/manifest.json` is not the manifest `pipeline/source.json` pins. A
+reader can walk from a figure on the site to the file it came from without
+trusting this document. If a pinned file is ever edited by hand, the artifact
+hashes change and `npm run data:check` fails.
+
+What the manifest can and cannot prove: it records a sha256 for each curated
+JSONL, but the two files pinned here are those records rewrapped, so their bytes
+are not the JSONL's. The manifest is the pin's own receipts, not a second copy of
+the files.
 
 ## The one file that is not from the model
 
-\`champion-releases.json\` is fetched from the same wiki the upstream dataset
+`champion-releases.json` is fetched from the same wiki the upstream dataset
 crawls, with the query recorded inside the file and the date it was pinned. It
 exists because a champion without a release date cannot be read: "picked in 21 of
 495 games" means one thing for a champion released in 2011 and another for one
-released in 2014. Refresh it with \`pipeline/refresh-releases.sh\` and read the diff.
+released in 2014. Refresh it with `pipeline/refresh-releases.sh` and read the diff.
 
 ## Refreshing the pin
 
@@ -58,10 +68,11 @@ pipeline/refresh-data.sh v1.2.0
 npm run data:build
 ```
 
-The script re-copies the model, the era table, the manifest and the two curated
-audit files, rewrites `pipeline/source.json` from the tag it checked out, and prints
-what changed. Refreshing the current pin is a no-op: when the tag and the records
-have not moved, the audit files keep their pin date and the bytes do not change.
+The script re-copies the model (its CSVs, the data dictionary and the DDL), the era
+table, the manifest and the two curated audit files, rewrites `pipeline/source.json`
+from the tag it checked out, and prints what changed. Refreshing the current pin is
+a no-op: when the tag and the records have not moved, the audit files keep their pin
+date and the bytes do not change.
 
 Refreshing is deliberate, not automatic: a new upstream tag can move counts, and a
 site that silently renumbers itself is a site whose history cannot be cited.

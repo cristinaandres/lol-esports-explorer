@@ -7,7 +7,6 @@
 # files from that tag, then rewrites pipeline/source.json so the pin and the files
 # can never disagree.
 # It does not build; run 'npm run data:build' next and read the diff.
-set -euo pipefail
 
 tag="${1:-}"
 if [ -z "$tag" ]; then
@@ -24,10 +23,13 @@ echo "cloning $tag ..."
 git clone --quiet --depth 1 --branch "$tag" https://github.com/RRiboulet/lol-dataset "$tmp/src"
 commit="$(git -C "$tmp/src" rev-parse HEAD)"
 
-rm -f "$root"/data/model/*.csv "$root"/data/model/data-dictionary.md
+set -euo pipefail
+
+rm -f "$root"/data/model/*.csv "$root"/data/model/data-dictionary.md "$root"/data/model/schema.sql
 mkdir -p "$root/data/model" "$root/data/upstream"
 cp "$tmp/src"/data/model/*.csv "$root/data/model/"
 cp "$tmp/src/data/model/data-dictionary.md" "$root/data/model/data-dictionary.md"
+cp "$tmp/src/data/model/schema.sql" "$root/data/model/schema.sql"
 cp "$tmp/src/data/curated/manifest.json" "$root/data/upstream/manifest.json"
 cp "$tmp/src/tools/dataset/rules/game-eras.json" "$root/data/upstream/game-eras.json"
 
@@ -85,8 +87,9 @@ path.write_text(json.dumps({
     "tag": tag,
     "commit": commit,
     "manifestSha256": manifest_sha,
-    "note": "The model CSVs in data/model/ are a byte-for-byte copy of the pinned "
-            "tag's build output. Refresh with pipeline/refresh-data.sh.",
+    "note": "The files in data/model/ -- the CSVs, the data dictionary and the DDL -- "
+            "are a byte-for-byte copy of the pinned tag's build output. Refresh with "
+            "pipeline/refresh-data.sh.",
 }, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 print(f"pinned {tag} ({commit[:7]})")
 PY
