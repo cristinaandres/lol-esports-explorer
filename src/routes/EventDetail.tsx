@@ -59,7 +59,7 @@ export default function EventDetail() {
     return (
       <p className="text-fog-300">
         No event called <code>{id}</code>.{' '}
-        <Link to="/" className="text-gold">
+        <Link to="/eras" className="text-gold">
           Back to the eras
         </Link>
         .
@@ -174,7 +174,7 @@ export default function EventDetail() {
                     )}
                   </h3>
                   <span className="text-fog-600 text-xs">
-                    {count(phase.series.length)} {phase.series.length === 1 ? 'series' : 'series'} ·{' '}
+                    {count(phase.series.length)} series ·{' '}
                     {count(phase.series.reduce((sum, entry) => sum + entry.games.length, 0))} games
                   </span>
                 </div>

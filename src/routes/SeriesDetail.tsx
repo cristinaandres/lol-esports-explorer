@@ -58,7 +58,7 @@ export default function SeriesDetail() {
     return (
       <p className="text-fog-300">
         No series called <code>{id}</code>.{' '}
-        <Link to="/" className="text-gold">
+        <Link to="/eras" className="text-gold">
           Back to the eras
         </Link>
         .

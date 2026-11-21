@@ -64,7 +64,7 @@ export default function GameDetail() {
     return (
       <p className="text-fog-300">
         No game called <code>{id}</code>.{' '}
-        <Link to="/" className="text-gold">
+        <Link to="/eras" className="text-gold">
           Back to the eras
         </Link>
         .
