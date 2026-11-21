@@ -10,7 +10,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { useAliases, useDataset, useGameCorpus, usePlayerGames } from '../lib/data'
+import { useAliases, useDataset, useGameCorpus, usePlayerGames, type Dataset } from '../lib/data'
 import {
   applyFilter,
   emptyReason,
@@ -25,6 +25,7 @@ import { count, dayMonthYear } from '../lib/format'
 import { buildIndexes, playerName, playerPath } from '../lib/indexes'
 import { rosterFrom, rosterOfGame, teamAppearancesFor, teamSummaryFrom } from '../lib/team'
 import { championships, groupTitlesByCompetition, titlesForTeam } from '../lib/titles'
+import type { Team } from '../lib/types'
 
 /**
  * One team's record.
@@ -33,54 +34,20 @@ import { championships, groupTitlesByCompetition, titlesForTeam } from '../lib/t
  * page states both instead of hiding them: the roster is derived from who appeared
  * in the games, not from a contract table the model does not have, and the side
  * split is reported per view because side advantage belongs to the era.
+ *
+ * The id is resolved against the eager set alone, in `TeamDetail`; the lazy set
+ * lives in `TeamPage`, which a found id mounts and a typo'd one never does.
  */
 export default function TeamDetail() {
   const { team: id } = useParams()
   const dataset = useDataset()
-  const corpus = useGameCorpus()
-  const rows = usePlayerGames()
-  const aliases = useAliases()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filter = parseFilter(searchParams)
 
-  const prepared = useMemo(() => {
-    if (dataset.status !== 'ready' || corpus.status !== 'ready') return null
-    const team = dataset.data.teams.find((row) => row.team_id === id)
-    if (!team) return { team: undefined } as const
-
-    const index = buildIndexes(dataset.data)
-
-    return {
-      team,
-      ready: rows.status === 'ready',
-      appearances: teamAppearancesFor(corpus.data.games, index.competitions, team.team_key),
-      playerGames: rows.status === 'ready' ? rows.data : [],
-      former:
-        aliases.status === 'ready'
-          ? namesFor(aliases.data, 'team', team.team_id).map((row) => ({
-              name: row.alias_string,
-              from: row.valid_from,
-              to: row.valid_to,
-            }))
-          : [],
-      champs: championships(corpus.data.games, corpus.data.matches),
-      index,
-    } as const
-  }, [dataset, corpus, rows, aliases, id])
-
-  const applyFilters = (next: typeof filter) => {
-    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
-  }
-
-  if (dataset.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
-  if (corpus.status === 'failed')
-    return (
-      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
-    )
 
-  if (!prepared?.team) {
+  const team = dataset.data.teams.find((row) => row.team_id === id)
+  if (!team) {
     return (
       <div className="py-12">
         <p className="text-fog-600 mb-3 font-mono text-xs tracking-widest uppercase">Not found</p>
@@ -97,7 +64,49 @@ export default function TeamDetail() {
     )
   }
 
-  const { team, index, playerGames } = prepared
+  return <TeamPage team={team} data={dataset.data} />
+}
+
+function TeamPage({ team, data }: { team: Team; data: Dataset }) {
+  const corpus = useGameCorpus()
+  const rows = usePlayerGames()
+  const aliases = useAliases()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter = parseFilter(searchParams)
+
+  const prepared = useMemo(() => {
+    if (corpus.status !== 'ready') return null
+
+    const index = buildIndexes(data)
+
+    return {
+      ready: rows.status === 'ready',
+      appearances: teamAppearancesFor(corpus.data.games, index.competitions, team.team_key),
+      playerGames: rows.status === 'ready' ? rows.data : [],
+      former:
+        aliases.status === 'ready'
+          ? namesFor(aliases.data, 'team', team.team_id).map((row) => ({
+              name: row.alias_string,
+              from: row.valid_from,
+              to: row.valid_to,
+            }))
+          : [],
+      champs: championships(corpus.data.games, corpus.data.matches),
+      index,
+    } as const
+  }, [data, corpus, rows, aliases, team])
+
+  const applyFilters = (next: typeof filter) => {
+    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
+  }
+
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
+  if (!prepared) return <Skeleton shape="page" />
+
+  const { index, playerGames } = prepared
   const titles = titlesForTeam(prepared.champs, team.team_key)
   const titleGroups = groupTitlesByCompetition(titles, (key) => index.events.get(key)?.competition)
   const all = prepared.appearances

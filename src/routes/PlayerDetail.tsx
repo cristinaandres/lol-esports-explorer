@@ -25,7 +25,7 @@ import {
   type ChampionStat,
   type MeasureSummary,
 } from '../lib/career'
-import { useAliases, useDataset, useGameCorpus, usePlayerGames } from '../lib/data'
+import { useAliases, useDataset, useGameCorpus, usePlayerGames, type Dataset } from '../lib/data'
 import { contextFor, parseFrom } from '../lib/context'
 import { eraCopy } from '../lib/eras'
 import {
@@ -48,7 +48,7 @@ import {
   seriesLabel,
 } from '../lib/format'
 import { buildIndexes, championName, championPath, teamName, teamPath } from '../lib/indexes'
-import type { EventRow, Match } from '../lib/types'
+import type { EventRow, Match, Player } from '../lib/types'
 
 /**
  * One player's career.
@@ -60,87 +60,20 @@ import type { EventRow, Match } from '../lib/types'
  *    is absent from half the corpus and dividing by games would invent a figure;
  *  - nothing implies an order the source did not state. The champion list is by
  *    games played, not by pick order.
+ *
+ * The id is resolved against the eager set alone, in `PlayerDetail`; the lazy set
+ * lives in `PlayerPage`, which a found id mounts and a typo'd one never does.
  */
 export default function PlayerDetail() {
   const { player: id } = useParams()
   const dataset = useDataset()
-  const corpus = useGameCorpus()
-  const rows = usePlayerGames()
-  const aliases = useAliases()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filter = parseFilter(searchParams)
-  const from = parseFrom(searchParams)
 
-  const prepared = useMemo(() => {
-    if (dataset.status !== 'ready' || corpus.status !== 'ready') return null
-    const allGames = corpus.data.games
-    const player = dataset.data.players.find((row) => row.player_id === id)
-    if (!player) return { player: undefined } as const
-
-    const index = buildIndexes(dataset.data)
-    const appearances =
-      rows.status === 'ready'
-        ? appearancesFor(allGames, rows.data, player.player_key, index.competitions)
-        : []
-
-    const hit = contextFor(appearances, from)
-    const context = hit
-      ? {
-          appearance: hit,
-          event: dataset.data.events.find((event) => event.event_key === hit.game.event_key),
-          match: corpus.data.matches.find((match) => match.match_key === hit.game.match_key),
-          ...(() => {
-            const siblings =
-              hit.game.match_key === 0
-                ? []
-                : allGames
-                    .filter((game) => game.match_key === hit.game.match_key)
-                    .sort((a, b) => a.date_time_utc.localeCompare(b.date_time_utc))
-            const position = siblings.findIndex((game) => game.game_key === hit.game.game_key)
-            return { position: position >= 0 ? position + 1 : null, seriesGames: siblings.length }
-          })(),
-        }
-      : null
-
-    return {
-      player,
-      ready: rows.status === 'ready',
-      appearances,
-      context,
-      former:
-        aliases.status === 'ready'
-          ? namesFor(aliases.data, 'player', player.player_id).map((row) => ({
-              name: row.alias_string,
-              from: row.valid_from,
-              to: row.valid_to,
-            }))
-          : [],
-      index,
-      champs: championships(allGames, corpus.data.matches),
-    } as const
-  }, [dataset, corpus, rows, aliases, id, from])
-
-  const applyFilters = (next: typeof filter) => {
-    const params = new URLSearchParams(filterSearch(next))
-    // The context survives a filter change: the reader came from a game and is
-    // narrowing the career around it, not leaving the game behind.
-    if (from) params.set('from', `game:${from}`)
-    setSearchParams(params, { replace: true })
-  }
-
-  const clearContext = () => {
-    setSearchParams(new URLSearchParams(filterSearch(filter)), { replace: true })
-  }
-
-  if (dataset.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
     return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
-  if (corpus.status === 'failed')
-    return (
-      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
-    )
 
-  if (!prepared?.player) {
+  const player = dataset.data.players.find((row) => row.player_id === id)
+  if (!player) {
     return (
       <div className="py-12">
         <p className="text-fog-600 mb-3 font-mono text-xs tracking-widest uppercase">Not found</p>
@@ -157,7 +90,82 @@ export default function PlayerDetail() {
     )
   }
 
-  const { player, former, index } = prepared
+  return <PlayerPage player={player} data={dataset.data} />
+}
+
+function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
+  const corpus = useGameCorpus()
+  const rows = usePlayerGames()
+  const aliases = useAliases()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter = parseFilter(searchParams)
+  const from = parseFrom(searchParams)
+
+  const prepared = useMemo(() => {
+    if (corpus.status !== 'ready') return null
+    const allGames = corpus.data.games
+
+    const index = buildIndexes(data)
+    const appearances =
+      rows.status === 'ready'
+        ? appearancesFor(allGames, rows.data, player.player_key, index.competitions)
+        : []
+
+    const hit = contextFor(appearances, from)
+    const context = hit
+      ? {
+          appearance: hit,
+          event: data.events.find((event) => event.event_key === hit.game.event_key),
+          match: corpus.data.matches.find((match) => match.match_key === hit.game.match_key),
+          ...(() => {
+            const siblings =
+              hit.game.match_key === 0
+                ? []
+                : allGames
+                    .filter((game) => game.match_key === hit.game.match_key)
+                    .sort((a, b) => a.date_time_utc.localeCompare(b.date_time_utc))
+            const position = siblings.findIndex((game) => game.game_key === hit.game.game_key)
+            return { position: position >= 0 ? position + 1 : null, seriesGames: siblings.length }
+          })(),
+        }
+      : null
+
+    return {
+      ready: rows.status === 'ready',
+      appearances,
+      context,
+      former:
+        aliases.status === 'ready'
+          ? namesFor(aliases.data, 'player', player.player_id).map((row) => ({
+              name: row.alias_string,
+              from: row.valid_from,
+              to: row.valid_to,
+            }))
+          : [],
+      index,
+      champs: championships(allGames, corpus.data.matches),
+    } as const
+  }, [data, corpus, rows, aliases, player, from])
+
+  const applyFilters = (next: typeof filter) => {
+    const params = new URLSearchParams(filterSearch(next))
+    // The context survives a filter change: the reader came from a game and is
+    // narrowing the career around it, not leaving the game behind.
+    if (from) params.set('from', `game:${from}`)
+    setSearchParams(params, { replace: true })
+  }
+
+  const clearContext = () => {
+    setSearchParams(new URLSearchParams(filterSearch(filter)), { replace: true })
+  }
+
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
+  if (!prepared) return <Skeleton shape="page" />
+
+  const { former, index } = prepared
   const all = prepared.appearances
   const titles = titlesForPlayer(prepared.champs, all)
   const eventStats = eventsOf(all)
