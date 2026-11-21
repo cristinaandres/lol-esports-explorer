@@ -91,9 +91,11 @@ select
   coalesce(players.players, 0) as players,
   per_game.first_date,
   per_game.last_date,
-  per_game.blue_wins,
-  -- Coalesced like games and series: an admitted event with no game played has a
-  -- stated count of zero, not an absent one.
+  -- Coalesced like games, series, teams and players: an admitted event with no game
+  -- played has a stated count of zero, not an absent one. `first_date`, `last_date`
+  -- and the average stay null, because an event with no game has no span and no
+  -- length to average — those are absences, and the type says so.
+  coalesce(per_game.blue_wins, 0) as blue_wins,
   coalesce(per_game.games_duration_stated, 0) as games_duration_stated,
   per_game.avg_duration_seconds,
   per_game.eras

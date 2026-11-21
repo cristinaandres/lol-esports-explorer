@@ -115,6 +115,35 @@ describe('eras.json', () => {
   })
 })
 
+describe('events.json', () => {
+  /**
+   * The type says these fields are numbers, so a null here is either a bug in the
+   * view or a lie in the type. Two admitted events have no game — WCG 2011 and
+   * World Cyber Games 2013 — and their counts were null until the view coalesced
+   * them. Nothing rendered wrong, because `Ratio` prints an em dash past a zero
+   * total, which is exactly the kind of harmlessness that hides a defect until a
+   * sort or a sum trusts the type.
+   */
+  const counts = ['games', 'series', 'teams', 'players', 'blue_wins', 'games_duration_stated'] as const
+
+  it('states a count for every event, including the ones with no game', () => {
+    const gameLess = events.filter((event) => event.games === 0)
+    expect(gameLess.length).toBe(2)
+    for (const event of events) {
+      for (const field of counts) {
+        expect(typeof event[field], `${event.event_name}.${field}`).toBe('number')
+      }
+    }
+  })
+
+  it('never claims a blue-side win on a game the event does not have', () => {
+    expect(events.filter((event) => event.blue_wins > event.games)).toEqual([])
+    expect(events.reduce((sum, event) => sum + event.blue_wins, 0)).toBe(
+      games.filter((game) => game.blue_win === 1).length,
+    )
+  })
+})
+
 describe('draft artifacts', () => {
   it('puts every ordered pick in the corpus in picks.json', () => {
     const ordered = games.filter((game) => game.draft_fidelity === 'ordered')
