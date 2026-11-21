@@ -10,17 +10,39 @@
  * A page can be missing more than one file (a champion page needs the player rows
  * and the bans), so the block takes the list and names each one instead of
  * reporting a generic "data error".
+ *
+ * `inline` is for a failure that does not own a section: the alias bridge feeds
+ * one line of a page header or a search dropdown, and a 6 rem card there would
+ * outweigh the thing it is reporting. The sentence and the retry stay the same;
+ * only the shape changes.
  */
 export type LoadFailureReport = { what: string; error: Error }
 
 export function LoadFailure({
   failures,
   onRetry,
+  inline = false,
 }: {
   failures: LoadFailureReport[]
   onRetry: () => void
+  inline?: boolean
 }) {
   const names = failures.map((failure) => failure.what).join(' and ')
+
+  if (inline) {
+    return (
+      <span className="text-side-red text-sm">
+        Could not load {names}.{' '}
+        <button
+          type="button"
+          onClick={onRetry}
+          className="text-gold underline-offset-4 hover:underline"
+        >
+          Try again
+        </button>
+      </span>
+    )
+  }
 
   return (
     <div className="border-line bg-ink-900 rounded-xl border p-6">

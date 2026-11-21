@@ -111,7 +111,13 @@ export default function TeamDetail() {
         eyebrow={team.region ? `team · ${team.region}` : 'team'}
         title={team.team_name}
         lead={
-          prepared.former.length > 0 ? (
+          aliases.status === 'failed' ? (
+            <LoadFailure
+              inline
+              failures={[{ what: 'former names', error: aliases.error }]}
+              onRetry={aliases.retry}
+            />
+          ) : prepared.former.length > 0 ? (
             <span className="text-fog-500 text-sm">
               Previously{' '}
               {prepared.former.map((name, position) => (

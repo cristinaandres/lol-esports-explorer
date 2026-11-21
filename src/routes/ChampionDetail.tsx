@@ -132,7 +132,13 @@ export default function ChampionDetail() {
         eyebrow="champion"
         title={champion.champion_name}
         lead={
-          former.length > 0 ? (
+          aliases.status === 'failed' ? (
+            <LoadFailure
+              inline
+              failures={[{ what: 'former names', error: aliases.error }]}
+              onRetry={aliases.retry}
+            />
+          ) : former.length > 0 ? (
             <span className="text-fog-500 text-sm">
               Previously{' '}
               {former.map((name) => (
