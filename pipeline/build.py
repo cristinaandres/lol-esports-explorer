@@ -255,7 +255,10 @@ def report_shortname_defects(con: duckdb.DuckDBPyConnection) -> bool:
     dropped rows are a printed build error, not a count a test has to notice.
 
     The opposite defect is reported too: a name that folds onto two teams would bind
-    one abbreviation to both, which the artifacts cannot show either.
+    one abbreviation to both, which the artifacts cannot show either. Two teams here
+    means two rows of `dim_team`: the DDL declares `team_id` UNIQUE, but the build
+    reads a CSV rather than the DDL, so a duplicated id is a second team until the
+    rank and this report are keyed on `team_key`.
 
     Runs before anything is rendered or written, so a failed build leaves the committed
     artifacts untouched. Returns True when every pinned row reached exactly one team.
@@ -287,7 +290,8 @@ def report_shortname_defects(con: duckdb.DuckDBPyConnection) -> bool:
     if ambiguous:
         print(
             f"error: {len(ambiguous)} pinned short name(s) name more than one team; the "
-            "fold in pipeline/sql/08_shortnames.sql is too coarse for these names",
+            "fold in pipeline/sql/08_shortnames.sql is too coarse for these names, or "
+            "dim_team carries one team as two rows",
             file=sys.stderr,
         )
 

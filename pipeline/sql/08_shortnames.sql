@@ -41,6 +41,16 @@ lateral unnest(data.teams) as t(entry);
 -- spellings can reach one team, so the rank picks the row a team list prints: the one
 -- spelled the way the model spells the team first, then by name, so the choice does not
 -- depend on file order.
+--
+-- The rank is partitioned by team_key, not team_id. team_key is the row's primary key,
+-- unique and never null, and it is the key every view joins on (team_short_name,
+-- team_index, teams.json); team_id is only the natural key -- the DDL declares it UNIQUE,
+-- but the build reads a CSV, so nothing enforces that. Keyed on team_id, a second row
+-- under one team_id folded into the same partition: one of the two rows lost its short
+-- name to the rank without a word, which is the silent drop this guard exists to refuse.
+-- Every row with a null team_id folded together the same way. Keyed on team_key each row
+-- ranks on its own, so a duplicated id shows up as two teams in ambiguous_shortnames
+-- instead of disappearing here.
 create or replace view shortname_matches as
 select
   s.name      as stated_name,
@@ -49,7 +59,7 @@ select
   t.team_id,
   t.team_name,
   row_number() over (
-    partition by t.team_id
+    partition by t.team_key
     order by (s.name = t.team_name) desc, s.name, s.short
   )           as team_rank
 from team_shortnames s
@@ -67,16 +77,22 @@ anti join dim_team t on team_name_key(t.team_name) = team_name_key(s.name);
 -- one abbreviation to both of them, silently. Measured on the pinned model the keys are
 -- distinct, so this view is empty today and build.py fails on it if a later pin ever
 -- makes it not.
+--
+-- Counted over team_key for the reason shortname_matches ranks over it: team_key is the
+-- team, one row each, and it is the only column that stays one-per-row for a null team_id
+-- too. Counting distinct team_id called a duplicated id one team, so two teams sharing an
+-- id bound one abbreviation to both and this view said nothing; distinct team_key counts
+-- them, and the build refuses.
 create or replace view ambiguous_shortnames as
 select
   s.name,
   s.short,
-  count(distinct t.team_id)              as teams,
+  count(distinct t.team_key)             as teams,
   string_agg(t.team_name, ' | ' order by t.team_name) as team_names
 from team_shortnames s
 join dim_team t on team_name_key(t.team_name) = team_name_key(s.name)
 group by s.name, s.short
-having count(distinct t.team_id) > 1;
+having count(distinct t.team_key) > 1;
 
 create or replace view shortname_aliases as
 select

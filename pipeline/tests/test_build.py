@@ -1,18 +1,25 @@
-"""The refusals that keep a stale pin or an unrecorded file out of the build.
+"""The refusals that keep a stale pin, an unrecorded file or a dropped short name out
+of the build.
 
 `pipeline/build.py` stops when `data/upstream/manifest.json` is not the file
 `pipeline/source.json` pins, when it is missing, when a recorded file is missing or
-has moved, when a file in a pinned directory is on disk but unrecorded, and when a
-pinned directory holds something that is not a plain regular file. Each refusal was
-proved by hand in `/tmp`; nothing in the repository failed if a later edit deleted a
-call, so these tests are the proof rather than the transcript of one.
+has moved, when a file in a pinned directory is on disk but unrecorded, when a
+pinned directory holds something that is not a plain regular file, and when a
+pinned short name reaches no team or more than one. Each refusal was proved by hand
+in `/tmp`; nothing in the repository failed if a later edit deleted a call, so
+these tests are the proof rather than the transcript of one.
 
-Three choices keep them cheap and honest:
+Four choices keep them cheap and honest:
 
   * The module is imported, not run as a subprocess. Every refusal in `render()` is
     decided before DuckDB is asked for a row, so a connection stub reaches them in
     milliseconds. A subprocess would need a copy of `data/model/` and a real DuckDB
     run -- seconds per case -- and would cover the refusal no better.
+  * The short-name guard is the one refusal in `main()` rather than `render()`, so a
+    stub that answers its two views is what covers the call. The views themselves are
+    the other half: a three-row `dim_team` and a one-row pin in a temporary directory
+    run the real `08_shortnames.sql` against real DuckDB, which a stub cannot prove,
+    and avoid copying the 5 MB model to do it.
   * The root is temporary and the paths are patched, so nothing here can write to
     the repository's `data/` or `public/data/`. `pipeline/source.json` is copied,
     which means the hash the tests compare against is the pin's real one until a
@@ -26,11 +33,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import sys
 from collections.abc import Callable
 
+import duckdb
 import pytest
 
 PIPELINE_DIR = pathlib.Path(__file__).resolve().parents[1]
@@ -74,6 +83,49 @@ class NoRowsConnection:
 
     def execute(self, sql: str) -> EmptyCursor:
         return EmptyCursor()
+
+
+class RowsCursor:
+    """The rows a test gives one query."""
+
+    description: tuple[object, ...] = ()
+
+    def __init__(self, rows: list[tuple[object, ...]]) -> None:
+        self._rows = rows
+
+    def fetchall(self) -> list[tuple[object, ...]]:
+        return list(self._rows)
+
+
+class DefectConnection:
+    """The two defect views `report_shortname_defects()` reads, with a test's rows.
+
+    Nothing in `render()` reads these views, so a stub is the only way to reach the
+    refusal in `main()` in milliseconds: it answers the query that names each view
+    and refuses anything else, so a guard that asked for a third view, or a test
+    that swapped two views' rows, fails here instead of passing quietly.
+    """
+
+    def __init__(
+        self,
+        unmatched: list[tuple[object, ...]] | None = None,
+        ambiguous: list[tuple[object, ...]] | None = None,
+    ) -> None:
+        self._rows = {
+            "unmatched_shortnames": unmatched or [],
+            "ambiguous_shortnames": ambiguous or [],
+        }
+
+    def execute(self, sql: str) -> RowsCursor:
+        for view, rows in self._rows.items():
+            if view in sql:
+                return RowsCursor(rows)
+        # main() reads a defect view before anything else, so a query that names
+        # neither is the build having gone past the guard -- the deletion this stub
+        # exists to make a reader see.
+        raise AssertionError(
+            f"the build went past the short-name guard and asked for: {sql}"
+        )
 
 
 @pytest.fixture
@@ -289,3 +341,198 @@ def test_render_refuses_a_pin_that_records_no_files(root: pathlib.Path) -> None:
 
     assert "error: pipeline/source.json records no per-file hashes" in message
     assert "re-pin with pipeline/refresh-data.sh <tag>" in message
+
+
+# 08_shortnames.sql reads these paths relative to the working directory, as the build
+# runs it, so a test can chdir into a directory holding a model of two rows and a pin
+# of one, and exercise the real views without the pinned model. The header is the
+# model's own.
+GUARD_TEAM_HEADER = b"team_key,team_id,team_name,overview_page,region\n"
+# The pin states one name. Two rows state it too, which is the state the guard is for.
+GUARD_PINNED_SHORTNAMES = b'{"teams":[{"name":"T1 Esports","short":"T1"}]}\n'
+
+
+def guard_connection() -> duckdb.DuckDBPyConnection:
+    """A real DuckDB with `08_shortnames.sql` loaded over the caller's directory.
+
+    The caller has chdir'd into `guard_repo()`, because the file reads its model and
+    its pin by the paths the build reads them by. The file's last view unions the
+    alias bridge, which is not what this guard asks about, so the bridge is a view of
+    no rows with the bridge's columns. Everything else -- the fold, the rank, the two
+    defect views -- is the file's own SQL.
+    """
+    con = duckdb.connect()
+    con.execute(
+        """
+        create or replace view alias_rows as
+        select null::varchar as kind, null::varchar as alias_string,
+               null::varchar as entity_id, null::varchar as entity_name,
+               null::varchar as valid_from, null::varchar as valid_to,
+               null::varchar as evidence
+        where false
+        """
+    )
+    con.execute(
+        "create or replace view dim_team as "
+        "select * from read_csv('data/model/dim_team.csv', header = true)"
+    )
+    con.execute((PIPELINE_DIR / "sql" / "08_shortnames.sql").read_text(encoding="utf-8"))
+    return con
+
+
+def guard_repo(tmp_path: pathlib.Path, teams: bytes) -> pathlib.Path:
+    """A directory holding the two files 08_shortnames.sql reads by relative path."""
+    repo = tmp_path / "guarded"
+    (repo / "data" / "model").mkdir(parents=True)
+    (repo / "data" / "upstream").mkdir(parents=True)
+    (repo / "data" / "model" / "dim_team.csv").write_bytes(GUARD_TEAM_HEADER + teams)
+    (repo / "data" / "upstream" / "team-shortnames.json").write_bytes(
+        GUARD_PINNED_SHORTNAMES
+    )
+    return repo
+
+
+@pytest.mark.parametrize(
+    ("case", "first_id", "second_id"),
+    [
+        ("the same team_id twice", b"tm-shared", b"tm-shared"),
+        # An empty CSV field reads as NULL, which the unknown member already carries.
+        ("a null team_id", b"", b""),
+    ],
+)
+def test_shortname_guard_sees_two_teams_under_one_id(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    case: str,
+    first_id: bytes,
+    second_id: bytes,
+) -> None:
+    """The blind spot: two team rows sharing an id are two teams, not one.
+
+    The DDL declares `team_id` UNIQUE, but the build reads the CSV, so nothing rejects
+    a duplicate id, and the model's real key is `team_key`. Keyed on `team_id`, both
+    rows fell in one rank partition -- the second row's short name was dropped with no
+    word -- and the ambiguity view counted one team. The build succeeded and the pin's
+    abbreviation was gone from `teams.json`, which is the defect this test pins down.
+    """
+    teams = b"1," + first_id + b",T1 Esports,T1 Esports,Korea\n"
+    teams += b"2," + second_id + b",T1 Esports,T1 Esports,Korea\n"
+    repo = guard_repo(tmp_path, teams)
+    monkeypatch.chdir(repo)
+    con = guard_connection()
+
+    ambiguous = con.execute(
+        "select name, short, teams, team_names from ambiguous_shortnames"
+    ).fetchall()
+    assert ambiguous == [("T1 Esports", "T1", 2, "T1 Esports | T1 Esports")], case
+
+    # Both rows rank first on their own key, so neither can lose its short name to the
+    # other; the ambiguity above is what refuses the build.
+    ranks = con.execute(
+        "select team_key, team_rank from shortname_matches order by team_key"
+    ).fetchall()
+    assert ranks == [(1, 1), (2, 1)], case
+
+
+def test_shortname_guard_is_quiet_when_each_name_reaches_one_team(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The control: keying on `team_key` must not refuse an ordinary model.
+
+    One pinned name, one team it reaches, and a second team the pin does not name. Both
+    defect views are empty, which is the state the build proceeds on.
+    """
+    teams = b"1,tm-one,T1 Esports,T1 Esports,Korea\n"
+    teams += b"2,tm-two,T1 Academy,T1 Academy,Korea\n"
+    repo = guard_repo(tmp_path, teams)
+    monkeypatch.chdir(repo)
+    con = guard_connection()
+
+    assert con.execute("select count(*) from ambiguous_shortnames").fetchone() == (0,)
+    assert con.execute("select count(*) from unmatched_shortnames").fetchone() == (0,)
+    assert con.execute("select team_key, short_name from team_short_name").fetchall() == [
+        (1, "T1")
+    ]
+
+
+def test_main_refuses_a_pinned_short_name_that_joins_no_team(
+    root: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The refusal `render()` never reaches, because it runs in `main()` on both paths.
+
+    Nothing else in this suite fails if the `report_shortname_defects(con)` call is
+    deleted from `main()`: the build proceeds and the team's row in `teams.json` loses
+    its short name, silently. This is the test that makes that deletion red.
+    """
+    pin_tree(root)
+    monkeypatch.setattr(
+        build, "connect", lambda: DefectConnection(unmatched=[("T9 Esports", "T9")])
+    )
+
+    cwd = os.getcwd()
+    try:
+        status = build.main([])
+    finally:
+        os.chdir(cwd)
+
+    assert status == 1
+    error = capsys.readouterr().err
+    assert (
+        "error: pinned short name 'T9' for 'T9 Esports' joins no team in dim_team" in error
+    )
+    assert "error: 1 pinned short name(s) would be dropped" in error
+    assert not list((root / "public" / "data").iterdir()), (
+        "a refused build writes no artifact"
+    )
+
+
+def test_main_refuses_a_pinned_short_name_that_names_two_teams(
+    root: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The other defect the same call reports, with the same status and no artifact."""
+    pin_tree(root)
+    monkeypatch.setattr(
+        build,
+        "connect",
+        lambda: DefectConnection(
+            ambiguous=[("T1 Esports", "T1", "T1 Esports | T1 Academy")]
+        ),
+    )
+
+    cwd = os.getcwd()
+    try:
+        status = build.main([])
+    finally:
+        os.chdir(cwd)
+
+    assert status == 1
+    error = capsys.readouterr().err
+    assert (
+        "error: pinned short name 'T1' for 'T1 Esports' folds onto more than one team: "
+        "T1 Esports | T1 Academy" in error
+    )
+    assert "error: 1 pinned short name(s) name more than one team" in error
+    assert not list((root / "public" / "data").iterdir()), (
+        "a refused build writes no artifact"
+    )
+
+
+def test_main_builds_when_every_pinned_row_reaches_one_team(
+    root: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The control: an empty defect set is what lets `main()` write the artifacts."""
+    pin_tree(root)
+    monkeypatch.setattr(build, "connect", NoRowsConnection)
+
+    cwd = os.getcwd()
+    try:
+        status = build.main([])
+    finally:
+        os.chdir(cwd)
+
+    assert status == 0
+    assert (root / "public" / "data" / "teams.json").is_file()
