@@ -87,6 +87,18 @@ export function orDash(value: number | null | undefined): string {
 }
 
 /**
+ * A measure and its unit, or the words for its absence.
+ *
+ * `orDash` cannot carry a unit: "— gold" hangs the unit on a dash and reads as a
+ * broken figure rather than an absent one. Where the unit follows the number
+ * inline, absence says so instead, the way a series says "format not stated".
+ * The figure itself still comes from `orDash`, so a count never renders two ways.
+ */
+export function measureWithUnit(value: number | null | undefined, unit: string): string {
+  return value === null || value === undefined ? `${unit} not stated` : `${orDash(value)} ${unit}`
+}
+
+/**
  * A per-game average, formatted so it stays comparable to the total beside it.
  *
  * One decimal below 100, whole numbers above: 3.6 kills per game is a measurement,
