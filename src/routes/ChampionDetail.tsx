@@ -252,9 +252,11 @@ function ChampionPage({ champion, data }: { champion: Champion; data: Dataset })
           <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">By era</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Each era is measured against the games played in it since the champion was released,
-              so an era that ended before it existed carries no count at all rather than a row of
-              zeroes.
+              Each era is measured against the games played in it since the champion was released.
+              An era that ended before it existed has no row at all rather than a row of zeroes, so
+              every row here is an era the champion could be drafted in and a zero in it is a
+              measurement of those games. Only Won falls back to a dash, where no pick leaves it no
+              denominator.
             </p>
 
             <DataTable
@@ -277,25 +279,29 @@ function ChampionPage({ champion, data }: { champion: Champion; data: Dataset })
                   key: 'picked',
                   label: 'Picked',
                   align: 'right',
-                  render: (era) => (presenceOf(era) === 0 ? '—' : count(era.picked)),
+                  // Zero is measured here: the row exists only because the champion was
+                  // eligible for the games in it, and it was not picked in any of them.
+                  render: (era) => count(era.picked),
                 },
                 {
                   key: 'banned',
                   label: 'Banned',
                   align: 'right',
-                  render: (era) => (presenceOf(era) === 0 ? '—' : count(era.banned)),
+                  render: (era) => count(era.banned),
                 },
                 {
                   key: 'presence',
                   label: 'Presence',
                   align: 'right',
-                  render: (era) => <Ratio part={presenceOf(era)} total={era.games} empty="not present" />,
+                  render: (era) => <Ratio part={presenceOf(era)} total={era.games} />,
                 },
                 {
                   key: 'won',
                   label: 'Won',
                   align: 'right',
-                  render: (era) => <Ratio part={era.won} total={era.picked} empty="—" />,
+                  // A win rate over no picks has no denominator, so this is the one
+                  // column where a dash still means nothing was measured.
+                  render: (era) => <Ratio part={era.won} total={era.picked} />,
                 },
               ]}
             />

@@ -98,7 +98,11 @@ describe('championRecord', () => {
     expect(record.won).toBe(0)
   })
 
-  it('shows nothing before the champion existed rather than zero', () => {
+  it('counts the whole corpus when the release date is unknown', () => {
+    // No `since` means the date is unknown, so nothing is filtered out: the era is
+    // present and its pick count is a measured zero. With a date, the same era is
+    // dropped instead — the test below. This one used to be titled as if it proved
+    // the drop while calling the function without a date, which is the opposite.
     const record = championRecord([game({ game_key: 1, era: 'elemental-drakes', date_time_utc: '2019-01-01T00:00:00Z' })], [row({ game_key: 2 })], [], 100)
     const earlier = record.eras.find((era) => era.era === 'elemental-drakes')!
 
@@ -168,6 +172,36 @@ describe('championRecord before the champion existed', () => {
   it('drops an era the champion could not have been played in', () => {
     const career = championRecord(games, [row({ game_key: 2 })], [], 100, '2024-11-06')
     expect(career.eras.map((era) => era.era)).toEqual(['voidgrubs'])
+  })
+
+  it('keeps an eligible era with no pick as a measured zero', () => {
+    const career = championRecord(games, [], [], 100, '2013-01-01')
+    const voidgrubs = career.eras.find((era) => era.era === 'voidgrubs')!
+
+    // Both voidgrubs games were played after the release date, so the champion was
+    // eligible for them and zero picks and zero bans are answers about those two
+    // games. The era the release date excludes is absent instead of zero.
+    expect(career.eras.map((era) => era.era)).toEqual(['elemental-drakes', 'voidgrubs'])
+    expect(voidgrubs.games).toBe(2)
+    expect(voidgrubs.picked).toBe(0)
+    expect(presenceOf(voidgrubs)).toBe(0)
+  })
+
+  it('counts only the games after a mid-era release in that era', () => {
+    const career = championRecord(
+      [
+        game({ game_key: 5, era: 'voidgrubs', date_time_utc: '2024-01-01T00:00:00Z' }),
+        game({ game_key: 6, era: 'voidgrubs', date_time_utc: '2024-12-01T00:00:00Z' }),
+      ],
+      [],
+      [],
+      100,
+      '2024-06-01',
+    )
+
+    // The era is not dropped: it still holds a game the champion was eligible for.
+    expect(career.eras.map((era) => era.era)).toEqual(['voidgrubs'])
+    expect(career.eras[0]!.games).toBe(1)
   })
 
   it('counts a game played on the release day itself', () => {
