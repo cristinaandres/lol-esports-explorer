@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Skeleton } from '../components/Skeleton'
+import { LoadFailure } from '../components/LoadFailure'
 import { CareerFilters } from '../components/CareerFilters'
 import { EmptyFilter } from '../components/EmptyFilter'
 import { PageHeader } from '../components/PageHeader'
@@ -320,74 +321,85 @@ export default function TeamDetail() {
             </div>
           </section>
 
-          <section className="mt-12">
-            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Current roster</h2>
-            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              The players who appeared in the most recent game of this selection
-              {visible.length > 0 ? ` (${dayMonthYear(visible[visible.length - 1]!.game.date_time_utc)})` : ''}
-              . The corpus records who played, not who is signed, so the last game is the only
-              evidence of who is on the team today.
-            </p>
+          {rows.status === 'failed' ? (
+            <section className="mt-12">
+              <LoadFailure
+                failures={[{ what: "this team's rosters", error: rows.error }]}
+                onRetry={rows.retry}
+              />
+            </section>
+          ) : (
+            <>
+              <section className="mt-12">
+                <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Current roster</h2>
+                <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+                  The players who appeared in the most recent game of this selection
+                  {visible.length > 0 ? ` (${dayMonthYear(visible[visible.length - 1]!.game.date_time_utc)})` : ''}
+                  . The corpus records who played, not who is signed, so the last game is the only
+                  evidence of who is on the team today.
+                </p>
 
-            {!prepared.ready ? (
-              <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
-            ) : current.length === 0 ? (
-              <p className="text-fog-600 text-sm">No player rows for that game.</p>
-            ) : (
-              <ul className="flex flex-wrap gap-2">
-                {current.map((entry) => (
-                  <li key={entry.playerKey}>
-                    <PlayerChip index={index} entry={entry} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+                {!prepared.ready ? (
+                  <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
+                ) : current.length === 0 ? (
+                  <p className="text-fog-600 text-sm">No player rows for that game.</p>
+                ) : (
+                  <ul className="flex flex-wrap gap-2">
+                    {current.map((entry) => (
+                      <li key={entry.playerKey}>
+                        <PlayerChip index={index} entry={entry} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
 
-          <section className="mt-10">
-            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">
-              Everyone who played
-            </h2>
-            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Derived from the player rows of every game in this selection. A player who joined and
-              never played does not appear; one who left mid-season appears for the games they
-              played.
-            </p>
+              <section className="mt-10">
+                <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">
+                  Everyone who played
+                </h2>
+                <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+                  Derived from the player rows of every game in this selection. A player who joined and
+                  never played does not appear; one who left mid-season appears for the games they
+                  played.
+                </p>
 
-            {!prepared.ready ? (
-              <div className="bg-ink-900 border-line h-32 animate-pulse rounded-xl border" />
-            ) : roster.length === 0 ? (
-              <p className="text-fog-600 text-sm">
-                No player rows are recorded for these games. Their player-statistics coverage is
-                unavailable.
-              </p>
-            ) : (
-              <ul className="divide-line border-line divide-y border-y">
-                {roster.map((entry) => (
-                  <li
-                    key={entry.playerKey}
-                    className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
-                  >
-                    <span className="text-fog-200 text-sm">
-                      {playerPath(index, entry.playerKey) ? (
-                        <Link to={playerPath(index, entry.playerKey)!} className="hover:text-gold">
-                          {playerName(index, entry.playerKey)}
-                        </Link>
-                      ) : (
-                        playerName(index, entry.playerKey)
-                      )}
-                    </span>
-                    <span className="text-fog-600 flex items-baseline gap-4 text-xs">
-                      <span className="tabular-nums">{count(entry.games)} games</span>
-                      <span className="font-mono">
-                        {dayMonthYear(entry.first)} → {dayMonthYear(entry.last)}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+                {!prepared.ready ? (
+                  <div className="bg-ink-900 border-line h-32 animate-pulse rounded-xl border" />
+                ) : roster.length === 0 ? (
+                  <p className="text-fog-600 text-sm">
+                    No player rows are recorded for these games. Their player-statistics coverage is
+                    unavailable.
+                  </p>
+                ) : (
+                  <ul className="divide-line border-line divide-y border-y">
+                    {roster.map((entry) => (
+                      <li
+                        key={entry.playerKey}
+                        className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
+                      >
+                        <span className="text-fog-200 text-sm">
+                          {playerPath(index, entry.playerKey) ? (
+                            <Link to={playerPath(index, entry.playerKey)!} className="hover:text-gold">
+                              {playerName(index, entry.playerKey)}
+                            </Link>
+                          ) : (
+                            playerName(index, entry.playerKey)
+                          )}
+                        </span>
+                        <span className="text-fog-600 flex items-baseline gap-4 text-xs">
+                          <span className="tabular-nums">{count(entry.games)} games</span>
+                          <span className="font-mono">
+                            {dayMonthYear(entry.first)} → {dayMonthYear(entry.last)}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </>
+          )}
         </>
       )}
     </>

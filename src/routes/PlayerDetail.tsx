@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Skeleton } from '../components/Skeleton'
+import { LoadFailure } from '../components/LoadFailure'
 import { CareerFilters } from '../components/CareerFilters'
 import { DataTable } from '../components/DataTable'
 import { EmptyFilter } from '../components/EmptyFilter'
@@ -236,7 +237,12 @@ export default function PlayerDetail() {
         />
       ) : null}
 
-      {career === null ? (
+      {rows.status === 'failed' ? (
+        <LoadFailure
+          failures={[{ what: "this player's games", error: rows.error }]}
+          onRetry={rows.retry}
+        />
+      ) : career === null ? (
         <Skeleton shape="table" tableHeight="h-48" />
       ) : career.games === 0 && all.length > 0 ? (
         <EmptyFilter
