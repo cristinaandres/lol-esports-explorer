@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
+import { LoadFailure } from '../components/LoadFailure'
 import { Skeleton } from '../components/Skeleton'
 import { PageHeader } from '../components/PageHeader'
 import { useDataset } from '../lib/data'
@@ -108,7 +109,12 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
 
   if (state.status === 'loading') return <Skeleton shape="page" />
   if (state.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {state.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: state.error }]}
+        onRetry={state.retry}
+      />
+    )
 
   return (
     <>

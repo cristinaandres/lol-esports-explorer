@@ -43,7 +43,12 @@ export default function GameDetail() {
 
   if (dataset.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: dataset.error }]}
+        onRetry={dataset.retry}
+      />
+    )
   if (corpus.status === 'failed')
     return (
       <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />

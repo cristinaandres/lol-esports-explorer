@@ -50,7 +50,12 @@ export default function EventDetail() {
 
   if (state.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
   if (state.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {state.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: state.error }]}
+        onRetry={state.retry}
+      />
+    )
   if (corpus.status === 'failed')
     return (
       <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
