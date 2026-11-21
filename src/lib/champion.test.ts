@@ -98,7 +98,11 @@ describe('championRecord', () => {
     expect(record.won).toBe(0)
   })
 
-  it('shows nothing before the champion existed rather than zero', () => {
+  it('counts the whole corpus when the release date is unknown', () => {
+    // No `since` means the date is unknown, so nothing is filtered out: the era is
+    // present and its pick count is a measured zero. With a date, the same era is
+    // dropped instead — the test below. This one used to be titled as if it proved
+    // the drop while calling the function without a date, which is the opposite.
     const record = championRecord([game({ game_key: 1, era: 'elemental-drakes', date_time_utc: '2019-01-01T00:00:00Z' })], [row({ game_key: 2 })], [], 100)
     const earlier = record.eras.find((era) => era.era === 'elemental-drakes')!
 
