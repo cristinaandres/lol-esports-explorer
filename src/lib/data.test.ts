@@ -264,6 +264,58 @@ describe('aliases.json', () => {
     })
   })
 
+  it('calls a pinned short name an abbreviation, never a former name', () => {
+    // 78 of the pinned names appear twice in the artifact -- once as a bridge
+    // redirect and once as the short name -- and the redirect sorts first, so this
+    // is where "formerly 100T" came from. The index merges the rows; the claim is
+    // about every pinned name, so a later pin that duplicates one cannot bring the
+    // label back.
+    const wrong = teams
+      .filter((team) => team.short_name !== null)
+      .map((team) => {
+        const match = search(aliasIndex, team.short_name!, 1_000).find(
+          (result) => result.kind === 'team' && result.id === team.team_id,
+        )
+        if (!match || match.current || match.abbreviation) return null
+        return `${team.short_name} -> ${match.name} formerly ${match.matched}`
+      })
+      .filter((row): row is string => row !== null)
+    expect(wrong).toEqual([])
+  })
+
+  it('finds 100 Thieves, Rogue, Flash Wolves, NaJin Black Sword and Karmine Corp by abbreviation', () => {
+    const expected: [string, string][] = [
+      ['100t', '100 Thieves'],
+      ['rge', 'Rogue'],
+      ['fw', 'Flash Wolves'],
+      ['njbs', 'NaJin Black Sword'],
+      ['kc', 'Karmine Corp'],
+    ]
+    for (const [query, name] of expected) {
+      expect(search(aliasIndex, query).filter((match) => match.kind === 'team')[0], query).toMatchObject(
+        { name, current: false, abbreviation: true },
+      )
+    }
+  })
+
+  it('still labels a rename as a former name and keeps the old name findable', () => {
+    // The other half of the invariant: merging rows must not turn every alias into
+    // an abbreviation, and a team renamed long ago is still reachable by the name
+    // it no longer uses.
+    expect(search(aliasIndex, 'mad lions')[0]).toMatchObject({
+      id: 'tm-d0d4a4d767cd',
+      name: 'Movistar KOI',
+      matched: 'MAD Lions',
+      current: false,
+      abbreviation: false,
+    })
+    expect(search(aliasIndex, 'Splyce')[0]).toMatchObject({
+      id: 'tm-d0d4a4d767cd',
+      name: 'Movistar KOI',
+      abbreviation: false,
+    })
+  })
+
   it('lists the dated names it played under, and no redirects', () => {
     expect(namesFor(aliases, 'team', 'tm-d0d4a4d767cd').map((row) => row.alias_string)).toEqual([
       'Splyce',
