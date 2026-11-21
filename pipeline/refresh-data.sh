@@ -7,6 +7,7 @@
 # files from that tag, then rewrites pipeline/source.json so the pin and the files
 # can never disagree.
 # It does not build; run 'npm run data:build' next and read the diff.
+set -euo pipefail
 
 tag="${1:-}"
 if [ -z "$tag" ]; then
@@ -22,8 +23,6 @@ trap 'rm -rf "$tmp"' EXIT
 echo "cloning $tag ..."
 git clone --quiet --depth 1 --branch "$tag" https://github.com/RRiboulet/lol-dataset "$tmp/src"
 commit="$(git -C "$tmp/src" rev-parse HEAD)"
-
-set -euo pipefail
 
 rm -f "$root"/data/model/*.csv "$root"/data/model/data-dictionary.md "$root"/data/model/schema.sql
 mkdir -p "$root/data/model" "$root/data/upstream"

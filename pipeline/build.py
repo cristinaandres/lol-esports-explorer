@@ -108,19 +108,38 @@ def sha256(path: pathlib.Path) -> str:
 
 
 def pinned_files(directory: pathlib.Path) -> dict[str, str]:
-    """Every file in a pinned directory, hashed, keyed by name.
+    """Every pinned file in a directory, hashed, keyed by name.
 
     The rule is the directory, not an extension list: `data/model/` holds the model
     CSVs, the data dictionary and the DDL, and `data/upstream/` holds the era table,
     the build manifest and the curated files. Hashing `*.csv` alone let three files
     the provenance document calls pinned go unrecorded, which is the kind of gap a
-    reader only finds by checking by hand. Anything that lands in either directory is
-    pinned by definition, so it is hashed by definition.
+    reader only finds by checking by hand.
+
+    Two exceptions, both because the alternative is an artifact that depends on the
+    machine rather than on the pin:
+
+      * A dotfile is the operating system's, not the pin's. macOS writes `.DS_Store`
+        into any directory it lists, `.gitignore` already ignores it, and hashing it
+        would make `--check` fail on one contributor's laptop and pass on another.
+      * Anything that is not a plain regular file -- a subdirectory, a symlink -- is
+        refused rather than skipped, because skipping it is how a pinned file ends up
+        recorded nowhere, which is the defect this function exists to close.
 
     Deterministic: names are sorted, and a new file changes the artifact once, on
     purpose, so the diff says what was added.
     """
-    return {path.name: sha256(path) for path in sorted(directory.iterdir()) if path.is_file()}
+    pinned: dict[str, str] = {}
+    for path in sorted(directory.iterdir()):
+        if path.name.startswith("."):
+            continue
+        if path.is_symlink() or not path.is_file():
+            raise SystemExit(
+                f"error: {path.relative_to(ROOT)} is not a regular file; "
+                "a pinned directory holds pinned files only"
+            )
+        pinned[path.name] = sha256(path)
+    return pinned
 
 
 def verify_manifest(source: dict[str, object]) -> None:

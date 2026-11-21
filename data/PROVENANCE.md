@@ -40,13 +40,16 @@ data/upstream/champion-releases.json
 
 ```
 
-`public/data/meta.json` records the sha256 of every file in `data/model/` and
-`data/upstream/` at build time -- the directory is the rule, so a file added here
-cannot be pinned and unrecorded -- and the build refuses to run if
-`data/upstream/manifest.json` is not the manifest `pipeline/source.json` pins. A
-reader can walk from a figure on the site to the file it came from without
-trusting this document. If a pinned file is ever edited by hand, the artifact
-hashes change and `npm run data:check` fails.
+`public/data/meta.json` records the sha256 of every regular file in `data/model/`
+and `data/upstream/` at build time -- the directory is the rule, so a file added
+here cannot be pinned and unrecorded. The exceptions are stated in the build: a
+dotfile is the operating system's rather than the pin's (`.DS_Store` is ignored,
+or the artifact would depend on which laptop ran the build), and anything that is
+not a plain file -- a subdirectory, a symlink -- stops the build instead of being
+skipped. The build also refuses to run if `data/upstream/manifest.json` is not the
+manifest `pipeline/source.json` pins. A reader can walk from a figure on the site
+to the file it came from without trusting this document. If a pinned file is ever
+edited by hand, the artifact hashes change and `npm run data:check` fails.
 
 What the manifest can and cannot prove: it records a sha256 for each curated
 JSONL, but the two files pinned here are those records rewrapped, so their bytes
