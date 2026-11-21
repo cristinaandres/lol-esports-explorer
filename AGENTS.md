@@ -8,9 +8,11 @@ only decides how it is navigated.
 **Language.** Every commit message, comment, identifier, document and user-facing
 string is in English. The project is public and meant to read internationally.
 
-**Current state.** Phases 0 and 1 of `docs/roadmap.md` are built: the era spine,
-era detail with coverage and its event list, the glossary, the DuckDB pipeline
-and the deploy. Event, series, game and entity pages are not built yet.
+**Current state.** Phases 2 and 3 are built, along with the 3b polish round and
+the 4b structure work: the era spine and era detail, event, series and game
+pages, the player, team and champion pages with their indexes and search, the
+glossary and the selection audit, over the DuckDB pipeline and the deploy. Phase
+4 (`/compare`) and the phase 5 design pass are not built.
 
 ## The rules that matter here
 
