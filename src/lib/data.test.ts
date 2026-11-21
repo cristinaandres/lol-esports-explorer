@@ -16,9 +16,13 @@ import type {
   Game,
   Match,
   Meta,
+  Patch,
   Player,
   PlayerGame,
+  SelectionCandidate,
+  Side,
   Team,
+  Totals,
 } from './types'
 
 /**
@@ -43,7 +47,408 @@ const aliases = read<AliasRow[]>('aliases.json')
 const players = read<Player[]>('players.json')
 const teams = read<Team[]>('teams.json')
 const champions = read<Champion[]>('champions.json')
+const sides = read<Side[]>('sides.json')
+const patches = read<Patch[]>('patches.json')
+const selection = read<SelectionCandidate[]>('selection.json')
+const totals = read<Totals[]>('totals.json')
 const meta = read<Meta>('meta.json')
+
+/** The JSON kind a field can hold. `null` is handled separately, by the contract. */
+type JsonKind = 'string' | 'number' | 'array' | 'object'
+
+/** The fields whose declared type admits null. */
+type NullableKeys<T> = { [K in keyof T]-?: null extends T[K] ? K : never }[keyof T]
+
+/** Artifact name to the row type its file carries. */
+type ArtifactRows = {
+  'aliases.json': AliasRow
+  'bans.json': DraftSlot
+  'champions.json': Champion
+  'eras.json': Era
+  'events.json': EventRow
+  'games.json': Game
+  'matches.json': Match
+  'patches.json': Patch
+  'picks.json': DraftSlot
+  'player-games.json': PlayerGame
+  'players.json': Player
+  'selection.json': SelectionCandidate
+  'sides.json': Side
+  'teams.json': Team
+  'totals.json': Totals
+}
+
+/**
+ * What one artifact promises, field by field.
+ *
+ * `kinds` names every field of the row type and nothing else, so adding a field to
+ * `types.ts` is a compile error here until it is given a kind; the table cannot
+ * fall behind the types it checks. `nullable` is the whole of what the artifact
+ * may state as null, and it cannot name a field the type says is always there. A
+ * field absent from it must hold its kind on every row.
+ */
+type Contract<T> = {
+  rows: readonly T[]
+  kinds: Record<keyof T, JsonKind>
+  nullable: readonly NullableKeys<T>[]
+}
+
+type RuntimeContract = {
+  rows: readonly Record<string, unknown>[]
+  kinds: Record<string, JsonKind>
+  nullable: readonly string[]
+}
+
+/**
+ * The artifact contract, one entry per published file.
+ *
+ * The nullable lists are the decisions this audit settled, not a description of
+ * whatever the data happened to hold: an unordered draft has no slot, a source can
+ * state no wiki page, and an era with no game has no span. Anything else -- a
+ * placeholder id, a measure that should have been coalesced -- fails the test.
+ */
+const CONTRACT = {
+  'aliases.json': {
+    rows: aliases,
+    kinds: {
+      kind: 'string',
+      alias_string: 'string',
+      entity_id: 'string',
+      entity_name: 'string',
+      valid_from: 'string',
+      valid_to: 'string',
+      evidence: 'string',
+    },
+    nullable: ['valid_from', 'valid_to'],
+  },
+  'bans.json': {
+    rows: bans,
+    kinds: {
+      game_key: 'number',
+      side: 'string',
+      entry_index: 'number',
+      slot: 'number',
+      champion_key: 'number',
+    },
+    // Every ban of the 641 unordered-draft games carries no slot. That is the absence
+    // the type now admits; a ban of an ordered draft with no slot would still fail.
+    nullable: ['slot'],
+  },
+  'champions.json': {
+    rows: champions,
+    kinds: {
+      champion_key: 'number',
+      champion_id: 'string',
+      champion_name: 'string',
+      riot_key: 'number',
+      games: 'number',
+      release_date: 'string',
+    },
+    // Two champions the wiki names have no row in the model's releases.
+    nullable: ['release_date'],
+  },
+  'eras.json': {
+    rows: eras,
+    kinds: {
+      era: 'string',
+      from: 'string',
+      cites: 'string',
+      eligible_fields: 'number',
+      eligible: 'array',
+      first_date: 'string',
+      last_date: 'string',
+      games: 'number',
+      series: 'number',
+      events: 'number',
+      teams: 'number',
+      players: 'number',
+      blue_wins: 'number',
+      red_wins: 'number',
+      games_draft_complete: 'number',
+      games_player_complete: 'number',
+      games_team_complete: 'number',
+      games_duration_stated: 'number',
+      avg_duration_seconds: 'number',
+      patches: 'number',
+    },
+    // Two declared eras govern no game, so they have no span and nothing to average.
+    nullable: ['first_date', 'last_date', 'avg_duration_seconds'],
+  },
+  'events.json': {
+    rows: events,
+    kinds: {
+      event_key: 'number',
+      event_id: 'string',
+      event_name: 'string',
+      league: 'string',
+      competition: 'string',
+      region: 'string',
+      year: 'number',
+      date_start: 'string',
+      games: 'number',
+      series: 'number',
+      teams: 'number',
+      players: 'number',
+      first_date: 'string',
+      last_date: 'string',
+      blue_wins: 'number',
+      games_duration_stated: 'number',
+      avg_duration_seconds: 'number',
+      eras: 'string',
+      coverage_games: 'number',
+      team_complete: 'number',
+      draft_complete: 'number',
+      player_complete: 'number',
+    },
+    // WCG 2011 states no league; the two game-less events have no span, no
+    // average and no coverage. The counts are coalesced, not null.
+    nullable: [
+      'league',
+      'first_date',
+      'last_date',
+      'avg_duration_seconds',
+      'eras',
+      'coverage_games',
+      'team_complete',
+      'draft_complete',
+      'player_complete',
+    ],
+  },
+  'games.json': {
+    rows: games,
+    kinds: {
+      game_key: 'number',
+      game_id: 'string',
+      event_key: 'number',
+      match_key: 'number',
+      date_time_utc: 'string',
+      era: 'string',
+      patch_key: 'number',
+      duration_seconds: 'number',
+      blue_win: 'number',
+      blue_team_key: 'number',
+      red_team_key: 'number',
+      draft_fidelity: 'string',
+      draft_switched_sides: 'number',
+      team_stats_coverage: 'string',
+      draft_coverage: 'string',
+      player_stats_coverage: 'string',
+    },
+    // match_key and patch_key use 0 for "none stated" and are never null.
+    nullable: ['duration_seconds', 'draft_switched_sides'],
+  },
+  'matches.json': {
+    rows: matches,
+    kinds: {
+      match_key: 'number',
+      match_id: 'string',
+      event_key: 'number',
+      match_name: 'string',
+      date_time_utc: 'string',
+      best_of: 'number',
+      tab: 'string',
+      is_nullified: 'number',
+      forfeit: 'number',
+    },
+    // One series states no format. The unknown member is not published at all.
+    nullable: ['best_of', 'is_nullified', 'forfeit'],
+  },
+  'patches.json': {
+    rows: patches,
+    kinds: { patch_key: 'number', patch: 'string', patch_name: 'string' },
+    nullable: [],
+  },
+  'picks.json': {
+    rows: picks,
+    kinds: {
+      game_key: 'number',
+      side: 'string',
+      entry_index: 'number',
+      slot: 'number',
+      champion_key: 'number',
+    },
+    // Stricter than the type on purpose: the pipeline publishes ordered picks only,
+    // so a pick with no slot is a defect rather than the absence bans admit.
+    nullable: [],
+  },
+  'player-games.json': {
+    rows: playerGames,
+    kinds: {
+      game_key: 'number',
+      player_key: 'number',
+      team_key: 'number',
+      champion_key: 'number',
+      side: 'string',
+      role: 'string',
+      kills: 'number',
+      deaths: 'number',
+      assists: 'number',
+      cs: 'number',
+      gold: 'number',
+      damage: 'number',
+      vision: 'number',
+    },
+    nullable: ['cs', 'gold', 'damage', 'vision'],
+  },
+  'players.json': {
+    rows: players,
+    kinds: {
+      player_key: 'number',
+      player_id: 'string',
+      player_name: 'string',
+      overview_page: 'string',
+      games: 'number',
+    },
+    // 39 players have no wiki overview page; the model does not state one.
+    nullable: ['overview_page'],
+  },
+  'selection.json': {
+    rows: selection,
+    kinds: {
+      id: 'string',
+      name: 'string',
+      league: 'string',
+      region: 'string',
+      decision: 'string',
+      rule: 'string',
+      key: 'string',
+    },
+    nullable: ['key'],
+  },
+  'sides.json': {
+    rows: sides,
+    kinds: {
+      game_key: 'number',
+      side: 'string',
+      team_key: 'number',
+      is_winner: 'number',
+      kills: 'number',
+      gold: 'number',
+      towers: 'number',
+      inhibitors: 'number',
+      barons: 'number',
+      dragons: 'number',
+      dragons_clouds: 'number',
+      dragons_infernals: 'number',
+      dragons_mountains: 'number',
+      dragons_oceans: 'number',
+      dragons_hextechs: 'number',
+      dragons_chemtechs: 'number',
+      dragons_elders: 'number',
+      rift_heralds: 'number',
+      void_grubs: 'number',
+      atakhans: 'number',
+    },
+    // Every objective measure can be absent, and null means "not recorded".
+    nullable: [
+      'kills',
+      'gold',
+      'towers',
+      'inhibitors',
+      'barons',
+      'dragons',
+      'dragons_clouds',
+      'dragons_infernals',
+      'dragons_mountains',
+      'dragons_oceans',
+      'dragons_hextechs',
+      'dragons_chemtechs',
+      'dragons_elders',
+      'rift_heralds',
+      'void_grubs',
+      'atakhans',
+    ],
+  },
+  'teams.json': {
+    rows: teams,
+    kinds: {
+      team_key: 'number',
+      team_id: 'string',
+      team_name: 'string',
+      overview_page: 'string',
+      region: 'string',
+      games: 'number',
+      short_name: 'string',
+    },
+    // Four zero-game teams state no wiki page and no region; most have no abbreviation.
+    nullable: ['overview_page', 'region', 'short_name'],
+  },
+  'totals.json': {
+    rows: totals,
+    kinds: {
+      games: 'number',
+      series: 'number',
+      events: 'number',
+      teams: 'number',
+      players: 'number',
+      events_admitted: 'number',
+      series_admitted: 'number',
+      teams_registered: 'number',
+      patches: 'number',
+      first_date: 'string',
+      last_date: 'string',
+      blue_wins: 'number',
+    },
+    nullable: [],
+  },
+} satisfies { [File in keyof ArtifactRows]: Contract<ArtifactRows[File]> }
+
+/** The checked table read through a string key, so the loop can iterate it. */
+const contracts: Record<string, RuntimeContract> = CONTRACT
+
+/**
+ * The contract, enforced over every row of every artifact.
+ *
+ * A field that is null, missing or of another kind than `types.ts` declares is
+ * either a bug in the view or a lie in the type, and this is where the difference
+ * is found before a sort or a sum trusts it. The fields a reader may legitimately
+ * see absent are listed once, in `nullable` above; everything else must be there.
+ */
+describe('artifact contract', () => {
+  it('states every field as the type declares it, and nulls only where the type says', () => {
+    const wrong: string[] = []
+
+    for (const [file, contract] of Object.entries(contracts)) {
+      const nullable = new Set(contract.nullable)
+      expect(contract.rows.length, `${file} carries no row`).toBeGreaterThan(0)
+
+      contract.rows.forEach((row, index) => {
+        for (const [field, expected] of Object.entries(contract.kinds)) {
+          const where = `${file}[${index}].${field}`
+          const value = row[field]
+          if (value === undefined) {
+            wrong.push(`${where}: missing`)
+            continue
+          }
+          if (value === null) {
+            if (!nullable.has(field)) wrong.push(`${where}: null`)
+            continue
+          }
+          const actual = Array.isArray(value) ? 'array' : typeof value
+          if (actual !== expected) wrong.push(`${where}: ${actual}, type declares ${expected}`)
+        }
+        for (const field of Object.keys(row)) {
+          if (!(field in contract.kinds)) wrong.push(`${file}[${index}].${field}: not declared by the type`)
+        }
+      })
+    }
+
+    expect(wrong).toEqual([])
+  })
+
+  it('publishes no unknown member, because nothing can resolve one', () => {
+    // The model keeps a key-0 row in every dimension so an absent reference has
+    // somewhere to point. Those sentinels still appear on the facts (42 games with
+    // match_key 0, 279 with patch_key 0), but no artifact names an entity at key 0,
+    // and every reader words the sentinel before it consults one of these files.
+    // Publishing the row is what used to put null ids under string-typed columns.
+    expect(matches.some((row) => row.match_key === 0)).toBe(false)
+    expect(teams.some((row) => row.team_key === 0)).toBe(false)
+    expect(players.some((row) => row.player_key === 0)).toBe(false)
+    expect(champions.some((row) => row.champion_key === 0)).toBe(false)
+    expect(patches.some((row) => row.patch_key === 0)).toBe(false)
+  })
+})
 
 describe('meta.json', () => {
   it('records the manifest that the pin states the hash of', () => {

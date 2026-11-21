@@ -78,7 +78,7 @@ ARTIFACTS: dict[str, str] = {
         left join champion_releases r on r.name = c.champion_name
         order by c.champion_key
     """,
-    "patches.json": "select * from dim_patch order by patch_key",
+    "patches.json": "select * from patch_rows order by patch_key",
     # Renames. Loaded by the entity pages and by search, not by the lists.
     # NULLS LAST is spelled out: the short names carry no window, and where nulls land
     # is a DuckDB setting rather than a property of the data. An artifact whose row

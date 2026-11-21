@@ -1,5 +1,4 @@
 [
-{"champion_key":0,"champion_id":null,"champion_name":"Unknown","riot_key":null,"games":0,"release_date":null},
 {"champion_key":1,"champion_id":"ch-01ef89acfea0","champion_name":"Hwei","riot_key":910,"games":34,"release_date":"2023-12-05"},
 {"champion_key":2,"champion_id":"ch-028a48ac2577","champion_name":"Jarvan IV","riot_key":59,"games":517,"release_date":"2011-03-01"},
 {"champion_key":3,"champion_id":"ch-038096aafcbc","champion_name":"Rammus","riot_key":33,"games":8,"release_date":"2009-07-10"},

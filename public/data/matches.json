@@ -1,5 +1,4 @@
 [
-{"match_key":0,"match_id":null,"event_key":0,"match_name":"Unknown","date_time_utc":null,"best_of":null,"tab":null,"is_nullified":null,"forfeit":null},
 {"match_key":1,"match_id":"mt-0031dc5e074b","event_key":6,"match_name":"Worlds 2022 — Day 1 — 2022-09-30","date_time_utc":"2022-09-30T00:00:00Z","best_of":1,"tab":"Day 1","is_nullified":0,"forfeit":null},
 {"match_key":2,"match_id":"mt-0041e335cefc","event_key":5,"match_name":"IPL 5 — Group D — 2012-11-30","date_time_utc":"2012-11-30T00:00:00Z","best_of":1,"tab":"Group D","is_nullified":0,"forfeit":null},
 {"match_key":3,"match_id":"mt-007429f6018d","event_key":40,"match_name":"Esports World Cup 2026 — Round 1 — 2026-04-15","date_time_utc":"2026-04-15T18:00:00Z","best_of":3,"tab":"Round 1","is_nullified":0,"forfeit":null},

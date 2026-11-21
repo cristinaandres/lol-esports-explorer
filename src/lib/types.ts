@@ -31,8 +31,14 @@ export type EventRow = {
   event_key: number
   event_id: string
   event_name: string
-  /** The source's raw league string, kept for provenance. */
-  league: string
+  /**
+   * The source's raw league string, kept for provenance.
+   *
+   * Null when the model states none (WCG 2011); `competition` already coalesces
+   * that to 'Unknown'. An absent string is not an empty one: the event has no
+   * league, it was not admitted under a blank.
+   */
+  league: string | null
   /** The canonical competition: 'Worlds', 'MSI', 'IEM', 'Rift Rivals', ... */
   competition: string
   region: string
@@ -117,7 +123,15 @@ export type Game = {
   player_stats_coverage: Coverage
 }
 
-/** One row of public/data/matches.json: one series. */
+/**
+ * One row of public/data/matches.json: one series.
+ *
+ * The model's unknown member (`match_key` 0, the target of a game that belongs to
+ * no series) is not published here: no series route resolves it, and every reader
+ * words key 0 as "series not stated" before it consults this file. Games keep the
+ * sentinel -- `Game.match_key` 0 still means "no series" -- so the artifact would
+ * only add a row of nulls under three names the type says are strings.
+ */
 export type Match = {
   /** Build-local. Never put this in a URL. */
   match_key: number
@@ -179,7 +193,17 @@ export type DraftSlot = {
   game_key: number
   side: 'blue' | 'red'
   entry_index: number
-  slot: number
+  /**
+   * The position of the pick or ban within its phase, or null when the source
+   * recorded no order.
+   *
+   * 3,821 bans -- every ban of the 641 unordered-draft games -- carry no slot: an
+   * unordered draft states which champions were banned, not when. That is an
+   * absence, not slot 0, which would sort a ban before every recorded one. Every
+   * row of picks.json carries a slot, because the pipeline publishes ordered picks
+   * only (`is_ordered = 1`), and a test holds that.
+   */
+  slot: number | null
   champion_key: number
 }
 
@@ -187,8 +211,10 @@ export type Team = {
   team_key: number
   team_id: string
   team_name: string
-  overview_page: string
-  region: string
+  /** The wiki page the record comes from; null when it states none (4 teams). */
+  overview_page: string | null
+  /** Null when the model states no region (the same 4 teams). */
+  region: string | null
   /** Games the team appears in, for the index. Zero when the corpus carries none. */
   games: number
   /** The abbreviation the game client shows, pinned from the wiki. Not a former name. */
@@ -199,7 +225,8 @@ export type Player = {
   player_key: number
   player_id: string
   player_name: string
-  overview_page: string
+  /** The wiki page the record comes from; null for 39 players the model has none for. */
+  overview_page: string | null
   games: number
 }
 
@@ -215,6 +242,12 @@ export type Champion = {
 
 export type Patch = {
   patch_key: number
+  /**
+   * The patch as the source states it, as text ('10.19', '25.05'). A label, not a
+   * quantity: 25.05 and 25.5 are different patches, so a leading zero is kept. The
+   * model declares it TEXT and the pipeline now reads it as such; it was arriving
+   * as a number because CSV sniffing typed the column DOUBLE.
+   */
   patch: string
   patch_name: string
 }

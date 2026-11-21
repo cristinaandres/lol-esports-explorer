@@ -117,6 +117,27 @@ describe('sortSlots', () => {
     ]
     expect(sortSlots(rows).map((row) => row.champion_key)).toEqual([11, 10, 20])
   })
+
+  it('never reads a missing slot as position zero', () => {
+    // An unordered draft states the bans but not their order, so `slot` is null on
+    // all 3,821 of them. Arithmetic on those nulls sorted them first, ahead of a
+    // recorded slot 1; the order the source wrote them in is the only order left.
+    const rows = [
+      slot({ slot: null, entry_index: 2, champion_key: 32 }),
+      slot({ slot: 1, entry_index: 3, champion_key: 11 }),
+      slot({ slot: null, entry_index: 1, champion_key: 31 }),
+    ]
+    expect(sortSlots(rows).map((row) => row.champion_key)).toEqual([11, 31, 32])
+  })
+
+  it('keeps the written order for a draft with no recorded slot at all', () => {
+    const rows = [
+      slot({ slot: null, entry_index: 3, champion_key: 3 }),
+      slot({ slot: null, entry_index: 1, champion_key: 1 }),
+      slot({ slot: null, entry_index: 2, champion_key: 2 }),
+    ]
+    expect(sortSlots(rows).map((row) => row.champion_key)).toEqual([1, 2, 3])
+  })
 })
 
 describe('sidesSwapped', () => {
