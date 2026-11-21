@@ -7,6 +7,26 @@
 -- They are emitted as aliases with no validity window, which is the existing rule for
 -- a searchable name that no page should print: the alias bridge's "Also known as" only
 -- lists dated names, and a short name is not a former name.
+--
+-- Names are compared folded, not by raw equality. The pin is written by asking the
+-- wiki for the model's spelling and storing the wiki's answer
+-- (pipeline/refresh-shortnames.py), and the wiki does not always answer in the model's
+-- spelling: it states "Pain Gaming" for the team dim_team calls "paiN Gaming". Raw
+-- equality dropped that row without a word, so "PG" found nothing. The fold is the
+-- one src/lib/aliases.ts already applies to the alias bridge -- case, accents,
+-- repeated spaces and the HTML entity the source leaves in one name are not
+-- differences between two teams -- so search and the pipeline agree on what "the same
+-- name" means.
+--
+-- Folding is safe on this corpus, not merely convenient: all 194 pinned rows reach a
+-- team, dim_team's 198 names fold to 198 distinct keys, and no pinned row reaches two
+-- teams. One fold does change an answer: "Pain Gaming" now reaches paiN Gaming, which
+-- already has a row stating PAIN. That team therefore carries two short names, both of
+-- which resolve; the team list prints one, the row spelled the way the model spells the
+-- team.
+
+create or replace macro team_name_key(name) as
+  lower(trim(regexp_replace(replace(strip_accents(name), '&amp;', '&'), '\s+', ' ', 'g')));
 
 create or replace view team_shortnames as
 select entry.name, entry.short
@@ -17,17 +37,63 @@ from read_json(
 ) as data,
 lateral unnest(data.teams) as t(entry);
 
+-- The pinned rows that name a team, with the model's spelling of that team. Two pinned
+-- spellings can reach one team, so the rank picks the row a team list prints: the one
+-- spelled the way the model spells the team first, then by name, so the choice does not
+-- depend on file order.
+create or replace view shortname_matches as
+select
+  s.name      as stated_name,
+  s.short,
+  t.team_key,
+  t.team_id,
+  t.team_name,
+  row_number() over (
+    partition by t.team_id
+    order by (s.name = t.team_name) desc, s.name, s.short
+  )           as team_rank
+from team_shortnames s
+join dim_team t on team_name_key(t.team_name) = team_name_key(s.name);
+
+-- A pinned row that folds to no team is a defect in the pin or in the fold, never a
+-- row to ignore: build.py reads this view and refuses to write artifacts while it has
+-- rows. An empty result is the assertion, so nothing has to maintain a count.
+create or replace view unmatched_shortnames as
+select s.name, s.short
+from team_shortnames s
+anti join dim_team t on team_name_key(t.team_name) = team_name_key(s.name);
+
+-- The fold is only as safe as its keys: folding two teams' names together would bind
+-- one abbreviation to both of them, silently. Measured on the pinned model the keys are
+-- distinct, so this view is empty today and build.py fails on it if a later pin ever
+-- makes it not.
+create or replace view ambiguous_shortnames as
+select
+  s.name,
+  s.short,
+  count(distinct t.team_id)              as teams,
+  string_agg(t.team_name, ' | ' order by t.team_name) as team_names
+from team_shortnames s
+join dim_team t on team_name_key(t.team_name) = team_name_key(s.name)
+group by s.name, s.short
+having count(distinct t.team_id) > 1;
+
 create or replace view shortname_aliases as
 select
   'team'         as kind,
   s.short        as alias_string,
-  t.team_id      as entity_id,
-  t.team_name    as entity_name,
+  s.team_id      as entity_id,
+  s.team_name    as entity_name,
   null           as valid_from,
   null           as valid_to,
   'shortname'    as evidence
-from team_shortnames s
-join dim_team t on t.team_name = s.name;
+from shortname_matches s;
+
+-- The short name a team list prints: one row per team, whatever the pin states.
+create or replace view team_short_name as
+select team_key, short as short_name
+from shortname_matches
+where team_rank = 1;
 
 -- Every name the site can resolve: the bridge's own rows plus the pinned short names.
 create or replace view alias_all as

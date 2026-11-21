@@ -59,10 +59,13 @@ ARTIFACTS: dict[str, str] = {
     "games.json": "select * from game_rows order by date_time_utc, game_key",
     "matches.json": "select * from match_rows order by match_key",
     # Names. Loaded eagerly because every page resolves a key to a name.
+    # The short name comes from team_short_name, which pairs the pin's rows with teams
+    # on the folded name and keeps one per team: the pin can state two spellings of a
+    # team's name, and a list needs a single abbreviation for it.
     "teams.json": """
-        select t.*, s.short as short_name
+        select t.*, s.short_name
         from team_index t
-        left join team_shortnames s on s.name = t.team_name
+        left join team_short_name s using (team_key)
         order by t.team_key
     """,
     "players.json": "select * from player_index order by player_key",
@@ -115,6 +118,55 @@ def connect() -> duckdb.DuckDBPyConnection:
     for path in sorted(SQL_DIR.glob("*.sql")):
         con.execute(path.read_text(encoding="utf-8"))
     return con
+
+
+def report_shortname_defects(con: duckdb.DuckDBPyConnection) -> bool:
+    """Fail the build when a pinned short name cannot be attached to one team.
+
+    The join in 08_shortnames.sql folds names before comparing them, because the pin
+    stores the wiki's spelling rather than the model's. A fold can still miss a team,
+    and a missed row is invisible in the artifacts: the team simply has no short name
+    and the abbreviation resolves to nothing, which is how "PG" disappeared. So the
+    dropped rows are a printed build error, not a count a test has to notice.
+
+    The opposite defect is reported too: a name that folds onto two teams would bind
+    one abbreviation to both, which the artifacts cannot show either.
+
+    Runs before anything is rendered or written, so a failed build leaves the committed
+    artifacts untouched. Returns True when every pinned row reached exactly one team.
+    """
+    unmatched = con.execute(
+        "select name, short from unmatched_shortnames order by name, short"
+    ).fetchall()
+    for name, short in unmatched:
+        print(
+            f"error: pinned short name {short!r} for {name!r} joins no team in dim_team",
+            file=sys.stderr,
+        )
+    if unmatched:
+        print(
+            f"error: {len(unmatched)} pinned short name(s) would be dropped; fix the pin "
+            "(pipeline/refresh-shortnames.py) or the fold in pipeline/sql/08_shortnames.sql",
+            file=sys.stderr,
+        )
+
+    ambiguous = con.execute(
+        "select name, short, team_names from ambiguous_shortnames order by name, short"
+    ).fetchall()
+    for name, short, team_names in ambiguous:
+        print(
+            f"error: pinned short name {short!r} for {name!r} folds onto more than one "
+            f"team: {team_names}",
+            file=sys.stderr,
+        )
+    if ambiguous:
+        print(
+            f"error: {len(ambiguous)} pinned short name(s) name more than one team; the "
+            "fold in pipeline/sql/08_shortnames.sql is too coarse for these names",
+            file=sys.stderr,
+        )
+
+    return not unmatched and not ambiguous
 
 
 def build_eras(con: duckdb.DuckDBPyConnection) -> list[dict[str, object]]:
@@ -215,7 +267,11 @@ def main(argv: list[str]) -> int:
     import os
 
     os.chdir(ROOT)
-    rendered = render(connect())
+
+    con = connect()
+    if not report_shortname_defects(con):
+        return 1
+    rendered = render(con)
 
     if args.check:
         stale = [

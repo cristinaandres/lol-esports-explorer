@@ -125,12 +125,14 @@ describe('draft artifacts', () => {
 
 describe('aliases.json', () => {
   it('carries every alias the model recorded, plus the pinned short names', () => {
-    // 3,791 rows from the bridge and 193 team short names pinned from the wiki. The
-    // 194th, 'Pain Gaming', is spelled differently there and joins to nothing.
-    expect(aliases).toHaveLength(3_984)
+    // 3,791 rows from the bridge and all 194 team short names pinned from the wiki.
+    // The pin states one of them against a spelling the model does not use ('Pain
+    // Gaming' for 'paiN Gaming'); the join folds names, so it is carried rather than
+    // dropped, and the build fails instead of losing a row like it.
+    expect(aliases).toHaveLength(3_985)
     const byKind = new Map<string, number>()
     for (const row of aliases) byKind.set(row.kind, (byKind.get(row.kind) ?? 0) + 1)
-    expect(Object.fromEntries(byKind)).toEqual({ player: 2_872, team: 940, champion: 172 })
+    expect(Object.fromEntries(byKind)).toEqual({ player: 2_872, team: 941, champion: 172 })
   })
 
   it('points every alias at an entity', () => {
@@ -164,6 +166,15 @@ describe('aliases.json', () => {
     expect(resolve(aliases, 'BLG').filter((m) => m.kind === 'team')[0]?.entityName).toBe(
       'Bilibili Gaming',
     )
+  })
+
+  it('resolves PG, pinned against a spelling the model does not use', () => {
+    // The pin states 'Pain Gaming' -> PG; the model calls the team 'paiN Gaming'. The
+    // pipeline joins those names folded, so the abbreviation resolves instead of
+    // vanishing, and the team keeps the short name the model's own spelling states.
+    expect(resolve(aliases, 'PG').filter((match) => match.kind === 'team')).toMatchObject([
+      { entityId: 'tm-f642dbf0692c', entityName: 'paiN Gaming', matched: 'PG' },
+    ])
   })
 
   it('lists the dated names it played under, and no redirects', () => {
