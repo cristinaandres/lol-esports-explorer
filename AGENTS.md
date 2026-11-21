@@ -22,10 +22,16 @@ glossary and the selection audit, over the DuckDB pipeline and the deploy. Phase
 2. **No dead links.** A route is linked only when it exists. The era page lists
    events as rows and says where they open, rather than linking to a page that
    404s.
-3. **Data is pinned, never hand-edited.** `data/` is a byte-for-byte copy of one
-   upstream tag. Changing it means running `pipeline/refresh-data.sh <tag>` and
-   committing the diff, so `pipeline/source.json`, the files and
-   `public/data/meta.json` stay in agreement.
+3. **Data is pinned, never hand-edited.** `data/` holds one upstream tag. The
+   model's CSVs, its data dictionary and DDL, the era table and the build manifest
+   are byte-for-byte copies of it; the two curated audit files are that tag's JSONL
+   rewrapped with its source and pin date by the refresh script, because the
+   pipeline reads a wrapper. Everything is pinned, nothing is hand-edited:
+   changing any of it means running `pipeline/refresh-data.sh <tag>` and committing
+   the diff, so `pipeline/source.json`, the files and `public/data/meta.json` stay
+   in agreement. The build refuses to run if `data/upstream/manifest.json` is not
+   the manifest the pin names, and `meta.json` records the hash of every file in
+   `data/model/` and `data/upstream/`.
 4. **Artifacts are generated and committed.** `public/data/*.json` is written by
    `pipeline/build.py` and is deterministic: no timestamps, no dictionary
    ordering surprises. `npm run data:check` fails if a committed file is stale.
