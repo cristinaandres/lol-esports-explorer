@@ -74,12 +74,10 @@ export default function PlayerDetail() {
     const player = dataset.data.players.find((row) => row.player_id === id)
     if (!player) return { player: undefined } as const
 
-    const competitions = new Map(
-      dataset.data.events.map((event) => [event.event_key, event.competition]),
-    )
+    const index = buildIndexes(dataset.data)
     const appearances =
       rows.status === 'ready'
-        ? appearancesFor(dataset.data.games, rows.data, player.player_key, competitions)
+        ? appearancesFor(dataset.data.games, rows.data, player.player_key, index.competitions)
         : []
 
     const hit = contextFor(appearances, from)
@@ -114,9 +112,8 @@ export default function PlayerDetail() {
               to: row.valid_to,
             }))
           : [],
-      index: buildIndexes(dataset.data),
+      index,
       champs: championships(dataset.data.games, dataset.data.matches),
-      events: new Map(dataset.data.events.map((event) => [event.event_key, event])),
     } as const
   }, [dataset, rows, aliases, id, from])
 
@@ -157,7 +154,7 @@ export default function PlayerDetail() {
   const all = prepared.appearances
   const titles = titlesForPlayer(prepared.champs, all)
   const eventStats = eventsOf(all)
-  const titleGroups = groupTitlesByCompetition(titles, (key) => prepared.events.get(key)?.competition)
+  const titleGroups = groupTitlesByCompetition(titles, (key) => prepared.index.events.get(key)?.competition)
   const visible = applyFilter(all, filter)
   const form = recentForm(visible)
   const roleSplits = byRole(visible)
@@ -321,12 +318,12 @@ export default function PlayerDetail() {
                           className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
                         >
                           <span className="text-fog-100 text-sm">
-                            {prepared.events.get(title.eventKey) ? (
+                            {prepared.index.events.get(title.eventKey) ? (
                               <Link
-                                to={`/events/${prepared.events.get(title.eventKey)!.event_id}`}
+                                to={`/events/${prepared.index.events.get(title.eventKey)!.event_id}`}
                                 className="hover:text-gold"
                               >
-                                {prepared.events.get(title.eventKey)!.event_name}
+                                {prepared.index.events.get(title.eventKey)!.event_name}
                               </Link>
                             ) : (
                               'Unknown event'
@@ -525,7 +522,7 @@ export default function PlayerDetail() {
                 </thead>
                 <tbody className="divide-line divide-y">
                   {eventStats.map((entry) => {
-                    const event = prepared.events.get(entry.eventKey)
+                    const event = prepared.index.events.get(entry.eventKey)
                     return (
                       <tr key={entry.eventKey} className="hover:bg-ink-850/50">
                         <td className="text-fog-100 px-2 py-2 sm:px-4">

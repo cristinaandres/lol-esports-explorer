@@ -10,6 +10,9 @@
  * here, so adding an era upstream cannot silently ship a blank card.
  */
 
+import { monthYear } from './format'
+import type { Era } from './types'
+
 export type EraCopy = {
   title: string
   /** What the era changed in the game, in one sentence. */
@@ -75,4 +78,19 @@ export function eraCopy(id: string): EraCopy {
       whatChanged: 'No description has been written for this era yet.',
     }
   )
+}
+
+/**
+ * The years an era's games were played in, as the spine and the era page print it.
+ *
+ * An era that governed no game declares no dates upstream, so it reads as the
+ * year it was governed from. `from` is a full ISO date and a boundary, not the
+ * span of play, so the month rather than the raw timestamp is what a reader
+ * should see there.
+ */
+export function eraSpan(era: Era): string {
+  if (!era.first_date || !era.last_date) return `from ${monthYear(era.from)}`
+  const from = era.first_date.slice(0, 4)
+  const to = era.last_date.slice(0, 4)
+  return from === to ? from : `${from} – ${to}`
 }

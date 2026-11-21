@@ -38,17 +38,16 @@ export default function ChampionDetail() {
     const champion = dataset.data.champions.find((row) => row.champion_id === id)
     if (!champion) return { champion: undefined } as const
 
-    const competitions = new Map(
-      dataset.data.events.map((event) => [event.event_key, event.competition]),
-    )
+    const index = buildIndexes(dataset.data)
     const scoped = dataset.data.games.map((game) => ({
       game,
-      competition: competitions.get(game.event_key) ?? 'Unknown',
+      competition: index.competitions.get(game.event_key) ?? 'Unknown',
     }))
 
     return {
       champion,
       scoped,
+      index,
       former:
         aliases.status === 'ready'
           ? namesFor(aliases.data, 'champion', champion.champion_id).map((row) => ({
@@ -112,7 +111,7 @@ export default function ChampionDetail() {
     ? championRoleStats(visibleGames, draft.playerGames, champion.champion_key)
     : []
   const reason = emptyReason(scoped, filter)
-  const index = buildIndexes(dataset.data)
+  const index = prepared.index
 
   return (
     <>

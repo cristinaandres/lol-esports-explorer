@@ -46,14 +46,12 @@ export default function TeamDetail() {
     const team = dataset.data.teams.find((row) => row.team_id === id)
     if (!team) return { team: undefined } as const
 
-    const competitions = new Map(
-      dataset.data.events.map((event) => [event.event_key, event.competition]),
-    )
+    const index = buildIndexes(dataset.data)
 
     return {
       team,
       ready: rows.status === 'ready',
-      appearances: teamAppearancesFor(dataset.data.games, competitions, team.team_key),
+      appearances: teamAppearancesFor(dataset.data.games, index.competitions, team.team_key),
       playerGames: rows.status === 'ready' ? rows.data : [],
       former:
         aliases.status === 'ready'
@@ -63,9 +61,8 @@ export default function TeamDetail() {
               to: row.valid_to,
             }))
           : [],
-      events: new Map(dataset.data.events.map((event) => [event.event_key, event])),
       champs: championships(dataset.data.games, dataset.data.matches),
-      index: buildIndexes(dataset.data),
+      index,
     } as const
   }, [dataset, rows, aliases, id])
 
@@ -94,9 +91,9 @@ export default function TeamDetail() {
     )
   }
 
-  const { team, index, events, playerGames } = prepared
+  const { team, index, playerGames } = prepared
   const titles = titlesForTeam(prepared.champs, team.team_key)
-  const titleGroups = groupTitlesByCompetition(titles, (key) => events.get(key)?.competition)
+  const titleGroups = groupTitlesByCompetition(titles, (key) => index.events.get(key)?.competition)
   const all = prepared.appearances
   const visible = applyFilter(all, filter)
   const summary = teamSummaryFrom(visible)
@@ -213,12 +210,12 @@ export default function TeamDetail() {
                           className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
                         >
                           <span className="text-fog-100 text-sm">
-                            {events.get(title.eventKey) ? (
+                            {index.events.get(title.eventKey) ? (
                               <Link
-                                to={`/events/${events.get(title.eventKey)!.event_id}`}
+                                to={`/events/${index.events.get(title.eventKey)!.event_id}`}
                                 className="hover:text-gold"
                               >
-                                {events.get(title.eventKey)!.event_name}
+                                {index.events.get(title.eventKey)!.event_name}
                               </Link>
                             ) : (
                               'Unknown event'
@@ -274,7 +271,7 @@ export default function TeamDetail() {
                 </thead>
                 <tbody className="divide-line divide-y">
                   {summary.events.map((entry) => {
-                    const event = events.get(entry.eventKey)
+                    const event = index.events.get(entry.eventKey)
                     return (
                       <tr key={entry.eventKey} className="hover:bg-ink-850/50">
                         <td className="text-fog-100 px-2 py-2 sm:px-4">
