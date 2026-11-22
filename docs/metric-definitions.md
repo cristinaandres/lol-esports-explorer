@@ -59,7 +59,8 @@ never in a leaderboard.
 
 | Fact | Rule |
 |---|---|
-| Release date | The champion's live date, pinned from Leaguepedia in `data/upstream/champion-releases.json`. Not part of the model, and never derived from its first appearance in the corpus. |
+| Release date | The champion's live date, `dim_champion.release_date` in the model. Never derived from the champion's first appearance in the corpus. |
+| Team short name | The abbreviation the model states on the team row (`dim_team.short`), used to resolve a search and never shown as a name. A label, not an identity: two teams can state the same one. |
 
 ## Deliberately absent
 

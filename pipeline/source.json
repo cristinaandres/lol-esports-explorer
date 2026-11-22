@@ -19,12 +19,10 @@
     "data/model/fact_player_game.csv": "84d75fb4c0b7effb7dc6f0521f5ae536d55b748b4aacee5e04de3386c862c1db",
     "data/model/fact_player_honour.csv": "1c9e66e13f09a3ec6ab6eb95192abd12a72a59564c241197561a08e3a3cc1963",
     "data/model/schema.sql": "d9b2c29500644faf93e24e12df5ea20e9a11022403c3f0900211cd79ad43c833",
-    "data/upstream/champion-releases.json": "1aa3673e0a11cc6817bb04fd45b8739ee2abc71043a3c0e4034d15c21d7e4f16",
     "data/upstream/event-coverage.json": "e0f2ffa50a5b4c8665cb6a515886fb3f472ee44c8e697cde6830340c75a85152",
     "data/upstream/event-selection.json": "d4313a0fedf54fe32dbbe4325fb5f5a7ad8fe33e67f2b6da72d6b52ee100e0ba",
     "data/upstream/game-eras.json": "a3758bccdb650792ab266b1100f41736c987c5a97b17e371dbdf03520ad4ab4c",
-    "data/upstream/manifest.json": "f919082ad4ab90fa8c7e8a88d2bd55528bdc9739f0393cf02dcfb3a4e991a67d",
-    "data/upstream/team-shortnames.json": "9777b22478aa7cbd0df153504d785388dbc649304bfa63711cc4ec49ab691385"
+    "data/upstream/manifest.json": "f919082ad4ab90fa8c7e8a88d2bd55528bdc9739f0393cf02dcfb3a4e991a67d"
   },
   "note": "The files in data/model/ -- the CSVs, the data dictionary and the DDL -- are a byte-for-byte copy of the pinned tag's build output. Refresh with pipeline/refresh-data.sh."
 }

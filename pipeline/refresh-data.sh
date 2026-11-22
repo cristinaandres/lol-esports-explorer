@@ -205,19 +205,6 @@ for relative in ("data/model", "data/upstream"):
             continue
         pinned[f"{relative}/{entry.name}"] = hashlib.sha256(entry.read_bytes()).hexdigest()
 
-# The two upstream files that are not from the tag. This script does not write them
-# -- refresh-shortnames.sh and refresh-releases.sh do -- so their hash is taken from
-# the installed copy, which this run leaves alone. Their absence stops the refresh
-# here: a pin whose record cannot name every file it holds is a pin build.py refuses,
-# and failing before the swap is cheaper than failing after it.
-for relative in ("data/upstream/champion-releases.json", "data/upstream/team-shortnames.json"):
-    installed_file = root / relative
-    if not installed_file.is_file():
-        raise SystemExit(
-            f"error: {relative} is missing; run the script that pins it, then retry"
-        )
-    pinned[relative] = hashlib.sha256(installed_file.read_bytes()).hexdigest()
-
 path.write_text(json.dumps({
     "repository": "RRiboulet/lol-dataset",
     "tag": tag,
@@ -233,8 +220,8 @@ PY
 # The pin the tree will hold, checked before it is installed: a staged tree that
 # does not hold together is a tag that cannot be pinned, not a reason to write one.
 verify_pin() {
-  local tree="$1" mode="${2:-installed}"
-  if ! python3 - "$tree" "$stage" "$tag" "$commit" "$mode" <<'PY'
+  local tree="$1"
+  if ! python3 - "$tree" "$stage" "$tag" "$commit" <<'PY'
 """Prove a tree holds exactly one pin, and that it is the one just built.
 
 The four claims the rest of the repository relies on:
@@ -245,8 +232,7 @@ The four claims the rest of the repository relies on:
   * the per-file hashes pipeline/source.json records are the hashes of the files in
     the tree, and every file in the two pinned directories is recorded -- the same
     comparison build.py makes, made here so a refresh cannot install a pin whose
-    record is already wrong (a staged tree is allowed to lack the two files this
-    script does not install, whose hashes came from the installed copy);
+    record is already wrong;
   * data/model/ holds exactly the tag's files, byte for byte: the set matters as
     much as the contents, because a file left over from the previous tag states a
     build the tag never produced, and git status cannot see it (an unchanged file
@@ -262,11 +248,7 @@ import hashlib, json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 stage = pathlib.Path(sys.argv[2])
 tag, commit = sys.argv[3], sys.argv[4]
-staged = len(sys.argv) > 5 and sys.argv[5] == "staged"
 copied = ("manifest.json", "game-eras.json", "event-selection.json", "event-coverage.json")
-# Pinned by their own fetch scripts, not installed from the tag, so a staged tree
-# legitimately does not hold them. build.py checks them in the tree it renders.
-not_installed = {"data/upstream/champion-releases.json", "data/upstream/team-shortnames.json"}
 defects: list[str] = []
 
 
@@ -302,8 +284,6 @@ if source:
         for relative in sorted(files):
             path = root / relative
             if not path.is_file():
-                if staged and relative in not_installed:
-                    continue
                 defects.append(f"{relative} is missing")
             elif digest(path) != files[relative]:
                 defects.append(f"{relative} is not the file pipeline/source.json records")
@@ -360,7 +340,7 @@ PY
   fi
 }
 
-verify_pin "$stage" staged
+verify_pin "$stage"
 
 # The only snapshot taken before writing, and the only thing a rollback restores.
 # It is verified against the tree so a failed copy cannot become a bad restore.
