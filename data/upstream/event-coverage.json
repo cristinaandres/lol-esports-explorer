@@ -1,6 +1,6 @@
 {
-  "source": "https://github.com/RRiboulet/lol-dataset (data/curated/event-coverage.jsonl, v1.1.0)",
-  "fetched": "2026-11-20",
+  "source": "https://github.com/RRiboulet/lol-dataset (data/curated/event-coverage.jsonl, v1.2.0)",
+  "fetched": "2026-11-22",
   "note": "Coverage per event, as the dataset measured it. The site folds it into the events artifact so an event can state what could be measured in it.",
   "events": [
     {
