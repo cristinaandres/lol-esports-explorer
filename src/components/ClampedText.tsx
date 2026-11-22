@@ -10,10 +10,15 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
  * button carries `aria-expanded` and `aria-controls` so the state is not carried by
  * the word alone.
  *
- * The button is only rendered when the text actually overflows, measured after
- * layout: a "See more" that reveals nothing is a control that lies about the
- * content. The clamp itself is the `line-clamp-2` utility rather than a height in
- * pixels, so it follows the line-height instead of guessing it.
+ * The button is only rendered when the text actually overflows, measured after layout
+ * and re-measured whenever the element changes size — a narrower window, a font that
+ * loads late — because a control that appears once and then lies is worse than none. The
+ * clamp itself is the `line-clamp-2` utility rather than a height in pixels, so it
+ * follows the line-height instead of guessing it.
+ *
+ * Clipped text is not interactive text: a link inside the clamp can be reached by Tab
+ * while invisible, which is a focus trap a reader cannot see. Callers put links beside
+ * the note, not inside it.
  */
 export function ClampedText({ children }: { children: ReactNode }) {
   const id = useId()
@@ -24,10 +29,20 @@ export function ClampedText({ children }: { children: ReactNode }) {
   // Measured only while clamped: expanded, the box fits its content by definition and
   // a re-measure would conclude the text is short and take the collapse button away.
   useEffect(() => {
-    if (expanded) return
     const element = paragraph.current
-    if (!element) return
-    setOverflows(element.scrollHeight > element.clientHeight + 1)
+    if (!element || expanded) return
+
+    const measure = () => setOverflows(element.scrollHeight > element.clientHeight + 1)
+    measure()
+
+    // A window that narrows, or a font that arrives after first paint, changes whether
+    // the text fits while the element's own height stays clamped at two lines — so the
+    // box is observed for width as well, and the font set re-measures when it settles.
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    void document.fonts?.ready.then(measure)
+
+    return () => observer.disconnect()
   }, [expanded, children])
 
   return (

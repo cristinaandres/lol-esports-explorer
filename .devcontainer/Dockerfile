@@ -32,11 +32,15 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # MCP server rather than as missing packages.
 #
 # `install-deps` is Playwright's own list for this distribution, so it cannot drift from
-# the browser the checkout downloads; the version it resolves only decides which
-# libraries, never which browser, and installing a library twice is harmless. postCreate
-# still proves the result by taking a screenshot, so a future gap fails where a human
-# reads it.
-RUN npx --yes playwright install-deps chromium \
+# the browser the checkout downloads; the version only decides which libraries, never
+# which browser, and installing a library twice is harmless. postCreate still proves the
+# result by taking a screenshot, so a future gap fails where a human reads it.
+#
+# Pinned to the Playwright build `@playwright/mcp` depends on (see `package-lock.json`),
+# because `npx playwright` without a version resolves whatever npm published that day and
+# two builds of one commit would then install different package sets. Bump it with the
+# MCP package, not on its own.
+RUN npx --yes "playwright@1.66.0-alpha-2026-11-18" install-deps chromium \
     && rm -rf /var/lib/apt/lists/*
 
 # Give non-interactive shells a no-op git editor. Nothing here sets core.editor,

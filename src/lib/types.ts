@@ -264,8 +264,8 @@ export type Player = {
   /**
    * The role the player appears in most, and the rows that decided it.
    *
-   * 68 of the 1,140 played two roles and 6 tie at the top; a tie resolves by the
-   * canonical order `Top, Jungle, Mid, Bot, Support` in the pipeline, not here.
+   * A player who appeared in more than one role is decided by count and then by the
+   * canonical order `Top, Jungle, Mid, Bot, Support` in the pipeline, never here.
    * Null only for a player with no game, which no row has today.
    */
   primary_role: string | null
@@ -293,9 +293,9 @@ export type Champion = {
    */
   release_date: string | null
   /**
-   * The role the champion appears in most, and the rows that decided it. 139 of the
-   * 171 appear in more than one role and 2 tie at the top (Rammus, Teemo), resolved in
-   * the pipeline by the canonical role order.
+   * The role the champion appears in most, and the rows that decided it. A champion
+   * that appears in more than one role is decided by count and then by the canonical
+   * order in the pipeline; a tie is a decidable answer, not a better one.
    */
   primary_role: string | null
   primary_role_games: number | null
