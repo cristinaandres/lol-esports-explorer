@@ -183,6 +183,43 @@ the Dockerfile, so plain `git push` works in a fresh container without this.
 MSG
 fi
 
+# --- Playwright MCP browser ---
+# /workspace/.pi/mcp.json declares the Playwright MCP server, which drives a
+# headless Chromium so an agent can load the dev server and read what rendered
+# instead of inferring it from the source. The npm package comes from
+# package.json; the browser binary does not, and without it the server exits
+# with "Chromium distribution 'chrome' is not found", which reads as a config
+# error rather than a missing download. Install it here.
+#
+# Run the checkout's own playwright (`node_modules/.bin/playwright`) rather than
+# an npx-resolved one: the browser revision has to match the playwright version
+# @playwright/mcp depends on, and npx would otherwise install the newest
+# playwright and a build this server cannot launch. The command is a no-op when
+# the right build is already in $HOME/.cache/ms-playwright, which is
+# container-local, so a rebuilt container needs it again.
+#
+# The launch below is the part that proves the installation: font and nss
+# libraries missing from the base image fail here, where a human reads it, and
+# not later in an agent's browser call.
+if [ -x "$REPO/node_modules/.bin/playwright" ]; then
+  if ( cd "$REPO" && npm run --silent browser:install >/dev/null ); then
+    # mktemp -d, not -u: the screenshot needs a directory that exists, and a
+    # name reserved with -u is a path nothing has created yet.
+    SMOKE_DIR="$(mktemp -d)"
+    if ( cd "$REPO" && ./node_modules/.bin/playwright screenshot --browser chromium \
+           about:blank "$SMOKE_DIR/smoke.png" >/dev/null 2>&1 && [ -s "$SMOKE_DIR/smoke.png" ] ); then
+      echo "[postCreate] Playwright Chromium is installed and launches."
+    else
+      echo "[postCreate] Playwright Chromium installed but does not launch; the playwright MCP server will fail (see 'npm run browser:install')" >&2
+    fi
+    rm -rf "$SMOKE_DIR"
+  else
+    echo "[postCreate] could not install the Playwright Chromium build; the playwright MCP server will not start (run 'npm run browser:install')" >&2
+  fi
+else
+  echo "[postCreate] node_modules is absent, so the Playwright browser was skipped; run 'npm install && npm run browser:install' to give the agent a browser" >&2
+fi
+
 # --- pi model catalogs ---
 # The judge the policy names can be newer than the model list pi ships with, so a
 # fresh volume does not have it and the judge fails with "not in pi's catalogue"

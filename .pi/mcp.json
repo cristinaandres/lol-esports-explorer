@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "--no-install",
+        "playwright-mcp",
+        "--browser",
+        "chromium",
+        "--headless",
+        "--isolated",
+        "--viewport-size",
+        "1280x900",
+        "--output-dir",
+        "scratch/playwright"
+      ],
+      "description": "Load the running site in a headless Chromium and read what it rendered: accessibility snapshot, console messages, screenshots",
+      "timeout": 120
+    }
+  }
+}
