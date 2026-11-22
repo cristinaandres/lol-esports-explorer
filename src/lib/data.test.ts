@@ -148,11 +148,10 @@ const CONTRACT = {
       games: 'number',
       release_date: 'string',
       primary_role: 'string',
-      primary_role_games: 'number',
     },
     // Two champions the wiki names have no row in the model's releases; a champion with
     // no player row would state no role, which no row does today.
-    nullable: ['release_date', 'primary_role', 'primary_role_games'],
+    nullable: ['release_date', 'primary_role'],
   },
   'eras.json': {
     rows: eras,
@@ -323,13 +322,12 @@ const CONTRACT = {
       overview_page: 'string',
       games: 'number',
       primary_role: 'string',
-      primary_role_games: 'number',
       last_team_key: 'number',
-      last_game_date: 'string',
+      last_game_year: 'string',
     },
     // 39 players have no wiki overview page; a player with no game would state no role
     // and no last game, which no row does today.
-    nullable: ['overview_page', 'primary_role', 'primary_role_games', 'last_game_date'],
+    nullable: ['overview_page', 'primary_role', 'last_game_year'],
   },
   'selection.json': {
     rows: selection,
@@ -1009,12 +1007,13 @@ describe('players.json last club', () => {
     expect(players.filter((row) => row.last_team_key === 0 && row.games > 0)).toEqual([])
   })
 
-  it('dates every last game, and dates it no later than the corpus', () => {
-    const latest = games.reduce((max, game) => (game.date_time_utc > max ? game.date_time_utc : max), '')
-    const undated = players.filter((row) => row.games > 0 && row.last_game_date === null)
+  it('dates every last game by its year, and never after the corpus', () => {
+    const latestYear = games.reduce((max, game) => (game.date_time_utc.slice(0, 4) > max ? game.date_time_utc.slice(0, 4) : max), '')
+    const undated = players.filter((row) => row.games > 0 && row.last_game_year === null)
     expect(undated).toEqual([])
-    const future = players.filter((row) => (row.last_game_date ?? '') > latest)
-    expect(future).toEqual([])
+    const malformed = players.filter((row) => row.last_game_year !== null && !/^\d{4}$/.test(row.last_game_year))
+    expect(malformed).toEqual([])
+    expect(players.filter((row) => (row.last_game_year ?? '') > latestYear)).toEqual([])
   })
 
   it('follows a transfer: Zeus last played for Hanwha Life, not T1', () => {
@@ -1024,6 +1023,6 @@ describe('players.json last club', () => {
     const club = teams.find((row) => row.team_key === zeus.last_team_key)!
     expect(club.team_name).toBe('Hanwha Life Esports')
     expect(club.short_name).toBe('HLE')
-    expect(zeus.last_game_date?.slice(0, 4)).toBe('2026')
+    expect(zeus.last_game_year).toBe('2026')
   })
 })

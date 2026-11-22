@@ -41,9 +41,8 @@ const player = (player_key: number, player_name: string): Player => ({
   overview_page: null,
   games: 1,
   primary_role: 'Mid',
-  primary_role_games: 1,
   last_team_key: 0,
-  last_game_date: null,
+  last_game_year: null,
 })
 
 const honour = (

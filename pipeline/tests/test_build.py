@@ -534,15 +534,25 @@ def test_last_club_is_the_club_of_the_latest_game(monkeypatch: pytest.MonkeyPatc
             """
         ).fetchall()
     )
+    # The artifact publishes the year; the instant stays on `player_last_game`, which is
+    # where a reader of the SQL (and this test) can compare it.
     stored = dict(
         con.execute(
-            "select player_key, last_game_date from player_index "
-            "where player_name in ('Zeus', 'Kingen')"
+            "select player_key, last_game_date from player_last_game "
+            "where player_key in (select player_key from dim_player where player_name in ('Zeus', 'Kingen'))"
         ).fetchall()
     )
     assert stored == latest
 
-    rows, with_date = con.execute(
-        "select count(*), count(last_game_date) from player_index"
+    years = dict(
+        con.execute(
+            "select player_key, last_game_year from player_index "
+            "where player_name in ('Zeus', 'Kingen')"
+        ).fetchall()
+    )
+    assert years == {key: value[:4] for key, value in latest.items()}
+
+    players, with_year = con.execute(
+        "select count(*), count(last_game_year) from player_index"
     ).fetchall()[0]
-    assert (rows, with_date) == (1140, 1140)
+    assert (players, with_year) == (1140, 1140)

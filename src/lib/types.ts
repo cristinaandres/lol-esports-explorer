@@ -262,23 +262,26 @@ export type Player = {
   overview_page: string | null
   games: number
   /**
-   * The role the player appears in most, and the rows that decided it.
+   * The role the player appears in most.
    *
    * A player who appeared in more than one role is decided by count and then by the
-   * canonical order `Top, Jungle, Mid, Bot, Support` in the pipeline, never here.
+   * canonical order `Top, Jungle, Mid, Bot, Support` in the pipeline, never here. The
+   * count that decided it stays in `player_index` for the pipeline test and is not
+   * published: nothing renders it, and it would be paid for on every first page load.
    * Null only for a player with no game, which no row has today.
    */
   primary_role: string | null
-  primary_role_games: number | null
   /**
-   * The club the player last appeared for in the corpus, and the instant of that game.
+   * The club the player last appeared for in the corpus, and the year of that game.
    *
    * `last_team_key` is 0 when that game names no club. It is **not** a current team:
    * the model has no contracts, rosters change between seasons, and the pages say
-   * "last played for" with the year beside it so a stale club is visible.
+   * "last played for" with the year beside it so a stale club is visible. The year is
+   * four characters, not the instant — the instant lives on `player_index`, where the
+   * pipeline test compares it.
    */
   last_team_key: number
-  last_game_date: string | null
+  last_game_year: string | null
 }
 
 export type Champion = {
@@ -293,12 +296,12 @@ export type Champion = {
    */
   release_date: string | null
   /**
-   * The role the champion appears in most, and the rows that decided it. A champion
-   * that appears in more than one role is decided by count and then by the canonical
-   * order in the pipeline; a tie is a decidable answer, not a better one.
+   * The role the champion appears in most. A champion that appears in more than one
+   * role is decided by count and then by the canonical order in the pipeline; a tie is
+   * a decidable answer, not a better one. The count stays in `champion_index` and is
+   * not published, because nothing renders it.
    */
   primary_role: string | null
-  primary_role_games: number | null
 }
 
 export type Patch = {

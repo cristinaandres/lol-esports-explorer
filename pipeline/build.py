@@ -70,13 +70,21 @@ ARTIFACTS: dict[str, str] = {
         left join team_short_name s using (team_key)
         order by t.team_key
     """,
-    "players.json": "select * from player_index order by player_key",
+    # Spelled out rather than `select *`: the view keeps `primary_role_games` for the
+    # pipeline test, and a `*` would carry that deciding count to every first page load
+    # although nothing renders it.
+    "players.json": """
+        select player_key, player_id, player_name, overview_page, games,
+               primary_role, last_team_key, last_game_year
+        from player_index
+        order by player_key
+    """,
     # Spelled out rather than `c.*`: the release date now sits on champion_index,
     # and the artifact's key order is part of its bytes, so a `select *` would churn
     # every row to move one field. Games before the date, as it has always been.
     "champions.json": """
         select c.champion_key, c.champion_id, c.champion_name, c.riot_key,
-               c.games, c.release_date, c.primary_role, c.primary_role_games
+               c.games, c.release_date, c.primary_role
         from champion_index c
         order by c.champion_key
     """,

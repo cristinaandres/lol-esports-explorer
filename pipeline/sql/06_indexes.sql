@@ -96,17 +96,19 @@ select
   p.overview_page,
   count(distinct f.game_key) as games,
   r.primary_role,
-  r.primary_role_games,
   coalesce(l.last_team_key, 0) as last_team_key,
-  l.last_game_date
+  -- The year, not the instant: the index prints "Zeus HLE 2026" and a full ISO
+  -- timestamp is 20 characters per player carried by every first page load for a
+  -- four-character label. The instant stays on player_last_game, which is where a test
+  -- can compare it.
+  left(l.last_game_date::varchar, 4) as last_game_year
 from dim_player p
 left join fact_player_game f on f.player_key = p.player_key
 left join player_primary_role r on r.player_key = p.player_key
 left join player_last_game l on l.player_key = p.player_key
 where p.player_key <> 0
 group by p.player_key, p.player_id, p.player_name, p.overview_page,
-         r.primary_role, r.primary_role_games,
-         l.last_team_key, l.last_game_date;
+         r.primary_role, l.last_team_key, l.last_game_date;
 
 create or replace view team_index as
 select
