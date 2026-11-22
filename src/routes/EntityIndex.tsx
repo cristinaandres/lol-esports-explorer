@@ -247,9 +247,16 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
                         </span>
                       ) : null}
                       {entry.club ? (
-                        <span className="text-fog-600 shrink-0 font-mono text-[10px] whitespace-nowrap">
+                        <span className="text-fog-600 shrink-0 font-mono text-[10px]">
                           {entry.club}
-                          {entry.clubYear ? <span className="ml-1">{entry.clubYear}</span> : null}
+                        </span>
+                      ) : null}
+                      {/* The year stands on its own: a club the model states no
+                          abbreviation for still has a last game, and the year is what
+                          says how old that record is. */}
+                      {entry.clubYear ? (
+                        <span className="text-fog-600 shrink-0 font-mono text-[10px] whitespace-nowrap">
+                          {entry.clubYear}
                         </span>
                       ) : null}
                     </Link>

@@ -411,14 +411,17 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
                       {count(data.events.length)} events in the corpus — it states no MVP for Worlds
                       2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021.
                       <br />
-                      So an empty list here means the source says nothing, not that nothing was won.{' '}
+                      So an empty list here means the source says nothing, not that nothing was won.
                     </>
                   ) : null}
+                </ClampedText>
+                {/* Beside the clamp, never inside it: a link in clipped text can be
+                    focused by Tab while invisible. */}
+                <p className="text-fog-600 mt-1 text-xs">
                   <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
                     What a distinction is
                   </Link>
-                  .
-                </ClampedText>
+                </p>
               </div>
 
               {honours.status === 'failed' ? (

@@ -45,6 +45,10 @@ export default function EventsIndex() {
     const next = new URLSearchParams(params)
     if (value === fallback) next.delete(name)
     else next.set(name, value)
+    // The direction belongs to the year axis. Leaving `?order=asc` behind when the sort
+    // goes back to competition would put a parameter in a shared link that no control
+    // owns and no grouping reads.
+    if (name === 'sort' && value !== 'year') next.delete('order')
     setParams(next, { replace: true })
   }
 

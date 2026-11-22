@@ -37,9 +37,9 @@ where champion_key <> 0
 group by champion_key, role;
 
 -- One row per champion: the role it appears in most, and the rows that decided it.
--- 139 of the 171 champions appear in more than one role and two tie at the top --
--- Rammus (Jungle 4, Top 4) and Teemo (Top 2, Bot 2) -- so the rank is what makes this
--- a value rather than a coin flip.
+-- A champion that appears in several roles is decided by count and then by the canonical
+-- order above, so the value never depends on row order; which champions tie is a fact
+-- about the pin, and `test_primary_roles_resolve_ties_by_the_canonical_order` names them.
 create or replace view champion_primary_role as
 select champion_key, role as primary_role, games as primary_role_games
 from champion_role_games
@@ -58,8 +58,9 @@ from fact_player_game
 where player_key <> 0
 group by player_key, role;
 
--- The same rule for a player. 68 of the 1,140 played two roles and six tie at the top
--- (Exosen, Hamezz, Kaigu, Reyk, Rock, Shushei), which the test names.
+-- The same rule for a player: an entity that appears in several roles is decided by count
+-- and then by the canonical order, and the players who tie are named in the pipeline test
+-- rather than here, so a re-pin cannot leave a stale sentence behind.
 create or replace view player_primary_role as
 select player_key, role as primary_role, games as primary_role_games
 from player_role_games
