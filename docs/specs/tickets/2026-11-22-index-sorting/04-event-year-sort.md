@@ -1,7 +1,7 @@
 # 04: An events index that can sort by year as well as by competition
 
 **Blocked by:** — (needs the shared sort control from 01 only if that lands first)
-**Status:** todo
+**Status:** done
 
 ## What to build
 
@@ -49,3 +49,21 @@ falls back to `desc`.
 Vitest over the grouping/order helper with a four-event fixture spanning two years and
 two competitions, covering both directions and the fallbacks, then the page read
 through the Playwright MCP server for the first and last year in each direction.
+
+## Built
+
+- `src/lib/eventGroups.ts` holds the two groupings and the URL parsing; `?sort=year` and
+  `?order=asc|desc` are read through it, and an unknown value of either falls back to
+  the default rather than emptying the page.
+- `sort=competition` is unchanged: groups largest first, events newest first inside,
+  and the direction is ignored — there is nothing for it to order when the groups are
+  competitions, so the control is not rendered in that mode.
+- `sort=year` groups by year and orders the groups by `order`; events inside a year are
+  ordered by name, because a year is a date and not a ranking. The lead says which way
+  round the list runs.
+- No new data: the year and the competition were already on `events.json`, so this is
+  grouping and ordering only.
+- Tests: `eventGroups.test.ts` — both parsers and their fallbacks, competition order
+  (size, then name, newest inside), year order in both directions and its exact reverse,
+  name order inside a year, and no event dropped. On the page: 2026 → 2011 for `desc`,
+  2011 → 2026 for `asc`, 54 events in every mode.
