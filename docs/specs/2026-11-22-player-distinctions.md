@@ -10,7 +10,6 @@ Tickets: `docs/specs/tickets/2026-11-22-player-distinctions/`.
 | 01 | — | The distinction artifact, its type and loader, and the module the pages share |
 | 02 | 01 | The player page's `Distinctions` section, under `Titles` |
 | 03 | 01 | The event page's `Distinctions` section, before `Phases`, and the glossary entry |
-| 04 | 01 | The team page's `Distinctions` section, added after the first pass |
 
 ## Objective
 
@@ -69,10 +68,9 @@ the pages still guard, because the next pin can add an event the site does not a
 - **R6 — The event page states its own awards before its phases.** The section
   names the winners and the titles given, in the source's words, and is absent
   entirely for the 35 events that state none.
-- **R7 — The team page is a later ticket (04).** An award's team is the team the
-  source states at the time, and one row names no team, so a club list has to say
-  what it is counting and keep a transfer from moving an award. Ticket 04 does that
-  after the first pass; the copy carries the rule.
+- **R7 — The team page is out of scope.** An award's team is the team the source
+  states at the time, and one row names no team; a team-page list is a later
+  question, not a free addition.
 
 ## Non-goals
 
