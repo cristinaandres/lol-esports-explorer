@@ -8,6 +8,7 @@ import { SeriesList } from '../components/SeriesList'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
+import { HoverNote } from '../components/HoverNote'
 import { LoadFailure } from '../components/LoadFailure'
 import { useDataset, useGameCorpus, useHonours } from '../lib/data'
 import { eraCopy } from '../lib/eras'
@@ -170,9 +171,15 @@ export default function EventDetail() {
         <section className="mt-10">
           <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
           <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-            Who the source honoured at this event, and for what, in its own words. A distinction is
-            a statement about a player — MVP or an All-Pro place — not the site&rsquo;s reading of
-            the bracket: the winner above is derived, these are stated.{' '}
+            Who the source honoured at this event, and for what, in its own words — stated, where
+            the winner above is derived from the bracket.{' '}
+            <HoverNote
+              variant="icon"
+              label="what a distinction is, and how the list is ordered"
+              note="A distinction is a statement about a player — MVP or an All-Pro place. MVP-named titles are listed before the other places."
+            >
+              i
+            </HoverNote>{' '}
             <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
               What a distinction is
             </Link>

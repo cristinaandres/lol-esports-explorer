@@ -398,16 +398,17 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
               <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
               <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
                 Awards the source states for this player at a tournament, in its own words — MVPs
-                and All-Pro places. These are <em>stated</em>, where the titles above are derived
-                from which team won a final; the two are never merged.{' '}
+                and All-Pro places. Stated, where the titles beside them are derived from who won a
+                final; the two are never merged. An empty list means the source says nothing here.{' '}
                 {honours.status === 'ready' ? (
-                  <>
-                    The source states a distinction at {count(distinctionEvents)} of the{' '}
-                    {count(data.events.length)} events in the corpus — it states no MVP for Worlds
-                    2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021 — so an empty list here
-                    means the source says nothing, not that nothing was won.{' '}
-                  </>
-                ) : null}
+                  <HoverNote
+                    variant="icon"
+                    label="how completely the source states distinctions"
+                    note={`The source states a distinction at ${count(distinctionEvents)} of the ${count(data.events.length)} events in this corpus — it has no MVP row for Worlds 2012/2013/2015/2016/2018-2020, nor for MSI 2017-2021 — so a player without one has not been told anything.`}
+                  >
+                    i
+                  </HoverNote>
+                ) : null}{' '}
                 <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
                   What a distinction is
                 </Link>
