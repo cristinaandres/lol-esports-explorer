@@ -61,6 +61,26 @@ create or replace view fact_player_game as
 create or replace view fact_draft_slot as
   select * from read_csv('data/model/fact_draft_slot.csv', header = true);
 
+-- `place` and `place_number` are empty on every recorded row (the dictionary says so
+-- explicitly), and DuckDB types a wholly empty column as VARCHAR: the integer the
+-- dictionary declares would arrive as text the day the source states one, and a
+-- later pin would silently change this artifact's type. Declared, as the DDL does.
+create or replace view fact_player_honour as
+  select * from read_csv(
+    'data/model/fact_player_honour.csv',
+    header = true,
+    columns = {
+      player_key: 'INTEGER',
+      event_key: 'INTEGER',
+      team_key: 'INTEGER',
+      title: 'VARCHAR',
+      type: 'VARCHAR',
+      source_page: 'VARCHAR',
+      place: 'VARCHAR',
+      place_number: 'INTEGER'
+    }
+  );
+
 -- One row per game, with the question "who won and on which side" already
 -- answered. Both sides are pivoted onto the game row because every page needs
 -- the pair together: a scoreboard without the opponent is not a scoreboard.

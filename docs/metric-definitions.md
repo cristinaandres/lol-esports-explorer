@@ -18,6 +18,7 @@ component except a ratio of two displayed counts.
 | Patches recorded | Distinct `patch_key` on a game. A game with no stated patch is not counted, so this is a floor, not a patch history. | `game_facts` | all eras |
 | Average length | Mean of `duration_seconds` over games that state one. The count it was measured over is printed beside it, because an average states its n on this site the way a share states its denominator. | `fact_game_side` | all eras |
 | Titles | Events whose final is the single series named Finals, won by the team with more game wins in it. Events that name several such series — most Rift Rivals relays, whose winner is a region — award nothing. A relay with one decisive final does award its winner. | `fact_game_side`, `dim_match`; derived in `src/lib/titles.ts` | all eras |
+| Distinctions | Awards the source states for a player at a tournament, in its own words (`Finals MVP`, `All Pro Team`, `MVP`) — one row per player, event and title, never normalised into one label and never merged with Titles, which is derived. Not a measure: a count of them is a `GROUP BY`. They exist for 19 of the 54 events, and the gaps are the source's (no MVP row for Worlds 2012/2013/2015/2016/2018–2020, nor MSI 2017–2021), so a player without one has not been told anything. | `fact_player_honour` | all eras |
 
 ## Shares
 

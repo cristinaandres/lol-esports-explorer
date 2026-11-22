@@ -15,6 +15,7 @@ import type {
   Era,
   EventRow,
   Game,
+  HonourRow,
   Match,
   Meta,
   Patch,
@@ -45,6 +46,7 @@ const playerGames = read<PlayerGame[]>('player-games.json')
 const picks = read<DraftSlot[]>('picks.json')
 const bans = read<DraftSlot[]>('bans.json')
 const aliases = read<AliasRow[]>('aliases.json')
+const honours = read<HonourRow[]>('honours.json')
 const players = read<Player[]>('players.json')
 const teams = read<Team[]>('teams.json')
 const champions = read<Champion[]>('champions.json')
@@ -68,6 +70,7 @@ type ArtifactRows = {
   'eras.json': Era
   'events.json': EventRow
   'games.json': Game
+  'honours.json': HonourRow
   'matches.json': Match
   'patches.json': Patch
   'picks.json': DraftSlot
@@ -237,6 +240,22 @@ const CONTRACT = {
     },
     // match_key and patch_key use 0 for "none stated" and are never null.
     nullable: ['duration_seconds', 'draft_switched_sides'],
+  },
+  'honours.json': {
+    rows: honours,
+    kinds: {
+      player_key: 'number',
+      event_key: 'number',
+      team_key: 'number',
+      title: 'string',
+      type: 'string',
+      source_page: 'string',
+      place: 'string',
+      place_number: 'number',
+    },
+    // The dictionary says both are empty on every recorded row so far. They are the
+    // only fields here the source may leave blank; a team key of 0 is a row, not a null.
+    nullable: ['place', 'place_number'],
   },
   'matches.json': {
     rows: matches,
@@ -913,5 +932,61 @@ describe('player-games.json', () => {
     // 15,040 of 30,910 rows carry no damage figure. The site renders those as an
     // em dash; a zero would be a measurement nobody made.
     expect(playerGames.filter((row) => row.damage === null)).toHaveLength(15_040)
+  })
+})
+
+describe('honours.json', () => {
+  it('states one row per player, event and title, in the fact\'s grain order', () => {
+    // 24 distinctions over 19 players and 19 events on the v1.2.0 pin. The count is
+    // a fact about the pin, so a bump may move it; what must not move is the grain
+    // (no duplicate triple) or the order the build promises.
+    expect(honours).toHaveLength(24)
+    const triples = honours.map((row) => `${row.player_key}-${row.event_key}-${row.title}`)
+    expect(new Set(triples).size).toBe(honours.length)
+
+    const order = [...honours].sort(
+      (a, b) =>
+        a.event_key - b.event_key ||
+        a.player_key - b.player_key ||
+        a.title.localeCompare(b.title),
+    )
+    expect(honours).toEqual(order)
+  })
+
+  it('resolves every player, every event, and every team it names', () => {
+    const playerKeys = new Set(players.map((row) => row.player_key))
+    const eventKeys = new Set(events.map((row) => row.event_key))
+    const teamKeys = new Set(teams.map((row) => row.team_key))
+
+    expect(honours.filter((row) => !playerKeys.has(row.player_key))).toEqual([])
+    expect(honours.filter((row) => !eventKeys.has(row.event_key))).toEqual([])
+    // One row names no team (Kiin, Esports World Cup 2025): key 0 is the unknown
+    // member, a stated absence, and the pages print nothing for it.
+    expect(honours.filter((row) => row.team_key !== 0 && !teamKeys.has(row.team_key))).toEqual([])
+    expect(honours.filter((row) => row.team_key === 0)).toHaveLength(1)
+  })
+
+  it('keeps the source\'s words and states one award type', () => {
+    // Upstream keeps MVP, MSI MVP and Most Valuable Player as three strings on
+    // purpose; normalising them here would be the site inventing a vocabulary.
+    expect(new Set(honours.map((row) => row.title))).toEqual(
+      new Set(['Finals MVP', 'All Pro Team', 'Most Valuable Player', 'MSI MVP', 'MVP', 'Tournament MVP']),
+    )
+    expect(new Set(honours.map((row) => row.type))).toEqual(new Set(['Season Award']))
+  })
+
+  it('has the shape the two pages read: a player with three, an event with six', () => {
+    const faker = players.find((row) => row.player_name === 'Faker')!
+    const mine = honours.filter((row) => row.player_key === faker.player_key)
+    expect(mine).toHaveLength(3)
+    expect(mine.map((row) => row.title).sort()).toEqual(
+      ['Finals MVP', 'MVP', 'Most Valuable Player'].sort(),
+    )
+
+    const msi2016 = events.find((row) => row.event_name === 'MSI 2016')!
+    const awards = honours.filter((row) => row.event_key === msi2016.event_key)
+    expect(awards).toHaveLength(6)
+    expect(awards.filter((row) => row.title === 'All Pro Team')).toHaveLength(5)
+    expect(awards.filter((row) => row.title === 'MVP')).toHaveLength(1)
   })
 })
