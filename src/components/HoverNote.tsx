@@ -8,12 +8,6 @@ import { useCallback, useId, useRef, useState, type ReactNode } from 'react'
  * keyboard focus, and the trigger carries a native `title` so a touch device or a
  * screen reader still gets the text without the bubble.
  *
- * Two triggers, because the two places this is used are different: `text` underlines
- * the figure itself, and `icon` puts a small circled `i` beside a sentence whose
- * qualifying detail — which events the source covers, why a zero is a measurement —
- * would otherwise be three lines of prose before the reader reaches the rows. The
- * sentence keeps the claim; the note keeps the evidence for it.
- *
  * The bubble is placed so it stays on screen. Anchoring it to one edge is wrong at
  * one width or another — a trigger near the left edge overflows left, one near the
  * right edge overflows right, and the player page and the event page put theirs in
@@ -22,18 +16,7 @@ import { useCallback, useId, useRef, useState, type ReactNode } from 'react'
  */
 const MARGIN = 8
 
-export function HoverNote({
-  note,
-  children,
-  variant = 'text',
-  label,
-}: {
-  note: string
-  children: ReactNode
-  variant?: 'text' | 'icon'
-  /** What the icon is for, read by a screen reader instead of a bare "i". */
-  label?: string
-}) {
+export function HoverNote({ note, children }: { note: string; children: ReactNode }) {
   const id = useId()
   const anchor = useRef<HTMLSpanElement>(null)
   const bubble = useRef<HTMLSpanElement>(null)
@@ -59,20 +42,14 @@ export function HoverNote({
     setShift(left - anchoredRight)
   }, [])
 
-  const triggerClass =
-    variant === 'icon'
-      ? 'border-fog-600/60 text-fog-500 inline-flex h-4 w-4 shrink-0 cursor-help items-center justify-center rounded-full border font-mono text-[10px] leading-none'
-      : 'border-fog-600/60 cursor-help border-b border-dotted'
-
   return (
     <span className="group relative inline-flex align-baseline">
       <span
         ref={anchor}
         tabIndex={0}
         aria-describedby={id}
-        aria-label={variant === 'icon' ? label : undefined}
         title={note}
-        className={triggerClass}
+        className="border-fog-600/60 cursor-help border-b border-dotted"
         onPointerEnter={place}
         onFocus={place}
       >
