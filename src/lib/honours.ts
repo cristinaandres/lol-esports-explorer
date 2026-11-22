@@ -34,6 +34,25 @@ function byTitleThenPlayer(a: HonourRow, b: HonourRow, players: Map<number, Play
   return aName.localeCompare(bName)
 }
 
+function withEvents(
+  rows: readonly HonourRow[],
+  events: Map<number, EventRow>,
+): DatedDistinction[] {
+  return rows.map((row) => ({ ...row, event: events.get(row.event_key) }))
+}
+
+/** The order a career or a club list reads in: newest event first. */
+function byEventThenTitle(
+  players: Map<number, Player>,
+): (a: DatedDistinction, b: DatedDistinction) => number {
+  return (a, b) => {
+    // The event's date is the primary key of the list; the title rule only decides
+    // inside one event, where the dates are equal.
+    const date = (b.event?.date_start ?? '').localeCompare(a.event?.date_start ?? '')
+    return date !== 0 ? date : byTitleThenPlayer(a, b, players)
+  }
+}
+
 /**
  * One player's distinctions, newest event first.
  *
@@ -48,15 +67,31 @@ export function distinctionsForPlayer(
   events: Map<number, EventRow>,
   players: Map<number, Player>,
 ): DatedDistinction[] {
-  return rows
-    .filter((row) => row.player_key === playerKey)
-    .map((row) => ({ ...row, event: events.get(row.event_key) }))
-    .sort((a, b) => {
-      // The event's date is the primary key of a career list; the title rule only
-      // decides inside one event, where the dates are equal.
-      const date = (b.event?.date_start ?? '').localeCompare(a.event?.date_start ?? '')
-      return date !== 0 ? date : byTitleThenPlayer(a, b, players)
-    })
+  return withEvents(
+    rows.filter((row) => row.player_key === playerKey),
+    events,
+  ).sort(byEventThenTitle(players))
+}
+
+/**
+ * The distinctions the source states for players at one team, newest event first.
+ *
+ * The team is the one the source names *at that event*, so an award follows the club
+ * the player was playing for rather than the club on the roster today: a distinction
+ * is a statement about one tournament. Key 0 is the unknown member and has no page,
+ * so it resolves to no list rather than a list under "Unknown".
+ */
+export function distinctionsForTeam(
+  rows: readonly HonourRow[],
+  teamKey: number,
+  events: Map<number, EventRow>,
+  players: Map<number, Player>,
+): DatedDistinction[] {
+  if (teamKey === 0) return []
+  return withEvents(
+    rows.filter((row) => row.team_key === teamKey),
+    events,
+  ).sort(byEventThenTitle(players))
 }
 
 /** One event's distinctions: MVP-named titles first, then the rest, then by name. */
