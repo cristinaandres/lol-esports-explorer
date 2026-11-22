@@ -169,7 +169,7 @@ export default function EventDetail() {
 
       {distinctions.length > 0 ? (
         <section className="mt-10">
-          <div className="mb-1 flex items-center justify-between gap-3">
+          <div className="mb-1 flex items-center gap-2">
             <h2 className="text-fog-100 text-lg font-semibold tracking-tight">Distinctions</h2>
             <HoverNote
               variant="icon"

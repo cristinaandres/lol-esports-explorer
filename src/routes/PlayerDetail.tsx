@@ -5,6 +5,7 @@ import { Breadcrumbs } from '../components/Breadcrumbs'
 import { Skeleton } from '../components/Skeleton'
 import { LoadFailure } from '../components/LoadFailure'
 import { CareerFilters } from '../components/CareerFilters'
+import { ClampedText } from '../components/ClampedText'
 import { DataTable } from '../components/DataTable'
 import { EmptyFilter } from '../components/EmptyFilter'
 import { HoverNote } from '../components/HoverNote'
@@ -395,7 +396,7 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
               )}
             </div>
             <div>
-              <div className="mb-1 flex items-center justify-between gap-3">
+              <div className="mb-1 flex items-center gap-2">
                 <h2 className="text-fog-100 text-lg font-semibold tracking-tight">Distinctions</h2>
                 {honours.status === 'ready' ? (
                   <HoverNote
@@ -407,15 +408,17 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
                   </HoverNote>
                 ) : null}
               </div>
-              <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-                Awards the source states for this player at a tournament, in its own words — MVPs
-                and All-Pro places. Stated, where the titles beside them are derived from who won a
-                final; the two are never merged. An empty list means the source says nothing here.{' '}
-                <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
-                  What a distinction is
-                </Link>
-                .
-              </p>
+              <div className="mb-5">
+                <ClampedText>
+                  Awards the source states for this player at a tournament, in its own words — MVPs
+                  and All-Pro places. Stated, where the titles beside them are derived from who won a
+                  final; the two are never merged. An empty list means the source says nothing here.{' '}
+                  <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
+                    What a distinction is
+                  </Link>
+                  .
+                </ClampedText>
+              </div>
 
               {honours.status === 'failed' ? (
                 <LoadFailure
