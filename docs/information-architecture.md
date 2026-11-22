@@ -118,11 +118,6 @@ One is the site's reading of the bracket, the other is somebody's statement abou
 the player; nothing on the page merges them, and the copy names the events the
 source says nothing about.
 
-The team page prints the same section for the club's players, and its copy carries
-the rule a reader would otherwise get wrong: the team is the one the source names at
-that event, so an award stays with the club the player was playing for and a later
-transfer does not move it.
-
 **Figma frames:** `50-player/context`, `50-player/career`, `50-player/filters`.
 
 ## Cross-cutting components

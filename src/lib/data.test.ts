@@ -990,16 +990,3 @@ describe('honours.json', () => {
     expect(awards.filter((row) => row.title === 'MVP')).toHaveLength(1)
   })
 })
-describe('honours.json for a team page', () => {
-  it('gives a club the awards the source named at its events', () => {
-    // T1 is the extreme case on this pin: five distinctions across three events.
-    const t1 = teams.find((row) => row.team_name === 'T1')!
-    const mine = honours.filter((row) => row.team_key === t1.team_key)
-    expect(mine).toHaveLength(5)
-    expect(new Set(mine.map((row) => row.event_key)).size).toBe(5)
-    // 13 clubs carry an award on this pin; the rest of the 24 rows name one of those
-    // clubs too, and one names none. The counts are the pin's, so a bump may move them.
-    const clubs = new Set(honours.filter((row) => row.team_key !== 0).map((row) => row.team_key))
-    expect(clubs.size).toBe(13)
-  })
-})

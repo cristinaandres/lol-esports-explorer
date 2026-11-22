@@ -10,14 +10,7 @@ import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import {
-  useAliases,
-  useDataset,
-  useGameCorpus,
-  useHonours,
-  usePlayerGames,
-  type Dataset,
-} from '../lib/data'
+import { useAliases, useDataset, useGameCorpus, usePlayerGames, type Dataset } from '../lib/data'
 import {
   applyFilter,
   emptyReason,
@@ -32,7 +25,6 @@ import { count, dayMonthYear } from '../lib/format'
 import { buildIndexes, playerName, playerPath } from '../lib/indexes'
 import { rosterFrom, rosterOfGame, teamAppearancesFor, teamSummaryFrom } from '../lib/team'
 import { championships, groupTitlesByCompetition, titlesForTeam } from '../lib/titles'
-import { distinctionsForTeam, groupByCompetition } from '../lib/honours'
 import type { Team } from '../lib/types'
 
 /**
@@ -84,7 +76,6 @@ function TeamPage({ team, data }: { team: Team; data: Dataset }) {
   const corpus = useGameCorpus()
   const rows = usePlayerGames()
   const aliases = useAliases()
-  const honours = useHonours()
   const [searchParams, setSearchParams] = useSearchParams()
   const filter = parseFilter(searchParams)
 
@@ -123,15 +114,6 @@ function TeamPage({ team, data }: { team: Team; data: Dataset }) {
   const { index, playerGames } = prepared
   const titles = titlesForTeam(prepared.champs, team.team_key)
   const titleGroups = groupTitlesByCompetition(titles, (key) => index.events.get(key)?.competition)
-  // The awards the source states for this club's players, in its own words. The team
-  // is the one the source names at that event, not the roster as it stands today.
-  const distinctions =
-    honours.status === 'ready'
-      ? distinctionsForTeam(honours.data, team.team_key, index.events, index.players)
-      : []
-  const distinctionGroups = groupByCompetition(distinctions)
-  const distinctionEvents =
-    honours.status === 'ready' ? new Set(honours.data.map((row) => row.event_key)).size : 0
   const all = prepared.appearances
   const visible = applyFilter(all, filter)
   const summary = teamSummaryFrom(visible)
@@ -273,94 +255,6 @@ function TeamPage({ team, data }: { team: Team; data: Dataset }) {
                           </span>
                         </li>
                       ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="mt-12">
-            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
-            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Awards the source states for this club&rsquo;s players at a tournament, in its own
-              words — MVPs and All-Pro places. These are <em>stated</em>, where the titles above are
-              derived from which team won a final. The team is the one the source names at that
-              event, so an award stays with the club the player was playing for.{' '}
-              {honours.status === 'ready' ? (
-                <>
-                  The source states a distinction at {count(distinctionEvents)} of the{' '}
-                  {count(data.events.length)} events in the corpus — it states no MVP for Worlds
-                  2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021 — so an empty list here
-                  means the source says nothing, not that none was won.{' '}
-                </>
-              ) : null}
-              <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
-                What a distinction is
-              </Link>
-              .
-            </p>
-
-            {honours.status === 'failed' ? (
-              <LoadFailure
-                failures={[{ what: 'the distinctions', error: honours.error }]}
-                onRetry={honours.retry}
-              />
-            ) : honours.status === 'loading' ? (
-              <Skeleton shape="stack" heights={['h-24']} />
-            ) : distinctionGroups.length === 0 ? (
-              <p className="text-fog-600 text-sm">
-                The source states no distinction for a player at this club. That is what it says,
-                not what the club won.
-              </p>
-            ) : (
-              <div className="space-y-6">
-                {distinctionGroups.map((group) => (
-                  <div key={group.competition}>
-                    <h3 className="text-fog-600 border-line mb-2 flex items-baseline justify-between border-b pb-1.5 text-[11px] tracking-[0.14em] uppercase">
-                      <span>{group.competition}</span>
-                      <span className="text-fog-500">
-                        {group.distinctions.length}{' '}
-                        {group.distinctions.length === 1 ? 'distinction' : 'distinctions'}
-                      </span>
-                    </h3>
-                    <ul className="divide-line divide-y">
-                      {group.distinctions.map((row) => {
-                        const path = playerPath(index, row.player_key)
-                        return (
-                          <li
-                            key={`${row.event_key}-${row.player_key}-${row.title}`}
-                            className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
-                          >
-                            <span className="text-fog-100 text-sm">
-                              {path ? (
-                                <Link to={path} className="hover:text-gold">
-                                  {playerName(index, row.player_key)}
-                                </Link>
-                              ) : (
-                                playerName(index, row.player_key)
-                              )}
-                              <span className="text-gold"> · {row.title}</span>
-                              {row.event ? (
-                                <>
-                                  {' at '}
-                                  <Link
-                                    to={`/events/${row.event.event_id}`}
-                                    className="hover:text-gold"
-                                  >
-                                    {row.event.event_name}
-                                  </Link>
-                                </>
-                              ) : (
-                                ' at an event this page cannot name'
-                              )}
-                            </span>
-                            <span className="text-fog-600 font-mono text-xs">
-                              {row.event ? dayMonthYear(row.event.date_start) : ''}
-                            </span>
-                          </li>
-                        )
-                      })}
                     </ul>
                   </div>
                 ))}

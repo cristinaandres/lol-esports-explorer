@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import {
   distinctionsForEvent,
   distinctionsForPlayer,
-  distinctionsForTeam,
   groupByCompetition,
   isMvpTitle,
 } from './honours'
@@ -160,33 +159,5 @@ describe('groupByCompetition', () => {
 
   it('returns no group for a player with no distinction', () => {
     expect(groupByCompetition([])).toEqual([])
-  })
-})
-
-describe('distinctionsForTeam', () => {
-  const rows = [
-    honour(1, 1, 'Finals MVP', 10),
-    honour(2, 2, 'All Pro Team', 10),
-    honour(2, 2, 'MVP', 10),
-    honour(3, 3, 'Finals MVP', 20),
-    honour(1, 2, 'MVP'), // names no team: it belongs to no club, not to the unknown one
-  ]
-
-  it('lists a club\'s players newest event first', () => {
-    const mine = distinctionsForTeam(rows, 10, events, players)
-    expect(mine.map((row) => row.event?.event_name)).toEqual(['Worlds 2024', 'MSI 2016', 'MSI 2016'])
-    expect(mine.map((row) => row.player_key)).toEqual([1, 2, 2])
-  })
-
-  it('puts an MVP above an All-Pro place at the same event', () => {
-    const mine = distinctionsForTeam(rows, 10, events, players)
-    const msi = mine.filter((row) => row.event_key === 2)
-    expect(msi.map((row) => row.title)).toEqual(['MVP', 'All Pro Team'])
-  })
-
-  it('carries no award for the unknown team, and none for a club nobody was honoured at', () => {
-    // Key 0 is a stated absence, and it has no club page to list anything under.
-    expect(distinctionsForTeam(rows, 0, events, players)).toEqual([])
-    expect(distinctionsForTeam(rows, 99, events, players)).toEqual([])
   })
 })
