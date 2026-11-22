@@ -1,7 +1,7 @@
 # 01: A champion's most-played role, and a champions index that sorts by it
 
 **Blocked by:** — (needs the metric definition below in `docs/metric-definitions.md` first)
-**Status:** todo
+**Status:** done
 
 ## What to build
 
@@ -60,3 +60,21 @@ A pipeline test that the SQL answer for a hand-checked champion (Ahri: 288 games
 role split) matches `champion_index`, and a vitest for the grouping helper over a
 fixture with a tie. Then the page, read through the Playwright MCP server, for the
 five-group count and the fallback.
+
+## Built
+
+- `role_rank(role)` in `06_indexes.sql` is the canonical order as one macro, so the two
+  entities that need it cannot drift; `champion_role_games` and
+  `champion_primary_role` rank with `row_number() over (order by games desc, role_order)`.
+- `champion_index` carries `primary_role` and `primary_role_games`; `champions.json`
+  publishes both, so the index stays 171 rows and loads with the eager set.
+- The sort is `?sort=name|role` and the filter is `?q=`, both URL parameters read through
+  one `parseIndexSort`, with unknown values falling back to `name`.
+- `src/lib/indexGroups.ts` owns the grouping and the stable order (games desc, then
+  name); `SelectField` is the shared control, extracted from `CareerFilters`.
+- Group counts on the page: Top 37, Jungle 38, Mid 39, Bot 28, Support 29 — 171 rows,
+  and Rammus and Teemo appear under Top, which is the tie-break visible on the page.
+- Tests: `indexGroups.test.ts` (initial grouping, draft-order role grouping, unknown
+  role, tie stability, no row dropped) and
+  `test_primary_roles_resolve_ties_by_the_canonical_order` in the pipeline suite, which
+  asserts Rammus/Teemo/Hari and that every published row has one of the five roles.

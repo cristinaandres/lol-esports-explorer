@@ -451,3 +451,47 @@ def test_honour_place_number_is_declared_rather_than_sniffed(
     csv = build.MODEL_DIR / "fact_player_honour.csv"
     stated = len(csv.read_text(encoding="utf-8").strip().splitlines()) - 1
     assert con.execute("select count(*) from fact_player_honour").fetchall() == [(stated,)]
+
+
+def test_primary_roles_resolve_ties_by_the_canonical_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The two tied champions and one ordinary one, read off the real SQL.
+
+    Rammus (Jungle 4, Top 4) and Teemo (Top 2, Bot 2) are the only champions whose top
+    role is a tie on this pin. The rule says the canonical order decides, so both are
+    Top; a later refactor that ranked by row order or by name would answer differently
+    and this is the test that would notice. Ahri is the control: 287 Mid rows against 1
+    Bot, so the tie-break is not doing the work.
+    """
+    monkeypatch.chdir(build.ROOT)
+    con = build.connect()
+
+    roles = dict(
+        con.execute(
+            "select champion_name, primary_role from champion_index "
+            "where champion_name in ('Rammus', 'Teemo', 'Ahri')"
+        ).fetchall()
+    )
+    assert roles == {"Rammus": "Top", "Teemo": "Top", "Ahri": "Mid"}
+
+    counts = dict(
+        con.execute(
+            "select player_name, primary_role from player_index "
+            "where player_name in ('Exosen', 'Shushei', 'Faker')"
+        ).fetchall()
+    )
+    # Exosen played Bot 8 and Mid 8; Mid comes first in the canonical order.
+    # Shushei played Mid 8 and Top 8; Top does.
+    assert counts == {"Exosen": "Mid", "Shushei": "Top", "Faker": "Mid"}
+
+    # Every published row has a role: a champion or player with no game would state
+    # none, and this pin has none. The five roles are the only values there are.
+    for view, expected in (("champion_index", 171), ("player_index", 1140)):
+        rows, with_role = con.execute(f"select count(*), count(primary_role) from {view}").fetchall()[0]
+        assert (rows, with_role) == (expected, expected), view
+        roles = {
+            row[0]
+            for row in con.execute(f"select distinct primary_role from {view}").fetchall()
+        }
+        assert roles <= {"Top", "Jungle", "Mid", "Bot", "Support"}, view

@@ -129,6 +129,7 @@ source says nothing about.
 | `Breadcrumbs` | The path from the top is always visible; back is a link, not a gesture. |
 | `EmptyFilter` | The state a filter produces when nothing survives it: names the half that emptied the view and offers one control that brings the games back. |
 | `HoverNote` | The evidence behind a figure, on demand: a dotted underline under it, opening the note on hover and on keyboard focus, with a native `title` as the fallback. The bubble is clamped inside the viewport, because a trigger near either edge would otherwise clip it. |
+| `SelectField` | The one labelled native `<select>`: the career filters and the index sort both use it. Native because it is keyboard-operable and announced correctly without a line of JavaScript. |
 | `ClampedText` | Prose that has to match the height of the column beside it: two lines, an ellipsis, and a `See more` control rendered only when the text really overflows. The full text stays in the DOM, so nothing is hidden from a screen reader or a search engine. |
 
 ## Visual rules

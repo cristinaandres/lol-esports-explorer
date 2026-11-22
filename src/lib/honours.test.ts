@@ -40,6 +40,8 @@ const player = (player_key: number, player_name: string): Player => ({
   player_name,
   overview_page: null,
   games: 1,
+  primary_role: 'Mid',
+  primary_role_games: 1,
 })
 
 const honour = (

@@ -16,17 +16,73 @@
 -- only row whose id (and a champion's riot_key) is null, so dropping it is what
 -- makes those declarations true.
 
+-- A role's canonical order, and the role each entity was played in most.
+--
+-- The five roles are not alphabetical and not a continuum: a list sorted by role reads
+-- Top, Jungle, Mid, Bot, Support, which is the order a draft is read in. Ties are
+-- resolved by this order rather than by row order, because a tie is a tie and the
+-- answer must not depend on which row the CSV happened to list first; `coalesce` keeps
+-- a role the vocabulary does not know last rather than first.
+create or replace macro role_rank(role) as
+  coalesce(array_position(['Top', 'Jungle', 'Mid', 'Bot', 'Support'], role), 99);
+
+create or replace view champion_role_games as
+select
+  champion_key,
+  role,
+  count(*)           as games,
+  role_rank(role)    as role_order
+from fact_player_game
+where champion_key <> 0
+group by champion_key, role;
+
+-- One row per champion: the role it appears in most, and the rows that decided it.
+-- 139 of the 171 champions appear in more than one role and two tie at the top --
+-- Rammus (Jungle 4, Top 4) and Teemo (Top 2, Bot 2) -- so the rank is what makes this
+-- a value rather than a coin flip.
+create or replace view champion_primary_role as
+select champion_key, role as primary_role, games as primary_role_games
+from champion_role_games
+qualify row_number() over (
+  partition by champion_key
+  order by games desc, role_order
+) = 1;
+
+create or replace view player_role_games as
+select
+  player_key,
+  role,
+  count(*)           as games,
+  role_rank(role)    as role_order
+from fact_player_game
+where player_key <> 0
+group by player_key, role;
+
+-- The same rule for a player. 68 of the 1,140 played two roles and six tie at the top
+-- (Exosen, Hamezz, Kaigu, Reyk, Rock, Shushei), which the test names.
+create or replace view player_primary_role as
+select player_key, role as primary_role, games as primary_role_games
+from player_role_games
+qualify row_number() over (
+  partition by player_key
+  order by games desc, role_order
+) = 1;
+
 create or replace view player_index as
 select
   p.player_key,
   p.player_id,
   p.player_name,
   p.overview_page,
-  count(distinct f.game_key) as games
+  count(distinct f.game_key) as games,
+  r.primary_role,
+  r.primary_role_games
 from dim_player p
 left join fact_player_game f on f.player_key = p.player_key
+left join player_primary_role r on r.player_key = p.player_key
 where p.player_key <> 0
-group by p.player_key, p.player_id, p.player_name, p.overview_page;
+group by p.player_key, p.player_id, p.player_name, p.overview_page,
+         r.primary_role, r.primary_role_games;
 
 create or replace view team_index as
 select
@@ -56,9 +112,13 @@ select
   c.champion_name,
   c.riot_key,
   c.release_date,
-  count(distinct p.game_key) as games
+  count(distinct p.game_key) as games,
+  r.primary_role,
+  r.primary_role_games
 from dim_champion c
 left join fact_player_game p on p.champion_key = c.champion_key
+left join champion_primary_role r on r.champion_key = c.champion_key
 where c.champion_key <> 0
-group by c.champion_key, c.champion_id, c.champion_name, c.riot_key, c.release_date;
+group by c.champion_key, c.champion_id, c.champion_name, c.riot_key, c.release_date,
+         r.primary_role, r.primary_role_games;
 

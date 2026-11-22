@@ -1,3 +1,4 @@
+import { SelectField } from './SelectField'
 import type { CareerFilter } from '../lib/filters'
 
 /**
@@ -25,27 +26,25 @@ export function CareerFilters({
 
   return (
     <div className="border-line bg-ink-900/60 mb-8 flex flex-wrap items-end gap-x-6 gap-y-4 rounded-xl border px-4 py-3">
-      <Field label="Competition">
-        <Select
-          value={filter.competition ?? ''}
-          onChange={(value) => onChange({ ...filter, competition: value || null })}
-          options={[
-            { value: '', label: 'All competitions' },
-            ...options.competitions.map((competition) => ({ value: competition, label: competition })),
-          ]}
-        />
-      </Field>
+      <SelectField
+        label="Competition"
+        value={filter.competition ?? ''}
+        onChange={(value) => onChange({ ...filter, competition: value || null })}
+        options={[
+          { value: '', label: 'All competitions' },
+          ...options.competitions.map((competition) => ({ value: competition, label: competition })),
+        ]}
+      />
 
-      <Field label="Year">
-        <Select
-          value={filter.year === null ? '' : String(filter.year)}
-          onChange={(value) => onChange({ ...filter, year: value ? Number(value) : null })}
-          options={[
-            { value: '', label: 'All years' },
-            ...options.years.map((year) => ({ value: String(year), label: String(year) })),
-          ]}
-        />
-      </Field>
+      <SelectField
+        label="Year"
+        value={filter.year === null ? '' : String(filter.year)}
+        onChange={(value) => onChange({ ...filter, year: value ? Number(value) : null })}
+        options={[
+          { value: '', label: 'All years' },
+          ...options.years.map((year) => ({ value: String(year), label: String(year) })),
+        ]}
+      />
 
       {eraLabel ? (
         <div className="pb-1">
@@ -73,35 +72,3 @@ export function CareerFilters({
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="text-fog-600 block text-[10px] tracking-[0.14em] uppercase">{label}</span>
-      <span className="mt-1.5 block">{children}</span>
-    </label>
-  )
-}
-
-function Select({
-  value,
-  onChange,
-  options,
-}: {
-  value: string
-  onChange: (value: string) => void
-  options: { value: string; label: string }[]
-}) {
-  return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className="border-line bg-ink-850 text-fog-100 focus-visible:outline-gold min-w-44 cursor-pointer rounded-lg border px-3 py-1.5 text-sm"
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
-  )
-}
