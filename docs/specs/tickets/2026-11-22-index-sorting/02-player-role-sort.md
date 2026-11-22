@@ -1,7 +1,7 @@
 # 02: A players index that sorts by name or role
 
 **Blocked by:** 01 (for the shared sort control and the `?sort=` convention)
-**Status:** todo
+**Status:** done
 
 ## What to build
 
@@ -58,3 +58,15 @@ what it is for before it needs a column.
 A pipeline test per column against a hand-counted player with two roles (one of the six
 ties), vitest for the grouping and tie-break, then the page read through the Playwright
 MCP server for the group counts.
+
+## Built
+
+- Same pipeline shape as ticket 01: `player_role_games` and `player_primary_role`, with
+  `primary_role` and `primary_role_games` on `player_index` and in `players.json`.
+- The six players who tie at the top are named in the test (Exosen, Hamezz, Kaigu,
+  Reyk, Rock, Shushei); Exosen resolves to Mid and Shushei to Top by the canonical order,
+  which is the one assertion a name-based tie-break would fail.
+- `?sort=role` on the page: Top 231, Jungle 241, Mid 218, Bot 225, Support 225 — 1,140
+  rows, every one in exactly one group.
+- Region sort was dropped before the build, per the decision above; nothing in the code
+  refers to it.

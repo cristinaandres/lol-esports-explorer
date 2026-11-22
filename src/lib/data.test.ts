@@ -147,9 +147,12 @@ const CONTRACT = {
       riot_key: 'number',
       games: 'number',
       release_date: 'string',
+      primary_role: 'string',
+      primary_role_games: 'number',
     },
-    // Two champions the wiki names have no row in the model's releases.
-    nullable: ['release_date'],
+    // Two champions the wiki names have no row in the model's releases; a champion with
+    // no player row would state no role, which no row does today.
+    nullable: ['release_date', 'primary_role', 'primary_role_games'],
   },
   'eras.json': {
     rows: eras,
@@ -319,9 +322,12 @@ const CONTRACT = {
       player_name: 'string',
       overview_page: 'string',
       games: 'number',
+      primary_role: 'string',
+      primary_role_games: 'number',
     },
-    // 39 players have no wiki overview page; the model does not state one.
-    nullable: ['overview_page'],
+    // 39 players have no wiki overview page; a player with no game would state no role,
+    // which no row does today.
+    nullable: ['overview_page', 'primary_role', 'primary_role_games'],
   },
   'selection.json': {
     rows: selection,

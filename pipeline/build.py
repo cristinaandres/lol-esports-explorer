@@ -76,7 +76,7 @@ ARTIFACTS: dict[str, str] = {
     # every row to move one field. Games before the date, as it has always been.
     "champions.json": """
         select c.champion_key, c.champion_id, c.champion_name, c.riot_key,
-               c.games, c.release_date
+               c.games, c.release_date, c.primary_role, c.primary_role_games
         from champion_index c
         order by c.champion_key
     """,

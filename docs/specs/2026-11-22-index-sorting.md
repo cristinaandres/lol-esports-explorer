@@ -1,8 +1,8 @@
 # Sorting the three indexes, and the club a player last played for
 
-Status: tickets only, nothing built. Four small navigation changes that share two
-decisions — a sort is a query parameter, and every label they print is a derived
-measure with a documented rule.
+Status: 01 and 02 built; 03 and 04 are still tickets. Four small navigation changes
+that share two decisions — a sort is a query parameter, and every label they print is
+a derived measure with a documented rule.
 
 Tickets: `docs/specs/tickets/2026-11-22-index-sorting/`.
 

@@ -4,8 +4,8 @@ import { buildSearchIndex, resultPath, search } from './search'
 import type { AliasRow, Champion, Player, Team } from './types'
 
 const players: Player[] = [
-  { player_key: 1, player_id: 'pl-apa', player_name: 'APA', overview_page: '', games: 0 },
-  { player_key: 2, player_id: 'pl-frozen', player_name: 'Frozen', overview_page: '', games: 0 },
+  { player_key: 1, player_id: 'pl-apa', player_name: 'APA', overview_page: '', games: 0, primary_role: 'Mid', primary_role_games: 0 },
+  { player_key: 2, player_id: 'pl-frozen', player_name: 'Frozen', overview_page: '', games: 0, primary_role: 'Mid', primary_role_games: 0 },
 ]
 const teams: Team[] = [
   { team_key: 1, team_id: 'tm-koi', team_name: 'Movistar KOI', overview_page: '', region: 'EMEA', games: 0, short_name: 'KOI' },
@@ -15,7 +15,7 @@ const teams: Team[] = [
   { team_key: 3, team_id: 'tm-illum', team_name: 'Illuminar Gaming', overview_page: '', region: 'EMEA', games: 0, short_name: null },
 ]
 const champions: Champion[] = [
-  { champion_key: 1, champion_id: 'ch-nunu', champion_name: 'Nunu & Willump', riot_key: 20, games: 0, release_date: '2009-02-21' },
+  { champion_key: 1, champion_id: 'ch-nunu', champion_name: 'Nunu & Willump', riot_key: 20, games: 0, release_date: '2009-02-21', primary_role: 'Mid', primary_role_games: 0 },
 ]
 
 const aliases: AliasRow[] = [

@@ -261,6 +261,15 @@ export type Player = {
   /** The wiki page the record comes from; null for 39 players the model has none for. */
   overview_page: string | null
   games: number
+  /**
+   * The role the player appears in most, and the rows that decided it.
+   *
+   * 68 of the 1,140 played two roles and 6 tie at the top; a tie resolves by the
+   * canonical order `Top, Jungle, Mid, Bot, Support` in the pipeline, not here.
+   * Null only for a player with no game, which no row has today.
+   */
+  primary_role: string | null
+  primary_role_games: number | null
 }
 
 export type Champion = {
@@ -274,6 +283,13 @@ export type Champion = {
    * Never derived from the champion's first appearance in the corpus.
    */
   release_date: string | null
+  /**
+   * The role the champion appears in most, and the rows that decided it. 139 of the
+   * 171 appear in more than one role and 2 tie at the top (Rammus, Teemo), resolved in
+   * the pipeline by the canonical role order.
+   */
+  primary_role: string | null
+  primary_role_games: number | null
 }
 
 export type Patch = {
