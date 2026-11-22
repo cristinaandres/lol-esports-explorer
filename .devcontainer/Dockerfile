@@ -22,6 +22,23 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get install -y tmux git curl jq unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# Chromium's shared libraries, for the Playwright MCP server an agent drives to read
+# what a page actually rendered (see AGENTS.md, and `.pi/mcp.json` for the server).
+#
+# The browser *binary* is installed per container by postCreate.sh, because it lives in
+# $HOME/.cache, which is container-local and discarded on rebuild; the OS libraries
+# belong here, where they are cached with the image and installed once. Without them
+# the browser downloads and then refuses to launch, which reads as a config error in the
+# MCP server rather than as missing packages.
+#
+# `install-deps` is Playwright's own list for this distribution, so it cannot drift from
+# the browser the checkout downloads; the version it resolves only decides which
+# libraries, never which browser, and installing a library twice is harmless. postCreate
+# still proves the result by taking a screenshot, so a future gap fails where a human
+# reads it.
+RUN npx --yes playwright install-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
+
 # Give non-interactive shells a no-op git editor. Nothing here sets core.editor,
 # so git falls back to vi, and vi blocks forever when stdin is not a terminal:
 # `git rebase --continue`, `git commit --amend` without -m and `git rebase -i`

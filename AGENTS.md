@@ -62,6 +62,24 @@ npm run dev          # http://localhost:5173/lol-esports-explorer/
 
 Run `npm run data:build` after touching `pipeline/sql/`, then `npm run check`.
 
+`npm run check` never sees a rendered page. For that, start `npm run dev` and
+drive it through the Playwright MCP server `.pi/mcp.json` declares: a headless
+Chromium that answers with the accessibility snapshot, console messages and
+screenshots of the running site, so a claim about layout or wiring is read off
+the page instead of inferred from the source. Its tools use `codemode` exposure,
+so reach them from a script:
+
+```js
+await tools.mcp__playwright__browser_navigate({ url: 'http://127.0.0.1:5173/lol-esports-explorer/eras' })
+const snapshot = (await tools.mcp__playwright__browser_snapshot({})).content[0].text
+```
+
+The pages fetch their artifacts after mount, so a navigation returns before
+anything is rendered: wait for `main` to stop growing before asserting, or the
+snapshot is a skeleton. Screenshots and page dumps land in `scratch/playwright/`,
+which is ignored. The browser build belongs to the container, not the checkout:
+`postCreate.sh` installs it and `npm run browser:install` repeats that by hand.
+
 ## Branches and pull requests
 
 Two long-lived branches: `dev` carries work in flight, `main` is what is released
