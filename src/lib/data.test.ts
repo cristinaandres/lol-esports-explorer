@@ -324,10 +324,12 @@ const CONTRACT = {
       games: 'number',
       primary_role: 'string',
       primary_role_games: 'number',
+      last_team_key: 'number',
+      last_game_date: 'string',
     },
-    // 39 players have no wiki overview page; a player with no game would state no role,
-    // which no row does today.
-    nullable: ['overview_page', 'primary_role', 'primary_role_games'],
+    // 39 players have no wiki overview page; a player with no game would state no role
+    // and no last game, which no row does today.
+    nullable: ['overview_page', 'primary_role', 'primary_role_games', 'last_game_date'],
   },
   'selection.json': {
     rows: selection,
@@ -994,5 +996,34 @@ describe('honours.json', () => {
     expect(awards).toHaveLength(6)
     expect(awards.filter((row) => row.title === 'All Pro Team')).toHaveLength(5)
     expect(awards.filter((row) => row.title === 'MVP')).toHaveLength(1)
+  })
+})
+describe('players.json last club', () => {
+  it('names a club every published player has played for', () => {
+    const clubKeys = new Set(teams.map((row) => row.team_key))
+    const unresolved = players.filter(
+      (row) => row.games > 0 && row.last_team_key !== 0 && !clubKeys.has(row.last_team_key),
+    )
+    expect(unresolved).toEqual([])
+    // Key 0 is a stated absence — the last game names no club — and no row does today.
+    expect(players.filter((row) => row.last_team_key === 0 && row.games > 0)).toEqual([])
+  })
+
+  it('dates every last game, and dates it no later than the corpus', () => {
+    const latest = games.reduce((max, game) => (game.date_time_utc > max ? game.date_time_utc : max), '')
+    const undated = players.filter((row) => row.games > 0 && row.last_game_date === null)
+    expect(undated).toEqual([])
+    const future = players.filter((row) => (row.last_game_date ?? '') > latest)
+    expect(future).toEqual([])
+  })
+
+  it('follows a transfer: Zeus last played for Hanwha Life, not T1', () => {
+    // Worlds 2023 with T1, MSI 2026 and after with HLE. A rule that picked the club
+    // with the most games would answer T1, so this is the assertion that pins the rule.
+    const zeus = players.find((row) => row.player_name === 'Zeus')!
+    const club = teams.find((row) => row.team_key === zeus.last_team_key)!
+    expect(club.team_name).toBe('Hanwha Life Esports')
+    expect(club.short_name).toBe('HLE')
+    expect(zeus.last_game_date?.slice(0, 4)).toBe('2026')
   })
 })

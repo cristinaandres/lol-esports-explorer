@@ -68,6 +68,25 @@ qualify row_number() over (
   order by games desc, role_order
 ) = 1;
 
+-- The club a player last played for, and when.
+--
+-- The same rule the team page's roster uses, so a player's row and a club's roster
+-- cannot disagree about each other. The model has no contracts, so this is what the
+-- corpus last saw rather than where a player is now: a player last seen in 2013 keeps
+-- that club, and the page prints the year so the staleness is visible.
+create or replace view player_last_game as
+select
+  pg.player_key,
+  pg.team_key                  as last_team_key,
+  g.date_time_utc              as last_game_date
+from fact_player_game pg
+join dim_game g using (game_key)
+where pg.player_key <> 0
+qualify row_number() over (
+  partition by pg.player_key
+  order by g.date_time_utc desc, pg.game_key desc
+) = 1;
+
 create or replace view player_index as
 select
   p.player_key,
@@ -76,13 +95,17 @@ select
   p.overview_page,
   count(distinct f.game_key) as games,
   r.primary_role,
-  r.primary_role_games
+  r.primary_role_games,
+  coalesce(l.last_team_key, 0) as last_team_key,
+  l.last_game_date
 from dim_player p
 left join fact_player_game f on f.player_key = p.player_key
 left join player_primary_role r on r.player_key = p.player_key
+left join player_last_game l on l.player_key = p.player_key
 where p.player_key <> 0
 group by p.player_key, p.player_id, p.player_name, p.overview_page,
-         r.primary_role, r.primary_role_games;
+         r.primary_role, r.primary_role_games,
+         l.last_team_key, l.last_game_date;
 
 create or replace view team_index as
 select

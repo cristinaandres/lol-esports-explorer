@@ -495,3 +495,54 @@ def test_primary_roles_resolve_ties_by_the_canonical_order(
             for row in con.execute(f"select distinct primary_role from {view}").fetchall()
         }
         assert roles <= {"Top", "Jungle", "Mid", "Bot", "Support"}, view
+
+
+def test_last_club_is_the_club_of_the_latest_game(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The club a player last played for, checked against a transfer.
+
+    Zeus won Worlds 2023 with T1 and was playing for Hanwha Life Esports in 2026, so a
+    rule that took the club with the most games would answer T1 and this asserts HLE.
+    Kingen is the second case: Kiwoom DRX at Worlds 2022, Nongshim RedForce last. Every
+    player the index publishes has a last game, and its date is the latest of theirs.
+    """
+    monkeypatch.chdir(build.ROOT)
+    con = build.connect()
+
+    rows = dict(
+        con.execute(
+            "select player_name, last_team_key from player_index "
+            "where player_name in ('Zeus', 'Kingen')"
+        ).fetchall()
+    )
+    expected = dict(
+        con.execute(
+            "select team_name, team_key from dim_team "
+            "where team_name in ('Hanwha Life Esports', 'Nongshim RedForce')"
+        ).fetchall()
+    )
+    assert rows == {"Zeus": expected["Hanwha Life Esports"], "Kingen": expected["Nongshim RedForce"]}
+
+    # The date is the player's own latest game, not the corpus's latest or the club's.
+    latest = dict(
+        con.execute(
+            """
+            select player_key, max(date_time_utc) from (
+              select pg.player_key, g.date_time_utc
+              from fact_player_game pg join dim_game g using (game_key)
+              where pg.player_key in (select player_key from dim_player where player_name in ('Zeus', 'Kingen'))
+            ) group by player_key
+            """
+        ).fetchall()
+    )
+    stored = dict(
+        con.execute(
+            "select player_key, last_game_date from player_index "
+            "where player_name in ('Zeus', 'Kingen')"
+        ).fetchall()
+    )
+    assert stored == latest
+
+    rows, with_date = con.execute(
+        "select count(*), count(last_game_date) from player_index"
+    ).fetchall()[0]
+    assert (rows, with_date) == (1140, 1140)

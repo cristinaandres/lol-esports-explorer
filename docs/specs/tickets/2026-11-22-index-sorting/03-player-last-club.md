@@ -2,7 +2,7 @@
 
 **Blocked by:** — (independent of 01/02, but it lands in the same list and should reuse
 whatever the sort work adds to `players.json`)
-**Status:** todo
+**Status:** done
 
 ## What to build
 
@@ -61,3 +61,23 @@ Three consequences the copy and tests carry:
 A pipeline test comparing `player_index.latest_team_key` and `latest_game_date` against
 a hand-written query for two players (one who transferred, one whose last club states no
 short), and the page read through the Playwright MCP server at both widths.
+
+## Built
+
+- `player_last_game` in `06_indexes.sql` takes `fact_player_game.team_key` and
+  `dim_game.date_time_utc` from the row with the greatest instant, ties by `game_key`;
+  `player_index` publishes `last_team_key` (0 when that game names no club) and
+  `last_game_date`.
+- The players index prints the club's abbreviation (`dim_team.short`, resolved from the
+  eager teams artifact) and the year of that game, in the same muted mono the teams
+  index uses. The name keeps the link; the club and year are labels.
+- The lead says where the club comes from: *"the corpus states no contracts, so it is
+  where they were last seen, not where they are now"*.
+- Zeus is the rendered proof of the rule: Worlds 2023 with T1, last game 2026 for
+  Hanwha Life Esports, and the row reads `Zeus HLE 2026`. Kingen reads `Kingen NS 2026`
+  (Kiwoom DRX at Worlds 2022), so a most-games rule would fail both.
+- Tests: a pipeline test for those two transfers and for the date being the player's own
+  latest game; three `data.test.ts` invariants (every published club resolves, key 0 is a
+  stated absence no row has, every date is present and no later than the corpus's newest
+  game, and Zeus's club is HLE); the row measured at 390 px with the club and year on one
+  line and the name truncating around them.

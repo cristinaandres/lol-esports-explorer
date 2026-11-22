@@ -270,6 +270,15 @@ export type Player = {
    */
   primary_role: string | null
   primary_role_games: number | null
+  /**
+   * The club the player last appeared for in the corpus, and the instant of that game.
+   *
+   * `last_team_key` is 0 when that game names no club. It is **not** a current team:
+   * the model has no contracts, rosters change between seasons, and the pages say
+   * "last played for" with the year beside it so a stale club is visible.
+   */
+  last_team_key: number
+  last_game_date: string | null
 }
 
 export type Champion = {
