@@ -12,8 +12,14 @@ default.
 ## The rule, which is a decision and not a formula
 
 A champion's role is the role it appears in most in `fact_player_game`. Measured, 139
-of the 171 champions appear in more than one role and **2 have a tie at the top**, so
-the tie-break is part of the definition:
+of the 171 champions appear in more than one role, and exactly two tie at the top:
+
+| Champion | Tied roles |
+|---|---|
+| **Rammus** | Jungle 4, Top 4 |
+| **Teemo** | Top 2, Bot 2 |
+
+So the tie-break is part of the definition, and both of those names belong in the test:
 
 1. most player-game rows in that role;
 2. on a tie, the role that appears first in the canonical order `Top, Jungle, Mid,
