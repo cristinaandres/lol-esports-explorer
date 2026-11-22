@@ -400,14 +400,18 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
               <div className="mb-5">
                 <ClampedText>
                   Awards the source states for this player at a tournament, in its own words — MVPs
-                  and All-Pro places. Stated, where the titles beside them are derived from who won a
-                  final; the two are never merged.{' '}
+                  and All-Pro places.
+                  <br />
+                  Stated, where the titles beside the final are derived from the winner; never
+                  merged.
                   {honours.status === 'ready' ? (
                     <>
+                      <br />
                       The source states a distinction at {count(distinctionEvents)} of the{' '}
                       {count(data.events.length)} events in the corpus — it states no MVP for Worlds
-                      2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021 — so an empty list here
-                      means the source says nothing, not that nothing was won.{' '}
+                      2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021.
+                      <br />
+                      So an empty list here means the source says nothing, not that nothing was won.{' '}
                     </>
                   ) : null}
                   <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">

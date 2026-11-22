@@ -170,10 +170,11 @@ export default function EventDetail() {
         <section className="mt-10">
           <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
           <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-            Who the source honoured at this event, and for what, in its own words. A distinction is
-            a statement about a player — MVP or an All-Pro place — not the site&rsquo;s reading of
-            the bracket: the winner above is derived, these are stated, and MVP-named titles are
-            listed before the other places.{' '}
+            Who the source honoured at this event, and for what, in its own words.
+            <br />
+            A distinction is a statement about a player — MVP or an All-Pro place — not the
+            site&rsquo;s reading of the bracket: the winner above is derived, these are stated, and
+            MVP-named titles are listed before the other places.{' '}
             <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
               What a distinction is
             </Link>
