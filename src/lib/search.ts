@@ -10,7 +10,7 @@ import type { AliasKind, AliasRow, Champion, Player, Team } from './types'
  * instead of showing a name the reader will not find on the page.
  *
  * One entry per name per entity, not one per row. The bridge can state the same
- * name twice for one entity -- a wiki redirect and a pinned short name are both
+ * name twice for one entity -- a wiki redirect and the model's short name are both
  * evidence about the string "100T" -- and two rows for one name would make the
  * result depend on which row the artifact lists first. A name is an abbreviation
  * because someone stated it as one, not because that row happened to arrive first.

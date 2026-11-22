@@ -1,10 +1,11 @@
 # Provenance
 
 Every number on the site is derived from the files in this directory, which are
-pinned to one upstream build or, where the model has no such column, to the wiki it
-crawls. The model and the tables are copies; the two curated audit files are the
-upstream JSONL wrapped with their source and pin date by the refresh script.
-Nothing here is hand-written, and nothing here is fetched at runtime.
+pinned to one upstream build. The model and the tables are copies; the two curated
+audit files are the upstream JSONL wrapped with their source and pin date by the
+refresh script. Nothing here is hand-written, and nothing here is fetched at
+runtime -- including the champion release dates and the team short names, which the
+model states itself as of `v1.2.0`.
 
 | Field | Value |
 |---|---|
@@ -32,16 +33,9 @@ data/upstream/event-selection.json
 data/upstream/event-coverage.json
                           coverage per event, as the dataset measured it
                           (upstream data/curated/event-coverage.jsonl, rewrapped)
-data/upstream/team-shortnames.json
-                          team short names for search ("KC" must find Karmine Corp)
-data/upstream/champion-releases.json
-                          champion release dates, pinned from Leaguepedia because the
-                          model had no such column when the pin was taken (v1.2.0
-                          added `dim_champion.release_date`)
-
 ```
 
-`pipeline/source.json` records the sha256 of every pinned file above -- all 21,
+`pipeline/source.json` records the sha256 of every pinned file above -- all 19,
 keyed by their path from the repository root -- and `public/data/meta.json` copies
 that record into the artifact. The build verifies every hash before it renders
 anything: a recorded file that is missing, a recorded file whose bytes moved (the
@@ -56,35 +50,25 @@ A reader can walk from a figure on the site to the file it came from without
 trusting this document, and a hand-edited pinned file fails the build before any
 artifact is rewritten.
 
-The two wiki-pinned files are recorded as installed: `refresh-data.sh` hashes the
-copies already in `data/upstream/`, because it does not fetch them --
-`refresh-shortnames.sh` and `refresh-releases.sh` do. A pin refresh therefore records
-their current bytes, so refresh those first when they are due; from then on the build
-verifies them like every other pinned file.
-
 What the manifest can and cannot prove: it records a sha256 for each curated
 JSONL, but the two files pinned here are those records rewrapped, so their bytes
 are not the JSONL's. The manifest is the pin's own receipts, not a second copy of
 the files.
 
-## The files that are not from the model
+## The facts that used to need their own files
 
-`champion-releases.json` is fetched from the same wiki the upstream dataset
-crawls, with the query recorded inside the file and the date it was pinned. It
-exists because a champion without a release date cannot be read: "picked in 21 of
-495 games" means one thing for a champion released in 2011 and another for one
-released in 2014. The model states the same dates as of `v1.2.0`, and the two agree
-wherever both name a champion, so this file now adds only the champions the corpus
-never fields (Akshan, Briar); reading the model's column and retiring the file is a
-separate change. Refresh it with `pipeline/refresh-releases.sh` and read the diff.
+Champion release dates and team short names were pinned from Leaguepedia until
+`v1.2.0`, because the model could not answer for them: a champion carried no live
+date, and a team carried a name and a region but no abbreviation. `v1.2.0` added
+both -- `dim_champion.release_date` and `dim_team.short` -- from the registry rows
+the dataset already reads, so the site takes them from the model and the two files
+and the two fetch scripts are gone. Measured before removing them: the dates agreed
+on all 171 champions both named, and the shorts on all 193 teams both named.
 
-`team-shortnames.json` is fetched the same way. The wiki's Teams table states the
-short name ("KC" for Karmine Corp); search needs it because nobody types the full
-name. The pin predates the model stating the same field (`dim_team.short` arrived
-with `v1.2.0`), and this refresh left the site reading the pin, so consuming the
-model's column -- and retiring this file -- is a separate change. Refresh it with
-`pipeline/refresh-shortnames.sh` and read the diff: a new pin can add a short name
-or move one, and the build refuses rather than drop a row that folds to no team.
+The one thing that changed on the site is a search alias. The wiki pin spelled one
+team twice, and the folded join carried both abbreviations; the model states one per
+team, so "PG" no longer resolves to paiN Gaming, whose row says `PAIN`. No date and
+no printed abbreviation moved.
 
 ## Refreshing the pin
 

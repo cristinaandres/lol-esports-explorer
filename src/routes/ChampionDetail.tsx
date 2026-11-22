@@ -223,7 +223,7 @@ function ChampionPage({ champion, data }: { champion: Champion; data: Dataset })
             <Stat
               label="Released"
               value={<span className="text-lg">{champion.release_date ? dayMonthYear(champion.release_date) : '—'}</span>}
-              hint={champion.release_date ? `${champion.release_date.slice(0, 4)} · source: Leaguepedia` : undefined}
+              hint={champion.release_date ? `${champion.release_date.slice(0, 4)} · from the dataset` : undefined}
             />
             <Stat label="Games since release" value={count(record.games)} />
             <Stat label="Picked" value={<Ratio part={record.picked} total={record.games} />} />

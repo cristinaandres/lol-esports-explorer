@@ -131,7 +131,7 @@ describe('search', () => {
 
 describe('search index with duplicate rows for one name', () => {
   // The artifact's real shape, reduced: the alias bridge carries "100T" as an
-  // undated redirect and the pinned short names carry it again as a short name,
+  // undated redirect and the model's short names carry it again as a short name,
   // and the redirect sorts first. Before the index merged rows by name, the
   // redirect won the tie and the result said "formerly 100T".
   const duplicateTeams: Team[] = [

@@ -686,15 +686,15 @@ describe('aliases.json', () => {
   // actually uses rather than a second lookup that only the tests call.
   const aliasIndex = buildSearchIndex(players, teams, champions, aliases)
 
-  it('carries every alias the model recorded, plus the pinned short names', () => {
-    // 3,791 rows from the bridge and all 194 team short names pinned from the wiki.
-    // The pin states one of them against a spelling the model does not use ('Pain
-    // Gaming' for 'paiN Gaming'); the join folds names, so it is carried rather than
-    // dropped, and the build fails instead of losing a row like it.
-    expect(aliases).toHaveLength(3_985)
+  it('carries every alias the model recorded, plus the team short names', () => {
+    // 3,791 rows from the bridge and the 193 team short names the model states on the
+    // team row (dim_team.short). The pin this replaced spelled one team twice and the
+    // folded join carried both abbreviations; a column on the row carries one, so "PG"
+    // is the one name that disappeared with it.
+    expect(aliases).toHaveLength(3_984)
     const byKind = new Map<string, number>()
     for (const row of aliases) byKind.set(row.kind, (byKind.get(row.kind) ?? 0) + 1)
-    expect(Object.fromEntries(byKind)).toEqual({ player: 2_872, team: 941, champion: 172 })
+    expect(Object.fromEntries(byKind)).toEqual({ player: 2_872, team: 940, champion: 172 })
   })
 
   it('points every alias at an entity', () => {
@@ -703,7 +703,7 @@ describe('aliases.json', () => {
 
   /**
    * The partition ticket 01 records, measured on the bridge rather than on the
-   * published artifact: 194 of the latter's rows are pinned short names with no
+   * published artifact: 193 of the latter's rows are team short names with no
    * window, and leaving them in would make every remainder below describe the
    * wrong set. The folded counts are the module's, not a raw string comparison:
    * "Nunu &amp; Willump" is the entity's own name with an HTML entity in it, and
@@ -768,22 +768,24 @@ describe('aliases.json', () => {
     )
   })
 
-  it('resolves PG, pinned against a spelling the model does not use', () => {
-    // The pin states 'Pain Gaming' -> PG; the model calls the team 'paiN Gaming'. The
-    // pipeline joins those names folded, so the abbreviation resolves instead of
-    // vanishing, and the team keeps the short name the model's own spelling states.
-    expect(search(aliasIndex, 'PG').filter((match) => match.kind === 'team')[0]).toMatchObject({
-      id: 'tm-f642dbf0692c',
-      name: 'paiN Gaming',
-      matched: 'PG',
-    })
+  it('resolves a team by the one abbreviation the model states', () => {
+    // The wiki pin spelled this team twice ('Pain Gaming' -> PG, 'paiN Gaming' ->
+    // PAIN) and the pipeline folded the names together. The model states one
+    // abbreviation on the team's own row, so "PG" is the single search answer this
+    // change moved, and "PAIN" is the one it kept.
+    expect(
+      search(aliasIndex, 'PAIN').filter((match) => match.kind === 'team')[0],
+    ).toMatchObject({ id: 'tm-f642dbf0692c', name: 'paiN Gaming', matched: 'PAIN' })
+    expect(search(aliasIndex, 'PG').filter((match) => match.kind === 'team')[0]?.name).not.toBe(
+      'paiN Gaming',
+    )
   })
 
-  it('calls a pinned short name an abbreviation, never a former name', () => {
-    // 78 of the pinned names appear twice in the artifact -- once as a bridge
+  it('calls a short name an abbreviation, never a former name', () => {
+    // 78 of the short names appear twice in the artifact -- once as a bridge
     // redirect and once as the short name -- and the redirect sorts first, so this
     // is where "formerly 100T" came from. The index merges the rows; the claim is
-    // about every pinned name, so a later pin that duplicates one cannot bring the
+    // about every short name, so a later pin that duplicates one cannot bring the
     // label back.
     const wrong = teams
       .filter((team) => team.short_name !== null)
