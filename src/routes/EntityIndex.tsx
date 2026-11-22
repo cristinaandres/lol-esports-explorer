@@ -32,6 +32,13 @@ type Entry = {
   short?: string
   /** The entity's most-played role; null for teams, which have none. */
   role: string | null
+  /**
+   * For a player: the abbreviation of the club they last played for, and the year of
+   * that game. Not "current" — the corpus states no contracts, so the year is what says
+   * how old the record is.
+   */
+  club?: string
+  clubYear?: string
 }
 
 // Only these two have a sort to offer: a team's grouping is its region, which is
@@ -82,15 +89,24 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
     if (state.status !== 'ready') return []
     const data = state.data
     if (kind === 'player') {
+      const clubs = new Map(data.teams.map((row) => [row.team_key, row]))
       return data.players
         .filter((row) => row.player_id && row.games > 0)
-        .map((row) => ({
-          id: row.player_id,
-          name: row.player_name,
-          meta: '',
-          games: row.games,
-          role: row.primary_role,
-        }))
+        .map((row) => {
+          const club = clubs.get(row.last_team_key)
+          return {
+            id: row.player_id,
+            name: row.player_name,
+            meta: '',
+            games: row.games,
+            role: row.primary_role,
+            // A club the model states no abbreviation for prints none rather than a
+            // name in a column that is abbreviations; a last game naming no club (0)
+            // prints nothing at all.
+            club: club?.short_name ?? undefined,
+            clubYear: row.last_game_date ? row.last_game_date.slice(0, 4) : undefined,
+          }
+        })
     }
     if (kind === 'team') {
       return data.teams
@@ -174,9 +190,11 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
         eyebrow={`Index · ${sortable && sort === 'role' ? 'by role' : copy.groupLabel}`}
         title={copy.title}
         lead={
-          sortable && sort === 'role'
-            ? `${count(total)} in the corpus, grouped by the role they were played in most. Each one carries the number of games it appears in, and the list is ordered by that number inside each group.`
-            : `${count(total)} in the corpus. Each one carries the number of games it appears in, and the list is ordered by that number inside each group.`
+          kind === 'player'
+            ? `${count(total)} in the corpus. The club beside a name is the one that player last played for here, with the year of that game — the corpus states no contracts, so it is where they were last seen, not where they are now.`
+            : sortable && sort === 'role'
+              ? `${count(total)} in the corpus, grouped by the role they were played in most. Each one carries the number of games it appears in, and the list is ordered by that number inside each group.`
+              : `${count(total)} in the corpus. Each one carries the number of games it appears in, and the list is ordered by that number inside each group.`
         }
         aside={
           <div className="flex flex-wrap items-end gap-3">
@@ -226,6 +244,12 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
                       {entry.short ? (
                         <span className="text-fog-600 shrink-0 font-mono text-[10px]">
                           {entry.short}
+                        </span>
+                      ) : null}
+                      {entry.club ? (
+                        <span className="text-fog-600 shrink-0 font-mono text-[10px] whitespace-nowrap">
+                          {entry.club}
+                          {entry.clubYear ? <span className="ml-1">{entry.clubYear}</span> : null}
                         </span>
                       ) : null}
                     </Link>

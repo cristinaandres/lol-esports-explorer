@@ -1,6 +1,6 @@
 # Sorting the three indexes, and the club a player last played for
 
-Status: 01 and 02 built; 03 and 04 are still tickets. Four small navigation changes
+Status: 01, 02 and 03 built; 04 is still a ticket. Four small navigation changes
 that share two decisions — a sort is a query parameter, and every label they print is
 a derived measure with a documented rule.
 
