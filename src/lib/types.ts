@@ -210,6 +210,32 @@ export type DraftSlot = {
   champion_key: number
 }
 
+/**
+ * One row of public/data/honours.json: a distinction the source states for a player
+ * at a tournament (`fact_player_honour`).
+ *
+ * Stated, not derived: `Titles` is the site's reading of which team won a final, and
+ * this is somebody's statement about a player. The title is kept in the source's own
+ * words -- `Finals MVP`, `All Pro Team`, `MVP` are three strings, not one label.
+ */
+export type HonourRow = {
+  player_key: number
+  event_key: number
+  /** The team the source states for the award; 0 when it names none, or none resolves. */
+  team_key: number
+  title: string
+  /** The source's award type, verbatim: `Season Award` on every recorded row. */
+  type: string
+  /** The page the award was stated on, kept as provenance. */
+  source_page: string
+  /**
+   * The source's place text and its number, both null on every recorded row so far
+   * (the dictionary says so). Carried so a later pin that states one needs no build.
+   */
+  place: string | null
+  place_number: number | null
+}
+
 export type Team = {
   team_key: number
   team_id: string
@@ -220,7 +246,11 @@ export type Team = {
   region: string | null
   /** Games the team appears in, for the index. Zero when the corpus carries none. */
   games: number
-  /** The abbreviation the game client shows, pinned from the wiki. Not a former name. */
+  /**
+   * The registry abbreviation the model states on the team row (`dim_team.short`,
+   * upstream v1.2.0). A label for search and display, never an identity: two teams
+   * can state the same one. Null when the model states none (4 minted teams).
+   */
   short_name: string | null
 }
 
@@ -239,7 +269,10 @@ export type Champion = {
   champion_name: string
   riot_key: number
   games: number
-  /** The date the champion went live. Pinned from the wiki: the model has no such column. */
+  /**
+   * The date the champion went live (`dim_champion.release_date` in the model).
+   * Never derived from the champion's first appearance in the corpus.
+   */
   release_date: string | null
 }
 

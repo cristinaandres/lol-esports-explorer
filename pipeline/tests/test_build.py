@@ -422,3 +422,32 @@ def test_main_writes_the_artifacts_when_the_pin_holds(root: pathlib.Path, monkey
 
     assert status == 0
     assert (root / "public" / "data" / "teams.json").is_file()
+
+
+def test_honour_place_number_is_declared_rather_than_sniffed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A wholly empty column is VARCHAR to DuckDB and INTEGER to the dictionary.
+
+    `place_number` is empty on every recorded row, so an undeclared read would type it
+    as text -- and the first pin that states a place would change the artifact's type
+    without a commit to `types.ts`. The view declares the column; this reads the
+    declaration off a real DuckDB, over the real pinned file, rather than trusting the
+    SQL to have kept it.
+    """
+    monkeypatch.chdir(build.ROOT)
+    con = build.connect()
+    columns = {
+        row[0]: row[1]
+        for row in con.execute("describe select * from fact_player_honour").fetchall()
+    }
+
+    assert columns["place_number"] == "INTEGER"
+    assert columns["place"] == "VARCHAR"
+    assert columns["player_key"] == "INTEGER"
+    assert columns["title"] == "VARCHAR"
+
+    # And the view reads the pinned fact rather than a copy: the row count is the CSV's.
+    csv = build.MODEL_DIR / "fact_player_honour.csv"
+    stated = len(csv.read_text(encoding="utf-8").strip().splitlines()) - 1
+    assert con.execute("select count(*) from fact_player_honour").fetchall() == [(stated,)]

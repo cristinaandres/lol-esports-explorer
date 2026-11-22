@@ -81,6 +81,16 @@ ARTIFACTS: dict[str, str] = {
         order by c.champion_key
     """,
     "patches.json": "select * from patch_rows order by patch_key",
+    # Distinctions: the awards the source states for a player at a tournament, one row
+    # per player, event and title. A pass-through with no derived column -- counting
+    # them is a GROUP BY -- published whole because it is 24 rows and both entity
+    # pages and event pages read it. Ordered by the fact's grain key, then the title,
+    # so the file is deterministic and the same pin always writes the same bytes.
+    "honours.json": """
+        select player_key, event_key, team_key, title, type, source_page, place, place_number
+        from fact_player_honour
+        order by event_key, player_key, title
+    """,
     # Renames. Loaded by the entity pages and by search, not by the lists.
     # NULLS LAST is spelled out: the short names carry no window, and where nulls land
     # is a DuckDB setting rather than a property of the data. An artifact whose row

@@ -64,11 +64,13 @@ one sentence on what changed. A gap card states why it is empty.
 
 ## Level 2 — event
 
-Teams with the games they played, the event's own coverage, the series grouped by
-phase, and the games the source attaches to no series. The header names the winner
-where the final is the single series named Finals; an event that names several
-such series names nobody. A series of one game links straight to the game; the rest
-link to a series.
+Teams with the games they played, the event's own coverage, the distinctions the
+source states for its players, the series grouped by phase, and the games the source
+attaches to no series. The header names the winner where the final is the single
+series named Finals; an event that names several such series names nobody. The
+distinctions block sits above the phases — who was honoured, in the source's words,
+before how the bracket was played — and is absent for the 35 events that state none.
+A series of one game links straight to the game; the rest link to a series.
 
 ## Level 3 — series (conditional)
 
@@ -109,6 +111,12 @@ is a link that reproduces the view.
 The career block always shows: games (`n`), wins and losses, win share with its
 denominator, KDA with its formula, per-game averages, and the champion pool with
 counts. Nothing is shown when the sample is zero — the page says so instead.
+
+Below the derived `Titles` section, the player page states the source's own
+`Distinctions` — MVPs and All-Pro places — in its own words and in its own section.
+One is the site's reading of the bracket, the other is somebody's statement about
+the player; nothing on the page merges them, and the copy names the events the
+source says nothing about.
 
 **Figma frames:** `50-player/context`, `50-player/career`, `50-player/filters`.
 

@@ -7,6 +7,7 @@ import type {
   Era,
   EventRow,
   Game,
+  HonourRow,
   Match,
   Meta,
   Patch,
@@ -200,6 +201,19 @@ export function loadPicks(): Promise<DraftSlot[]> {
   return pickRows()
 }
 
+/**
+ * The distinctions the source states, fetched by the pages that print one.
+ *
+ * 24 rows today -- a person's awards, not a corpus -- so it is small, but it is not
+ * in the eager set: a reader on the era spine or an event table has not asked what
+ * Faker was named, and the eager set is what every page pays for.
+ */
+const honourRows = memoised<HonourRow[]>(() => getJson<HonourRow[]>('honours.json'))
+
+export function loadHonours(): Promise<HonourRow[]> {
+  return honourRows()
+}
+
 /** The candidate events the rule considered, fetched only by the selection page. */
 const selectionRows = memoised<SelectionCandidate[]>(() =>
   getJson<SelectionCandidate[]>('selection.json'),
@@ -307,6 +321,10 @@ export function useBans(): AsyncState<DraftSlot[]> {
 
 export function useAliases(): AsyncState<AliasRow[]> {
   return useAsync(loadAliases)
+}
+
+export function useHonours(): AsyncState<HonourRow[]> {
+  return useAsync(loadHonours)
 }
 
 export function useSelection(): AsyncState<SelectionCandidate[]> {

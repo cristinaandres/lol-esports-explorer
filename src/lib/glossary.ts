@@ -54,6 +54,11 @@ export const GLOSSARY: GlossaryEntry[] = [
     body: 'One played game: two sides, one winner, one draft. The unit everything else is counted in.',
   },
   {
+    id: 'distinction',
+    term: 'Distinction',
+    body: 'An award the source states for a player at a tournament — Finals MVP, Most Valuable Player, an All-Pro place — kept in the source\'s own words, so MVP, MSI MVP and Most Valuable Player stay three strings rather than one label. Stated, not derived: a title is the site\'s reading of which team won a final, and the two are never merged. The source states distinctions for 19 of the corpus\'s 54 events and has no MVP row for Worlds 2012/2013/2015/2016/2018–2020 or MSI 2017–2021, so a player without one has not been told anything.',
+  },
+  {
     id: 'title',
     term: 'Title',
     body: 'An event won: the final is the single series named Finals, and the title goes to the team that won more games in it. Events whose final cannot be named as one series award nothing rather than guessing a team.',
