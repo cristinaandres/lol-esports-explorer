@@ -396,23 +396,20 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
               )}
             </div>
             <div>
-              <div className="mb-1 flex items-center gap-2">
-                <h2 className="text-fog-100 text-lg font-semibold tracking-tight">Distinctions</h2>
-                {honours.status === 'ready' ? (
-                  <HoverNote
-                    variant="icon"
-                    label="how completely the source states distinctions"
-                    note={`The source states a distinction at ${count(distinctionEvents)} of the ${count(data.events.length)} events in this corpus — it has no MVP row for Worlds 2012/2013/2015/2016/2018-2020, nor for MSI 2017-2021 — so a player without one has not been told anything.`}
-                  >
-                    i
-                  </HoverNote>
-                ) : null}
-              </div>
+              <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
               <div className="mb-5">
                 <ClampedText>
                   Awards the source states for this player at a tournament, in its own words — MVPs
                   and All-Pro places. Stated, where the titles beside them are derived from who won a
-                  final; the two are never merged. An empty list means the source says nothing here.{' '}
+                  final; the two are never merged.{' '}
+                  {honours.status === 'ready' ? (
+                    <>
+                      The source states a distinction at {count(distinctionEvents)} of the{' '}
+                      {count(data.events.length)} events in the corpus — it states no MVP for Worlds
+                      2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021 — so an empty list here
+                      means the source says nothing, not that nothing was won.{' '}
+                    </>
+                  ) : null}
                   <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
                     What a distinction is
                   </Link>
