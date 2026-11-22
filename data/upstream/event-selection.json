@@ -1,6 +1,6 @@
 {
-  "source": "https://github.com/RRiboulet/lol-dataset (data/curated/event-selection.jsonl, v1.1.0)",
-  "fetched": "2026-11-20",
+  "source": "https://github.com/RRiboulet/lol-dataset (data/curated/event-selection.jsonl, v1.2.0)",
+  "fetched": "2026-11-22",
   "note": "Every candidate event the rule considered, with the decision and the rule key that produced it. Pinned so the site can explain what it left out, not only what it kept.",
   "candidates": [
     {

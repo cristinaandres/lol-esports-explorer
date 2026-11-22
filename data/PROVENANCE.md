@@ -9,9 +9,9 @@ Nothing here is hand-written, and nothing here is fetched at runtime.
 | Field | Value |
 |---|---|
 | Repository | [RRiboulet/lol-dataset](https://github.com/RRiboulet/lol-dataset) |
-| Tag | `v1.1.0` |
-| Commit | `714ce6fd0812a69e649c9bf77fb510fb079a71b6` |
-| Curated manifest sha256 | `872b43cff39683cca16cf84e8af42d9d2cf658932acb75c1f50a963130a968f0` |
+| Tag | `v1.2.0` |
+| Commit | `4044872c410e1f91ab597838c808d133b64a0202` |
+| Curated manifest sha256 | `f919082ad4ab90fa8c7e8a88d2bd55528bdc9739f0393cf02dcfb3a4e991a67d` |
 
 ## What is pinned here
 
@@ -36,11 +36,12 @@ data/upstream/team-shortnames.json
                           team short names for search ("KC" must find Karmine Corp)
 data/upstream/champion-releases.json
                           champion release dates, pinned from Leaguepedia because the
-                          dimensional model has no such column
+                          model had no such column when the pin was taken (v1.2.0
+                          added `dim_champion.release_date`)
 
 ```
 
-`pipeline/source.json` records the sha256 of every pinned file above -- all 20,
+`pipeline/source.json` records the sha256 of every pinned file above -- all 21,
 keyed by their path from the repository root -- and `public/data/meta.json` copies
 that record into the artifact. The build verifies every hash before it renders
 anything: a recorded file that is missing, a recorded file whose bytes moved (the
@@ -72,11 +73,16 @@ the files.
 crawls, with the query recorded inside the file and the date it was pinned. It
 exists because a champion without a release date cannot be read: "picked in 21 of
 495 games" means one thing for a champion released in 2011 and another for one
-released in 2014. Refresh it with `pipeline/refresh-releases.sh` and read the diff.
+released in 2014. The model states the same dates as of `v1.2.0`, and the two agree
+wherever both name a champion, so this file now adds only the champions the corpus
+never fields (Akshan, Briar); reading the model's column and retiring the file is a
+separate change. Refresh it with `pipeline/refresh-releases.sh` and read the diff.
 
 `team-shortnames.json` is fetched the same way. The wiki's Teams table states the
-short name ("KC" for Karmine Corp) and the dimensional model carries neither it
-nor the field; search needs it because nobody types the full name. Refresh it with
+short name ("KC" for Karmine Corp); search needs it because nobody types the full
+name. The pin predates the model stating the same field (`dim_team.short` arrived
+with `v1.2.0`), and this refresh left the site reading the pin, so consuming the
+model's column -- and retiring this file -- is a separate change. Refresh it with
 `pipeline/refresh-shortnames.sh` and read the diff: a new pin can add a short name
 or move one, and the build refuses rather than drop a row that folds to no team.
 
