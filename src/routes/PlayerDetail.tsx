@@ -347,138 +347,139 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
             games and one in forty are not the same measurement.
           </p>
 
-          <section className="mt-12">
-            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Titles</h2>
-            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Events where this player&rsquo;s team won the final and they appeared in it. Derived
-              from the final series, so an event whose final cannot be identified awards nothing.
-            </p>
-
-            {titleGroups.length === 0 ? (
-              <p className="text-fog-600 text-sm">No title this player can be named for.</p>
-            ) : (
-              <div className="space-y-6">
-                {titleGroups.map((group) => (
-                  <div key={group.competition}>
-                    <h3 className="text-fog-600 border-line mb-2 flex items-baseline justify-between border-b pb-1.5 text-[11px] tracking-[0.14em] uppercase">
-                      <span>{group.competition}</span>
-                      <span className="text-fog-500">
-                        {group.titles.length} {group.titles.length === 1 ? 'title' : 'titles'}
-                      </span>
-                    </h3>
-                    <ul className="divide-line divide-y">
-                      {group.titles.map((title) => (
-                        <li
-                          key={title.eventKey}
-                          className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
-                        >
-                          <span className="text-fog-100 text-sm">
-                            {prepared.index.events.get(title.eventKey) ? (
-                              <Link
-                                to={`/events/${prepared.index.events.get(title.eventKey)!.event_id}`}
-                                className="hover:text-gold"
-                              >
-                                {prepared.index.events.get(title.eventKey)!.event_name}
-                              </Link>
-                            ) : (
-                              'Unknown event'
-                            )}
-                          </span>
-                          <span className="text-fog-600 font-mono text-xs">{dayMonthYear(title.date)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section className="mt-12">
-            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
-            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Awards the source states for this player at a tournament, in its own words — MVPs
-              and All-Pro places. These are <em>stated</em>, where the titles above are derived
-              from which team won a final; the two are never merged.{' '}
-              {honours.status === 'ready' ? (
-                <>
-                  The source states a distinction at {count(distinctionEvents)} of the{' '}
-                  {count(data.events.length)} events in the corpus — it states no MVP for Worlds
-                  2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021 — so an empty list here
-                  means the source says nothing, not that nothing was won.{' '}
-                </>
-              ) : null}
-              <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
-                What a distinction is
-              </Link>
-              .
-            </p>
-
-            {honours.status === 'failed' ? (
-              <LoadFailure
-                failures={[{ what: 'the distinctions', error: honours.error }]}
-                onRetry={honours.retry}
-              />
-            ) : honours.status === 'loading' ? (
-              <Skeleton shape="stack" heights={['h-24']} />
-            ) : distinctionGroups.length === 0 ? (
-              <p className="text-fog-600 text-sm">
-                The source states no distinction for this player. That is what it says, not what
-                they won.
+          <section className="mt-12 grid gap-10 lg:grid-cols-2">
+            <div>
+              <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Titles</h2>
+              <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+                Events where this player&rsquo;s team won the final and they appeared in it. Derived
+                from the final series, so an event whose final cannot be identified awards nothing.
               </p>
-            ) : (
-              <div className="space-y-6">
-                {distinctionGroups.map((group) => (
-                  <div key={group.competition}>
-                    <h3 className="text-fog-600 border-line mb-2 flex items-baseline justify-between border-b pb-1.5 text-[11px] tracking-[0.14em] uppercase">
-                      <span>{group.competition}</span>
-                      <span className="text-fog-500">
-                        {group.distinctions.length}{' '}
-                        {group.distinctions.length === 1 ? 'distinction' : 'distinctions'}
-                      </span>
-                    </h3>
-                    <ul className="divide-line divide-y">
-                      {group.distinctions.map((row) => {
-                        const path = teamPath(prepared.index, row.team_key)
-                        return (
+
+              {titleGroups.length === 0 ? (
+                <p className="text-fog-600 text-sm">No title this player can be named for.</p>
+              ) : (
+                <div className="space-y-6">
+                  {titleGroups.map((group) => (
+                    <div key={group.competition}>
+                      <h3 className="text-fog-600 border-line mb-2 flex items-baseline justify-between border-b pb-1.5 text-[11px] tracking-[0.14em] uppercase">
+                        <span>{group.competition}</span>
+                        <span className="text-fog-500">
+                          {group.titles.length} {group.titles.length === 1 ? 'title' : 'titles'}
+                        </span>
+                      </h3>
+                      <ul className="divide-line divide-y">
+                        {group.titles.map((title) => (
                           <li
-                            key={`${row.event_key}-${row.title}`}
+                            key={title.eventKey}
                             className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
                           >
                             <span className="text-fog-100 text-sm">
-                              <span className="text-gold">{row.title}</span>
-                              {row.event ? (
-                                <>
-                                  {' at '}
-                                  <Link
-                                    to={`/events/${row.event.event_id}`}
-                                    className="hover:text-gold"
-                                  >
-                                    {row.event.event_name}
-                                  </Link>
-                                </>
+                              {prepared.index.events.get(title.eventKey) ? (
+                                <Link
+                                  to={`/events/${prepared.index.events.get(title.eventKey)!.event_id}`}
+                                  className="hover:text-gold"
+                                >
+                                  {prepared.index.events.get(title.eventKey)!.event_name}
+                                </Link>
                               ) : (
-                                ' at an event this page cannot name'
+                                'Unknown event'
                               )}
                             </span>
-                            <span className="text-fog-600 font-mono text-xs">
-                              {/* The unknown team is an absence, so it prints nothing: an
-                                  award whose team the source does not state is still the
-                                  player's distinction. */}
-                              {path ? (
-                                <Link to={path} className="hover:text-gold">
-                                  {teamName(prepared.index, row.team_key)}
-                                </Link>
-                              ) : null}
-                            </span>
+                            <span className="text-fog-600 font-mono text-xs">{dayMonthYear(title.date)}</span>
                           </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div>
+              <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
+              <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+                Awards the source states for this player at a tournament, in its own words — MVPs
+                and All-Pro places. These are <em>stated</em>, where the titles above are derived
+                from which team won a final; the two are never merged.{' '}
+                {honours.status === 'ready' ? (
+                  <>
+                    The source states a distinction at {count(distinctionEvents)} of the{' '}
+                    {count(data.events.length)} events in the corpus — it states no MVP for Worlds
+                    2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021 — so an empty list here
+                    means the source says nothing, not that nothing was won.{' '}
+                  </>
+                ) : null}
+                <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
+                  What a distinction is
+                </Link>
+                .
+              </p>
+
+              {honours.status === 'failed' ? (
+                <LoadFailure
+                  failures={[{ what: 'the distinctions', error: honours.error }]}
+                  onRetry={honours.retry}
+                />
+              ) : honours.status === 'loading' ? (
+                <Skeleton shape="stack" heights={['h-24']} />
+              ) : distinctionGroups.length === 0 ? (
+                <p className="text-fog-600 text-sm">
+                  The source states no distinction for this player. That is what it says, not what
+                  they won.
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {distinctionGroups.map((group) => (
+                    <div key={group.competition}>
+                      <h3 className="text-fog-600 border-line mb-2 flex items-baseline justify-between border-b pb-1.5 text-[11px] tracking-[0.14em] uppercase">
+                        <span>{group.competition}</span>
+                        <span className="text-fog-500">
+                          {group.distinctions.length}{' '}
+                          {group.distinctions.length === 1 ? 'distinction' : 'distinctions'}
+                        </span>
+                      </h3>
+                      <ul className="divide-line divide-y">
+                        {group.distinctions.map((row) => {
+                          const path = teamPath(prepared.index, row.team_key)
+                          return (
+                            <li
+                              key={`${row.event_key}-${row.title}`}
+                              className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
+                            >
+                              <span className="text-fog-100 text-sm">
+                                <span className="text-gold">{row.title}</span>
+                                {row.event ? (
+                                  <>
+                                    {' at '}
+                                    <Link
+                                      to={`/events/${row.event.event_id}`}
+                                      className="hover:text-gold"
+                                    >
+                                      {row.event.event_name}
+                                    </Link>
+                                  </>
+                                ) : (
+                                  ' at an event this page cannot name'
+                                )}
+                              </span>
+                              <span className="text-fog-600 font-mono text-xs">
+                                {/* The unknown team is an absence, so it prints nothing: an
+                                    award whose team the source does not state is still the
+                                    player's distinction. */}
+                                {path ? (
+                                  <Link to={path} className="hover:text-gold">
+                                    {teamName(prepared.index, row.team_key)}
+                                  </Link>
+                                ) : null}
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
 
           <section className="mt-12">
