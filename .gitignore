@@ -3,8 +3,9 @@ dist/
 *.log
 .DS_Store
 
-# Python pipeline environment (uv creates it on first run).
+# Python pipeline environment (uv creates pipeline/.venv on first run).
 .pipeline-venv/
+.venv/
 __pycache__/
 *.pyc
 

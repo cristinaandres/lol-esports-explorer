@@ -8,22 +8,31 @@ only decides how it is navigated.
 **Language.** Every commit message, comment, identifier, document and user-facing
 string is in English. The project is public and meant to read internationally.
 
-**Current state.** Phases 0 and 1 of `docs/roadmap.md` are built: the era spine,
-era detail with coverage and its event list, the glossary, the DuckDB pipeline
-and the deploy. Event, series, game and entity pages are not built yet.
+**Current state.** Phases 2 and 3 are built, along with the 3b polish round and
+the 4b structure work: the era spine and era detail, event, series and game
+pages, the player, team and champion pages with their indexes and search, the
+glossary and the selection audit, over the DuckDB pipeline and the deploy. Phase
+4 (`/compare`) and the phase 5 design pass are not built.
 
 ## The rules that matter here
 
 1. **No share without its denominator.** Percentages render through the `Ratio`
    component, which always prints `part` and `total`. A table that shows `67%`
    alone is a bug, not a style choice.
-2. **No dead links.** A route is linked only when it exists. The era page lists
-   events as rows and says where they open, rather than linking to a page that
-   404s.
-3. **Data is pinned, never hand-edited.** `data/` is a byte-for-byte copy of one
-   upstream tag. Changing it means running `pipeline/refresh-data.sh <tag>` and
-   committing the diff, so `pipeline/source.json`, the files and
-   `public/data/meta.json` stay in agreement.
+2. **No dead links.** A route is linked only when it exists, and a link's label
+   names where it actually goes. When a level is not built yet, the row says where
+   it opens rather than offering a link that would 404.
+3. **Data is pinned, never hand-edited.** `data/` holds one upstream tag. The
+   model's CSVs, its data dictionary and DDL, the era table and the build manifest
+   are byte-for-byte copies of it; the two curated audit files are that tag's JSONL
+   rewrapped with its source and pin date by the refresh script, because the
+   pipeline reads a wrapper. Everything is pinned, nothing is hand-edited:
+   changing any of it means running `pipeline/refresh-data.sh <tag>` and committing
+   the diff, so `pipeline/source.json`, the files and `public/data/meta.json` stay
+   in agreement. The build verifies the recorded sha256 of every pinned file before
+   it renders: a recorded file that is missing, a recorded file whose bytes moved,
+   and a file on disk the pin does not record are each a refusal naming the file,
+   and `meta.json` copies the record.
 4. **Artifacts are generated and committed.** `public/data/*.json` is written by
    `pipeline/build.py` and is deterministic: no timestamps, no dictionary
    ordering surprises. `npm run data:check` fails if a committed file is stale.
@@ -36,6 +45,7 @@ and the deploy. Event, series, game and entity pages are not built yet.
 ## Structure
 
 ```
+bin/           the devcontainer helper (`devc`), which the site does not use
 data/          pinned model + era table; see data/PROVENANCE.md
 pipeline/      DuckDB SQL and the build script (needs uv)
 public/data/   generated artifacts the site fetches (committed)
@@ -46,7 +56,7 @@ docs/          product spec, information architecture, metrics, roadmap
 ## Checks
 
 ```bash
-npm run check        # lint, vitest, artifact freshness, production build
+npm run check        # lint, vitest, pipeline tests, artifact freshness, production build
 npm run dev          # http://localhost:5173/lol-esports-explorer/
 ```
 

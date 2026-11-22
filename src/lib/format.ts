@@ -57,6 +57,19 @@ export function stripDateSuffix(name: string): string {
 }
 
 /**
+ * A series name, or the words for a game the source attaches to no series.
+ *
+ * `match_key` 0 is the model's placeholder match: `match_name` "Unknown" and
+ * every other field null. Printing that name would name a series that does not
+ * exist, so absence is worded here instead, the way a gold figure the source
+ * does not state reads "gold not stated" rather than "Unknown gold".
+ */
+export function seriesLabel(matchKey: number, name: string | null | undefined): string {
+  const named = matchKey !== 0 && name ? stripDateSuffix(name) : ''
+  return named || 'series not stated'
+}
+
+/**
  * A date, or a range when two days are involved.
  *
  * 1,931 of 1,964 played series fit on one day, so a date inside a series is
@@ -87,6 +100,18 @@ export function orDash(value: number | null | undefined): string {
 }
 
 /**
+ * A measure and its unit, or the words for its absence.
+ *
+ * `orDash` cannot carry a unit: "— gold" hangs the unit on a dash and reads as a
+ * broken figure rather than an absent one. Where the unit follows the number
+ * inline, absence says so instead, the way a series says "format not stated".
+ * The figure itself still comes from `orDash`, so a count never renders two ways.
+ */
+export function measureWithUnit(value: number | null | undefined, unit: string): string {
+  return value === null || value === undefined ? `${unit} not stated` : `${orDash(value)} ${unit}`
+}
+
+/**
  * A per-game average, formatted so it stays comparable to the total beside it.
  *
  * One decimal below 100, whole numbers above: 3.6 kills per game is a measurement,
@@ -96,9 +121,4 @@ export function orDash(value: number | null | undefined): string {
 export function perGame(value: number | null | undefined): string {
   if (value === null || value === undefined) return '—'
   return value < 100 ? value.toFixed(1) : count(Math.round(value))
-}
-
-/** A percentage already computed, with no denominator attached. Prefer Ratio. */
-export function fixed(value: number, digits = 1): string {
-  return value.toFixed(digits)
 }

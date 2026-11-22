@@ -1,0 +1,58 @@
+name: check
+
+# The gate, defined once. `deploy` calls it before publishing and the pull-request
+# workflow calls it on every change, so the five steps `npm run check` runs cannot
+# drift between what review sees and what ships.
+#
+# Permissions are deliberately left to the caller. A called workflow can only narrow
+# the token it is given, and narrowing this one to `contents: read` would strip the
+# `pages: write` and `id-token: write` the deploy job needs to upload its artifact.
+# The pull-request workflow grants read only.
+on:
+  workflow_call:
+    inputs:
+      pages_artifact:
+        description: >-
+          Hand `dist` to Pages. True for the deploy, which calls this with the Pages
+          permissions in place; false for review, where the run is read-only and has
+          nowhere to publish.
+        type: boolean
+        default: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      # Rebuild the artifacts in the runner and compare bytes. This is the check
+      # that makes "the committed JSON is current" a proof rather than a claim.
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: '3.12'
+      # The build's refusals are executable, so a change that turns one into a silent
+      # pass fails here rather than in review. Same command `npm run check` runs.
+      - name: pipeline refusals are covered
+        run: uv run --project pipeline python -m pytest pipeline/tests
+      - name: artifacts are current
+        run: uv run --project pipeline python pipeline/build.py --check
+      - name: build
+        run: npm run build
+        env:
+          # Pages serves a project site from /<repo>/, so the build takes its base path
+          # from the repository name rather than a hard-coded constant; the fallback
+          # matches vite.config.ts, so a pull request builds what main would deploy.
+          BASE_PATH: /${{ github.event.repository.name }}/
+      - name: single-page fallback
+        if: inputs.pages_artifact
+        run: cp dist/index.html dist/404.html
+      - uses: actions/upload-pages-artifact@v3
+        if: inputs.pages_artifact
+        with:
+          path: dist

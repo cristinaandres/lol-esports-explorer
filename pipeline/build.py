@@ -53,26 +53,44 @@ ARTIFACTS: dict[str, str] = {
         left join event_coverage_report c using (event_id)
         order by e.date_start, e.event_name
     """,
+    # id ends the order: two pairs tie on decision, rule and name (the two
+    # All-Star 2018 Las Vegas and the two IEM Global Challenge Sao Paulo rows),
+    # and a tie is not an order.
     "selection.json": """
-        select * from selection_candidates order by decision, rule, name
+        select * from selection_candidates order by decision, rule, name, id
     """,
     "games.json": "select * from game_rows order by date_time_utc, game_key",
     "matches.json": "select * from match_rows order by match_key",
     # Names. Loaded eagerly because every page resolves a key to a name.
+    # The short name is the model's own column (dim_team.short, upstream v1.2.0); the
+    # view only renames it and drops the rows that state none.
     "teams.json": """
-        select t.*, s.short as short_name
+        select t.*, s.short_name
         from team_index t
-        left join team_shortnames s on s.name = t.team_name
+        left join team_short_name s using (team_key)
         order by t.team_key
     """,
     "players.json": "select * from player_index order by player_key",
+    # Spelled out rather than `c.*`: the release date now sits on champion_index,
+    # and the artifact's key order is part of its bytes, so a `select *` would churn
+    # every row to move one field. Games before the date, as it has always been.
     "champions.json": """
-        select c.*, r.release_date
+        select c.champion_key, c.champion_id, c.champion_name, c.riot_key,
+               c.games, c.release_date
         from champion_index c
-        left join champion_releases r on r.name = c.champion_name
         order by c.champion_key
     """,
-    "patches.json": "select * from dim_patch order by patch_key",
+    "patches.json": "select * from patch_rows order by patch_key",
+    # Distinctions: the awards the source states for a player at a tournament, one row
+    # per player, event and title. A pass-through with no derived column -- counting
+    # them is a GROUP BY -- published whole because it is 24 rows and both entity
+    # pages and event pages read it. Ordered by the fact's grain key, then the title,
+    # so the file is deterministic and the same pin always writes the same bytes.
+    "honours.json": """
+        select player_key, event_key, team_key, title, type, source_page, place, place_number
+        from fact_player_honour
+        order by event_key, player_key, title
+    """,
     # Renames. Loaded by the entity pages and by search, not by the lists.
     # NULLS LAST is spelled out: the short names carry no window, and where nulls land
     # is a DuckDB setting rather than a property of the data. An artifact whose row
@@ -93,12 +111,134 @@ ARTIFACTS: dict[str, str] = {
 ERA_FIELDS = (
     "first_date", "last_date", "games", "series", "events", "teams", "players",
     "blue_wins", "red_wins", "games_draft_complete", "games_player_complete",
-    "games_team_complete", "avg_duration_seconds", "patches",
+    "games_team_complete", "games_duration_stated", "avg_duration_seconds", "patches",
 )
 
 
 def sha256(path: pathlib.Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def pinned_files(directory: pathlib.Path) -> dict[str, str]:
+    """Every pinned file in a directory, hashed, keyed by name.
+
+    The rule is the directory, not an extension list: `data/model/` holds the model
+    CSVs, the data dictionary and the DDL, and `data/upstream/` holds the era table,
+    the build manifest and the curated files. Hashing `*.csv` alone let three files
+    the provenance document calls pinned go unrecorded, which is the kind of gap a
+    reader only finds by checking by hand.
+
+    Two exceptions, both because the alternative is an artifact that depends on the
+    machine rather than on the pin:
+
+      * A dotfile is the operating system's, not the pin's. macOS writes `.DS_Store`
+        into any directory it lists, `.gitignore` already ignores it, and hashing it
+        would make `--check` fail on one contributor's laptop and pass on another.
+      * Anything that is not a plain regular file -- a subdirectory, a symlink -- is
+        refused rather than skipped, because skipping it is how a pinned file ends up
+        recorded nowhere, which is the defect this function exists to close.
+
+    Deterministic: names are sorted, and a new file changes the artifact once, on
+    purpose, so the diff says what was added.
+    """
+    pinned: dict[str, str] = {}
+    for path in sorted(directory.iterdir()):
+        if path.name.startswith("."):
+            continue
+        if path.is_symlink() or not path.is_file():
+            raise SystemExit(
+                f"error: {path.relative_to(ROOT)} is not a regular file; "
+                "a pinned directory holds pinned files only"
+            )
+        pinned[path.name] = sha256(path)
+    return pinned
+
+
+def verify_manifest(source: dict[str, object]) -> None:
+    """The pinned manifest must be the one `pipeline/source.json` names.
+
+    `manifest.json` is the upstream build manifest, and until now its hash was
+    recorded in source.json and checked against nothing: the file it described was
+    not in the repository. It is committed, and this is the comparison that makes
+    the recorded hash mean something -- the build refuses to produce artifacts from a
+    manifest that is missing or that some later refresh replaced without updating the
+    pin.
+    """
+    manifest = UPSTREAM_DIR / "manifest.json"
+    expected = source.get("manifestSha256")
+    if not manifest.is_file():
+        raise SystemExit(
+            "error: data/upstream/manifest.json is missing; run pipeline/refresh-data.sh"
+        )
+    if not isinstance(expected, str):
+        raise SystemExit("error: pipeline/source.json states no manifestSha256")
+    actual = sha256(manifest)
+    if actual != expected:
+        raise SystemExit(
+            "error: data/upstream/manifest.json is not the manifest pipeline/source.json pins\n"
+            f"  pinned:    {expected}\n"
+            f"  on disk:   {actual}\n"
+            "  re-pin with pipeline/refresh-data.sh <tag>, then rebuild"
+        )
+
+
+def verify_pin(source: dict[str, object]) -> None:
+    """Every pinned file must be the one `pipeline/source.json` records.
+
+    The manifest used to be the only pinned file this build checked. It refused a
+    manifest that was not the pin's, then hashed whatever else it found into
+    meta.json -- so a hand-edited CSV rewrote the artifacts and the new meta.json
+    described the drift instead of the pin. `pipeline/refresh-data.sh` now records
+    the sha256 of every file it installs, keyed by its path from the repository
+    root, and this is the comparison that makes the record a proof.
+
+    Three refusals, because a pin is only worth what it can reject:
+
+      * a recorded file that is missing from the disk;
+      * a recorded file whose bytes moved, which names both hashes;
+      * a file on disk that the record does not name. This is a refusal rather than
+        a warning because `pinned_files()` already decides meta.json by the
+        directory: a file the pin does not record would otherwise be described by
+        the artifact and not by the pin, which is the same gap in a new place.
+
+    Recorded paths are read as repository-relative, and sorted, so the refusal a
+    reader sees is the first file in the pin and not the first the filesystem
+    happened to list.
+    """
+    recorded = source.get("files")
+    if not isinstance(recorded, dict) or not recorded:
+        raise SystemExit(
+            "error: pipeline/source.json records no per-file hashes\n"
+            "  re-pin with pipeline/refresh-data.sh <tag>"
+        )
+
+    for relative in sorted(recorded):
+        expected = recorded[relative]
+        path = ROOT / relative
+        if not path.is_file():
+            raise SystemExit(
+                f"error: {relative} is missing; run pipeline/refresh-data.sh"
+            )
+        actual = sha256(path)
+        if actual != expected:
+            raise SystemExit(
+                f"error: {relative} is not the file pipeline/source.json pins\n"
+                f"  pinned:    {expected}\n"
+                f"  on disk:   {actual}\n"
+                "  re-pin with pipeline/refresh-data.sh <tag>, then rebuild"
+            )
+
+    on_disk: set[str] = set()
+    for directory in (MODEL_DIR, UPSTREAM_DIR):
+        prefix = directory.relative_to(ROOT).as_posix()
+        on_disk.update(f"{prefix}/{name}" for name in pinned_files(directory))
+    unrecorded = sorted(on_disk - set(recorded))
+    if unrecorded:
+        raise SystemExit(
+            f"error: {unrecorded[0]} is not recorded in pipeline/source.json\n"
+            "  the pin names every file it installs; a file it does not name is not part of it\n"
+            "  re-pin with pipeline/refresh-data.sh <tag>, or remove the file"
+        )
 
 
 def plain(value: object) -> object:
@@ -172,8 +312,29 @@ def dumps(rows: list[dict[str, object]]) -> str:
     return "[\n" + body + "\n]\n"
 
 
+def read_pin() -> dict[str, object]:
+    """Read the pin and prove it, before anything reads a pinned file.
+
+    Every refusal here happens before DuckDB opens a CSV, so a file whose bytes
+    moved is the pin's refusal even when the edit would not load: the same bytes
+    that make a view fail are the bytes `source.json` does not record. Reading it a
+    second time in `render()` costs a few milliseconds and keeps the refusal where
+    a caller of `render()` expects it.
+    """
+    source = json.loads(SOURCE_FILE.read_text(encoding="utf-8"))
+    verify_manifest(source)
+    verify_pin(source)
+    return source
+
+
 def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
     """Return artifact name -> serialised UTF-8 JSON text."""
+    # Read and verify the pin first: a pinned file that disagrees with source.json
+    # makes every artifact below untrustworthy, so the build stops before writing
+    # any. The manifest is checked on its own as well, because its refusal is the
+    # one a reader already knows and it names the file a refresh moves first.
+    source = read_pin()
+
     rendered: dict[str, str] = {
         "eras.json": dumps(build_eras(con))
     }
@@ -186,11 +347,10 @@ def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
         ]
         rendered[name] = dumps(rows)
 
-    source = json.loads(SOURCE_FILE.read_text(encoding="utf-8"))
     meta = {
         "source": source,
-        "modelFiles": {path.name: sha256(path) for path in sorted(MODEL_DIR.glob("*.csv"))},
-        "upstreamFiles": {path.name: sha256(path) for path in sorted(UPSTREAM_DIR.glob("*.json"))},
+        "modelFiles": pinned_files(MODEL_DIR),
+        "upstreamFiles": pinned_files(UPSTREAM_DIR),
         "artifacts": {
             name: hashlib.sha256(text.encode("utf-8")).hexdigest()
             for name, text in rendered.items()
@@ -209,13 +369,19 @@ def main(argv: list[str]) -> int:
         print(f"error: {MODEL_DIR} is missing; run pipeline/refresh-data.sh", file=sys.stderr)
         return 2
 
+    # The pin is checked before DuckDB reads a CSV, so a missing or edited model
+    # file is the refusal in read_pin() rather than a DuckDB binder or IO error.
+    read_pin()
+
     # read_csv() resolves paths relative to the process working directory, and
     # the SQL files spell them relative to the repository root on purpose, so the
     # same file works from the CLI and from here.
     import os
 
     os.chdir(ROOT)
-    rendered = render(connect())
+
+    con = connect()
+    rendered = render(con)
 
     if args.check:
         stale = [

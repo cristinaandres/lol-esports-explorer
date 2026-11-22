@@ -3,7 +3,9 @@ import { Link } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { PageHeader } from '../components/PageHeader'
-import { useDataset } from '../lib/data'
+import { LoadFailure } from '../components/LoadFailure'
+import { Skeleton } from '../components/Skeleton'
+import { useDataset, useGameCorpus } from '../lib/data'
 import { count } from '../lib/format'
 import { buildIndexes, teamName } from '../lib/indexes'
 import { championships } from '../lib/titles'
@@ -20,10 +22,12 @@ import { championships } from '../lib/titles'
  */
 export default function EventsIndex() {
   const state = useDataset()
+  const corpus = useGameCorpus()
 
   const prepared = useMemo(() => {
-    if (state.status !== 'ready') return null
-    const { events, games, matches, teams } = state.data
+    if (state.status !== 'ready' || corpus.status !== 'ready') return null
+    const { events, teams } = state.data
+    const { games, matches } = corpus.data
     const champs = championships(games, matches)
     const index = buildIndexes(state.data)
 
@@ -46,11 +50,20 @@ export default function EventsIndex() {
         .sort((a, b) => b.events.length - a.events.length || a.competition.localeCompare(b.competition)),
       total: events.length,
     } as const
-  }, [state])
+  }, [state, corpus])
 
-  if (state.status === 'loading') return <p className="text-fog-600">Loading…</p>
+  if (state.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
   if (state.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {state.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: state.error }]}
+        onRetry={state.retry}
+      />
+    )
   if (!prepared) return null
 
   return (

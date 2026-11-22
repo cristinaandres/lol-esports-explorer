@@ -8,6 +8,12 @@ import type { AliasKind, AliasRow, Champion, Player, Team } from './types'
  * finds Movistar KOI while `movistar koi` finds it too. Alias entries keep the
  * current name for display, which is what lets a result say *formerly MAD Lions*
  * instead of showing a name the reader will not find on the page.
+ *
+ * One entry per name per entity, not one per row. The bridge can state the same
+ * name twice for one entity -- a wiki redirect and the model's short name are both
+ * evidence about the string "100T" -- and two rows for one name would make the
+ * result depend on which row the artifact lists first. A name is an abbreviation
+ * because someone stated it as one, not because that row happened to arrive first.
  */
 
 export type SearchEntry = {
@@ -44,19 +50,49 @@ export function buildSearchIndex(
   champions: Champion[],
   aliases: AliasRow[],
 ): SearchEntry[] {
-  const index: SearchEntry[] = []
+  const index = new Map<string, SearchEntry>()
+
+  /**
+   * Store a name, folding two rows that state the same one into a single entry.
+   *
+   * The key is the entity and the folded string, because two spellings that differ
+   * only in case, accents or spacing are one name here as much as they are in
+   * `namesFor`. A short-name row makes the name an abbreviation whether it is read
+   * before or after a bridge row, which is the whole point: the artifact orders
+   * rows by evidence, and a reader must not see that ordering.
+   */
+  const add = (entry: SearchEntry) => {
+    const key = `${entry.kind}\u0000${entry.id}\u0000${normalise(entry.term)}`
+    const existing = index.get(key)
+    if (!existing) {
+      index.set(key, entry)
+      return
+    }
+    // A name the entity still goes by is described by that, not by its short
+    // name: the current spelling wins, and "MVP" is not an abbreviation of MVP.
+    const current = existing.current || entry.current
+    const spelling = entry.current && !existing.current ? entry : existing
+    index.set(key, {
+      kind: spelling.kind,
+      id: spelling.id,
+      name: spelling.name,
+      term: spelling.term,
+      current,
+      abbreviation: !current && (existing.abbreviation || entry.abbreviation),
+    })
+  }
 
   for (const player of players) {
     if (!player.player_id) continue
-    index.push({ kind: 'player', id: player.player_id, name: player.player_name, term: player.player_name, current: true, abbreviation: false })
+    add({ kind: 'player', id: player.player_id, name: player.player_name, term: player.player_name, current: true, abbreviation: false })
   }
   for (const team of teams) {
     if (!team.team_id) continue
-    index.push({ kind: 'team', id: team.team_id, name: team.team_name, term: team.team_name, current: true, abbreviation: false })
+    add({ kind: 'team', id: team.team_id, name: team.team_name, term: team.team_name, current: true, abbreviation: false })
   }
   for (const champion of champions) {
     if (!champion.champion_id) continue
-    index.push({
+    add({
       kind: 'champion',
       id: champion.champion_id,
       name: champion.champion_name,
@@ -67,7 +103,7 @@ export function buildSearchIndex(
   }
 
   for (const alias of aliases) {
-    index.push({
+    add({
       kind: alias.kind,
       id: alias.entity_id,
       name: alias.entity_name,
@@ -77,7 +113,7 @@ export function buildSearchIndex(
     })
   }
 
-  return index
+  return [...index.values()]
 }
 
 /**

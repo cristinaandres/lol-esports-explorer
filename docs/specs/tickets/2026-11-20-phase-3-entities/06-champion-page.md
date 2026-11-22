@@ -12,10 +12,11 @@ because Azir did not exist, which is the same distinction the scoreboard already
 makes for objectives.
 
 Champions get renamed too, though far less than teams. Measured on the bridge: of
-its 172 champion rows, 170 repeat the current name and **two** are real renames
-(Nunu → Nunu & Willump). So the page shows a former name when there is one and says
-nothing when there is not, rather than reserving a section for a case that occurs
-twice in sixteen years.
+its 172 champion rows, 170 repeat the current name exactly, one is that name with
+the source's `&amp;` left in it, and **one** is a real rename (Nunu → Nunu &
+Willump). So the page shows a former name when there is one and says nothing when
+there is not, rather than reserving a section for a case that occurs once in
+sixteen years.
 
 ## Scope
 
@@ -57,3 +58,8 @@ champion's per-era picks equals its total picks. Covers spec R6.
   picked, present in all six eras; Nunu lists the name it replaced and the other
   170 champions show no empty section.
 - Champion names link here from the draft board and the player table.
+- The page asks the network for two artifacts, not four. It counts bans and reads
+  no pick, so it loads `player-games.json` and `bans.json` and leaves `sides.json`
+  and `picks.json` — 236 KB gzip it never renders — to the game page. Measured in
+  headless Chromium: a champion page requests those two files from the draft and
+  nothing else.

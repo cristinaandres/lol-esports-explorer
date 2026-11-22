@@ -19,19 +19,25 @@ The two axes meet at a game page, where every name is a link into Axis B that
 carries its context.
 
 ```
-/                       the era spine
+/                       the era spine: every era, as cards
+/eras                   index: every era, with its span and games
 /eras/:era              coverage, boundaries, the events in it
-/events/:id             teams, format, series list, leaders, draft pool
-/series/:id             only for best-of-three and above
-/games/:id              scoreboard, draft, player rows
+/events                 index: every event, grouped by competition
+/events/:event         teams, coverage, series by phase, series-less games
+/events/:event/phases/:phase
+                        the series of one phase of an event (its `tab`)
+/series/:series         only for best-of-three and above
+/games/:game            scoreboard, draft, player rows
 /players                index: every player, with the games they appear in
+/players/:player        context (if arrived from a game) + career with filters
 /teams                  index: every team, grouped by region
+/teams/:team            same shape as a player, with its renames
 /champions              index: every champion, with the games it appears in
-/players/:id            context (if arrived from a game) + career with filters
-/teams/:id              same shape
-/champions/:id          pick and ban record across eras
-/compare                two teams side by side: the pick'em view
+/champions/:champion    pick and ban record across eras
 /glossary               every term, including the absent ones
+/selection              the audit: every candidate event and the rule that decided
+/compare                (not built) two teams side by side: the pick'em view
+*                       not found: the only route that claims nothing
 ```
 
 ## Level 0 — the era spine
@@ -56,11 +62,15 @@ one sentence on what changed. A gap card states why it is empty.
 
 **Figma frames:** `10-era`, `10-era/coverage`, `10-era/gap`.
 
-## Level 2 — event (next phase)
+## Level 2 — event
 
-Teams, format, the series list, leaders per role, draft pool with pick and ban
-counts. Rows that are best-of-one link straight to a game; the rest link to a
-series.
+Teams with the games they played, the event's own coverage, the distinctions the
+source states for its players, the series grouped by phase, and the games the source
+attaches to no series. The header names the winner where the final is the single
+series named Finals; an event that names several such series names nobody. The
+distinctions block sits above the phases — who was honoured, in the source's words,
+before how the bracket was played — and is absent for the 35 events that state none.
+A series of one game links straight to the game; the rest link to a series.
 
 ## Level 3 — series (conditional)
 
@@ -68,7 +78,7 @@ Only rendered for best-of-three and above. For a best-of-one, the event links
 directly to the game: a level that exists for one third of the corpus is a level
 the reader has to learn for no reason.
 
-## Level 4 — game (next phase)
+## Level 4 — game
 
 Two-sided scoreboard, the full draft with its fidelity (`ordered` or `unordered`),
 player rows with role and champion, and the reconciled team totals.
@@ -102,6 +112,12 @@ The career block always shows: games (`n`), wins and losses, win share with its
 denominator, KDA with its formula, per-game averages, and the champion pool with
 counts. Nothing is shown when the sample is zero — the page says so instead.
 
+Below the derived `Titles` section, the player page states the source's own
+`Distinctions` — MVPs and All-Pro places — in its own words and in its own section.
+One is the site's reading of the bracket, the other is somebody's statement about
+the player; nothing on the page merges them, and the copy names the events the
+source says nothing about.
+
 **Figma frames:** `50-player/context`, `50-player/career`, `50-player/filters`.
 
 ## Cross-cutting components
@@ -111,7 +127,7 @@ counts. Nothing is shown when the sample is zero — the page says so instead.
 | `Ratio` | Renders `62% (8/13)`. The only way a share may appear. |
 | `CoverageBadge` | `complete` / `partial` / `unavailable`, with the group it refers to. |
 | `Breadcrumbs` | The path from the top is always visible; back is a link, not a gesture. |
-| `EmptyState` | Says what is missing and why, never just "no data". |
+| `EmptyFilter` | The state a filter produces when nothing survives it: names the half that emptied the view and offers one control that brings the games back. |
 
 ## Visual rules
 

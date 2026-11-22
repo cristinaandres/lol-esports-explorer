@@ -2,20 +2,21 @@ import { Link } from 'react-router'
 
 import { EraGrid } from '../components/EraGrid'
 import { PageHeader } from '../components/PageHeader'
+import { LoadFailure } from '../components/LoadFailure'
+import { Skeleton } from '../components/Skeleton'
 import { Stat, StatRow } from '../components/Stat'
 import { useDataset } from '../lib/data'
 import { count, monthYear } from '../lib/format'
 
 export default function Home() {
-  const { status, data, error } = useDataset()
+  const { status, data, error, retry } = useDataset()
 
-  if (status === 'loading') return <HomeSkeleton />
+  if (status === 'loading') return <Skeleton shape="cards" />
+  // The eager set is the one thing every page needs, so this is the failure a
+  // reader is most likely to meet; it gets the same block and retry as the rest
+  // rather than advice to reload by hand.
   if (status === 'failed')
-    return (
-      <p className="text-side-red">
-        Could not load the dataset: {error.message}. Run <code>node tools/check.ts</code>.
-      </p>
-    )
+    return <LoadFailure failures={[{ what: 'the dataset', error }]} onRetry={retry} />
 
   const { eras, totals, champions } = data
   const championsPlayed = champions.filter((champion) => champion.games > 0).length
@@ -123,21 +124,5 @@ function BrowseCard({
       </div>
       <p className="text-fog-500 mt-2 text-sm leading-relaxed">{blurb}</p>
     </Link>
-  )
-}
-
-
-
-function HomeSkeleton() {
-  return (
-    <div className="animate-pulse">
-      <div className="bg-ink-800 h-10 w-2/3 rounded" />
-      <div className="bg-ink-800/60 mt-4 h-4 w-1/2 rounded" />
-      <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }, (_, index) => (
-          <div key={index} className="bg-ink-900 border-line h-44 rounded-xl border" />
-        ))}
-      </div>
-    </div>
   )
 }

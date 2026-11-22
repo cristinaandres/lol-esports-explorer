@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { LoadFailure } from '../components/LoadFailure'
+import { Skeleton } from '../components/Skeleton'
 import { PageHeader } from '../components/PageHeader'
 import { useDataset } from '../lib/data'
 import { count } from '../lib/format'
@@ -106,9 +107,14 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
   const shown = groups.reduce((sum, group) => sum + group.items.length, 0)
   const copy = COPY[kind]
 
-  if (state.status === 'loading') return <PageSkeleton />
+  if (state.status === 'loading') return <Skeleton shape="page" />
   if (state.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {state.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: state.error }]}
+        onRetry={state.retry}
+      />
+    )
 
   return (
     <>

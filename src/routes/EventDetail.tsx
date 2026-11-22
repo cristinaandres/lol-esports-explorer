@@ -2,33 +2,40 @@ import { useMemo } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
+import { CoverageRow } from '../components/Coverage'
 import { SeriesList } from '../components/SeriesList'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
-import { useDataset } from '../lib/data'
+import { LoadFailure } from '../components/LoadFailure'
+import { useDataset, useGameCorpus, useHonours } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, duration, dayMonthYear } from '../lib/format'
-import { buildIndexes, teamName, teamPath } from '../lib/indexes'
+import { buildIndexes, playerName, playerPath, teamName, teamPath } from '../lib/indexes'
 import { groupGamesBySeries } from '../lib/series'
 import { groupByPhase, phasePath } from '../lib/phases'
 import { championships } from '../lib/titles'
+import { distinctionsForEvent } from '../lib/honours'
 import { teamsOfGames } from '../lib/team'
 
 export default function EventDetail() {
   const { event: id } = useParams()
   const state = useDataset()
+  const corpus = useGameCorpus()
+  const honours = useHonours()
 
   const prepared = useMemo(() => {
-    if (state.status !== 'ready') return null
+    if (state.status !== 'ready' || corpus.status !== 'ready') return null
     const data = state.data
     const event = data.events.find((row) => row.event_id === id)
     if (!event) return { event: undefined } as const
 
-    const games = data.games.filter((game) => game.event_key === event.event_key)
+    const allGames = corpus.data.games
+    const allMatches = corpus.data.matches
+    const games = allGames.filter((game) => game.event_key === event.event_key)
     const matches = new Map(
-      data.matches.filter((match) => match.event_key === event.event_key).map((match) => [match.match_key, match]),
+      allMatches.filter((match) => match.event_key === event.event_key).map((match) => [match.match_key, match]),
     )
     const grouped = groupGamesBySeries(games)
     return {
@@ -37,20 +44,29 @@ export default function EventDetail() {
       matches,
       grouped,
       phases: groupByPhase(grouped.series, matches),
-      champs: championships(data.games, data.matches),
+      champs: championships(allGames, allMatches),
       teams: teamsOfGames(games),
       index: buildIndexes(data),
     } as const
-  }, [state, id])
+  }, [state, corpus, id])
 
-  if (state.status === 'loading') return <PageSkeleton />
+  if (state.status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
   if (state.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {state.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: state.error }]}
+        onRetry={state.retry}
+      />
+    )
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
   if (!prepared?.event) {
     return (
       <p className="text-fog-300">
         No event called <code>{id}</code>.{' '}
-        <Link to="/" className="text-gold">
+        <Link to="/eras" className="text-gold">
           Back to the eras
         </Link>
         .
@@ -59,22 +75,24 @@ export default function EventDetail() {
   }
 
   const { event, matches, grouped, phases, index, teams } = prepared
+  // The source's own awards for this event, in its words. Absent for the 35 events
+  // that state none, which is a fact about the source and not a gap the site hides.
+  const distinctions =
+    honours.status === 'ready' ? distinctionsForEvent(honours.data, event.event_key, index.players) : []
   const champion = prepared.champs.get(event.event_key)
   const eraId = event.eras?.split(', ')[0] ?? ''
-  const eraTitle = eraId ? eraCopy(eraId).title : '—'
+  // A crumb is a place. An event in no era has none, so it gets no crumb rather than
+  // one labelled with a dash that is not a link.
+  const eraCrumbs = eraId ? [{ label: eraCopy(eraId).title, to: `/eras/${eraId}` }] : []
 
   return (
     <>
       <Breadcrumbs
-        items={[
-          { label: 'Eras', to: '/eras' },
-          { label: eraTitle, to: eraId ? `/eras/${eraId}` : undefined },
-          { label: event.event_name },
-        ]}
+        items={[{ label: 'Eras', to: '/eras' }, ...eraCrumbs, { label: event.event_name }]}
       />
 
       <PageHeader
-        eyebrow={`${event.competition} · ${event.year}`}
+        eyebrow={`${event.competition === 'Unknown' ? 'competition not stated' : event.competition} · ${event.year}`}
         title={event.event_name}
         lead={undefined}
         aside={
@@ -95,10 +113,15 @@ export default function EventDetail() {
               </p>
             ) : null}
             <p className="text-fog-600 font-mono text-xs leading-relaxed">
-              {dayMonthYear(event.first_date)} → {dayMonthYear(event.last_date)}
+              {/* A game-less event has no span: say so rather than print a dash either side
+                  of an arrow, which reads like a date the source lost. */}
+              {event.first_date && event.last_date
+                ? `${dayMonthYear(event.first_date)} → ${dayMonthYear(event.last_date)}`
+                : 'no game played, so no span'}
               <br />
-              {eraTitle}
-              {event.eras && event.eras.includes(',') ? ' (spans more than one era)' : ''}
+              {eraId
+                ? `${eraCopy(eraId).title}${event.eras?.includes(',') ? ' (spans more than one era)' : ''}`
+                : 'no era declared'}
             </p>
           </div>
         }
@@ -112,6 +135,7 @@ export default function EventDetail() {
         <Stat
           label="Avg length"
           value={<span className="text-lg">{duration(event.avg_duration_seconds)}</span>}
+          hint={`${count(event.games_duration_stated)} of ${count(event.games)} games state a length`}
         />
         <Stat label="Blue side won" value={<Ratio part={event.blue_wins} total={event.games} />} />
       </StatRow>
@@ -127,18 +151,66 @@ export default function EventDetail() {
           </p>
 
           <dl className="divide-line border-line max-w-2xl divide-y border-y">
-            <CoverageLine label="Draft" part={event.draft_complete ?? 0} total={event.coverage_games} />
-            <CoverageLine
+            <CoverageRow label="Draft" part={event.draft_complete ?? 0} total={event.coverage_games} />
+            <CoverageRow
               label="Player statistics"
               part={event.player_complete ?? 0}
               total={event.coverage_games}
             />
-            <CoverageLine
+            <CoverageRow
               label="Team statistics"
               part={event.team_complete ?? 0}
               total={event.coverage_games}
             />
           </dl>
+        </section>
+      ) : null}
+
+      {distinctions.length > 0 ? (
+        <section className="mt-10">
+          <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
+          <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+            Who the source honoured at this event, and for what, in its own words. A distinction is
+            a statement about a player — MVP or an All-Pro place — not the site&rsquo;s reading of
+            the bracket: the winner above is derived, these are stated.{' '}
+            <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
+              What a distinction is
+            </Link>
+            .
+          </p>
+
+          <ul className="divide-line border-line divide-y border-y">
+            {distinctions.map((row) => {
+              const playerLink = playerPath(index, row.player_key)
+              const teamLink = teamPath(index, row.team_key)
+              return (
+                <li
+                  key={`${row.player_key}-${row.title}`}
+                  className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
+                >
+                  <span className="text-fog-100 text-sm">
+                    {playerLink ? (
+                      <Link to={playerLink} className="hover:text-gold">
+                        {playerName(index, row.player_key)}
+                      </Link>
+                    ) : (
+                      playerName(index, row.player_key)
+                    )}
+                    <span className="text-gold"> · {row.title}</span>
+                  </span>
+                  <span className="text-fog-600 font-mono text-xs">
+                    {/* An award whose team the source does not state is still the player's:
+                        the unknown team prints nothing rather than "Unknown". */}
+                    {teamLink ? (
+                      <Link to={teamLink} className="hover:text-gold">
+                        {teamName(index, row.team_key)}
+                      </Link>
+                    ) : null}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
         </section>
       ) : null}
 
@@ -164,7 +236,7 @@ export default function EventDetail() {
                     )}
                   </h3>
                   <span className="text-fog-600 text-xs">
-                    {count(phase.series.length)} {phase.series.length === 1 ? 'series' : 'series'} ·{' '}
+                    {count(phase.series.length)} series ·{' '}
                     {count(phase.series.reduce((sum, entry) => sum + entry.games.length, 0))} games
                   </span>
                 </div>
@@ -239,16 +311,5 @@ export default function EventDetail() {
         </section>
       ) : null}
     </>
-  )
-}
-
-function CoverageLine({ label, part, total }: { label: string; part: number; total: number }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 py-3">
-      <dt className="text-fog-300 text-sm">{label}</dt>
-      <dd>
-        <Ratio part={part} total={total} />
-      </dd>
-    </div>
   )
 }

@@ -2,19 +2,21 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { LoadFailure } from '../components/LoadFailure'
+import { Skeleton } from '../components/Skeleton'
 import { DataTable } from '../components/DataTable'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
 import { championPlayers, championRecord, championRoleStats, presenceOf, roleKda } from '../lib/champion'
-import { useAliases, useDataset, useGameDetail } from '../lib/data'
+import { useAliases, useBans, useDataset, useGames, usePlayerGames, type Dataset } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { CareerFilters } from '../components/CareerFilters'
 import { applyFilter, emptyReason, filterSearch, NO_FILTER, optionsFor, parseFilter, recoverFilter } from '../lib/filters'
 import { count, dayMonthYear } from '../lib/format'
 import { buildIndexes, playerName, playerPath } from '../lib/indexes'
+import type { Champion } from '../lib/types'
 
 /**
  * One champion, era by era.
@@ -23,51 +25,25 @@ import { buildIndexes, playerName, playerPath } from '../lib/indexes'
  * released mid-corpus shows nothing before its first game rather than a run of
  * zeroes. That is the same rule the scoreboard applies to objectives, and it is
  * what stops "not yet released" from reading as "never picked".
+ *
+ * The id is resolved against the eager set alone, in `ChampionDetail`; the lazy set
+ * lives in `ChampionPage`, which a found id mounts and a typo'd one never does.
  */
 export default function ChampionDetail() {
   const { champion: id } = useParams()
   const dataset = useDataset()
-  const detail = useGameDetail()
-  const aliases = useAliases()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const filter = parseFilter(searchParams)
 
-  const prepared = useMemo(() => {
-    if (dataset.status !== 'ready') return null
-    const champion = dataset.data.champions.find((row) => row.champion_id === id)
-    if (!champion) return { champion: undefined } as const
-
-    const competitions = new Map(
-      dataset.data.events.map((event) => [event.event_key, event.competition]),
-    )
-    const scoped = dataset.data.games.map((game) => ({
-      game,
-      competition: competitions.get(game.event_key) ?? 'Unknown',
-    }))
-
-    return {
-      champion,
-      scoped,
-      former:
-        aliases.status === 'ready'
-          ? namesFor(aliases.data, 'champion', champion.champion_id).map((row) => ({
-              name: row.alias_string,
-              from: row.valid_from,
-              to: row.valid_to,
-            }))
-          : [],
-    } as const
-  }, [dataset, detail, aliases, id])
-
-  const applyFilters = (next: typeof filter) => {
-    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
-  }
-
-  if (dataset.status === 'loading') return <PageSkeleton />
+  if (dataset.status === 'loading') return <Skeleton shape="page" />
   if (dataset.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: dataset.error }]}
+        onRetry={dataset.retry}
+      />
+    )
 
-  if (!prepared?.champion) {
+  const champion = dataset.data.champions.find((row) => row.champion_id === id)
+  if (!champion) {
     return (
       <div className="py-12">
         <p className="text-fog-600 mb-3 font-mono text-xs tracking-widest uppercase">Not found</p>
@@ -77,7 +53,7 @@ export default function ChampionDetail() {
         <p className="text-fog-300 mt-3 max-w-xl text-sm leading-relaxed">
           The id in the URL is the one the dataset uses, not a name. A champion is reachable from any
           draft that contains it.{' '}
-          <Link to="/" className="text-gold">
+          <Link to="/eras" className="text-gold">
             Back to the eras
           </Link>
           .
@@ -86,28 +62,86 @@ export default function ChampionDetail() {
     )
   }
 
-  const { champion, former, scoped } = prepared
+  return <ChampionPage champion={champion} data={dataset.data} />
+}
+
+function ChampionPage({ champion, data }: { champion: Champion; data: Dataset }) {
+  const games = useGames()
+  const playerRows = usePlayerGames()
+  const banRows = useBans()
+  const aliases = useAliases()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const filter = parseFilter(searchParams)
+
+  const prepared = useMemo(() => {
+    if (games.status !== 'ready') return null
+
+    const index = buildIndexes(data)
+    const scoped = games.data.map((game) => ({
+      game,
+      competition: index.competitions.get(game.event_key) ?? 'Unknown',
+    }))
+
+    return {
+      scoped,
+      index,
+      former:
+        aliases.status === 'ready'
+          ? namesFor(aliases.data, 'champion', champion.champion_id).map((row) => ({
+              name: row.alias_string,
+              from: row.valid_from,
+              to: row.valid_to,
+            }))
+          : [],
+    } as const
+  }, [data, games, aliases, champion])
+
+  const applyFilters = (next: typeof filter) => {
+    setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
+  }
+
+  if (games.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: games.error }]} onRetry={games.retry} />
+    )
+  if (!prepared) return <Skeleton shape="page" />
+
+  const { former, scoped } = prepared
   const visibleGames = applyFilter(scoped, filter).map((entry) => entry.game)
-  const record =
-    detail.status === 'ready'
-      ? championRecord(
-          visibleGames,
-          detail.data.playerGames,
-          detail.data.bans,
-          champion.champion_key,
-          champion.release_date,
-        )
+  // A champion page counts bans and reads picks nowhere, so it asks for the player
+  // rows and the bans and leaves the scoreboards and the ordered draft on the game
+  // page, where they are actually rendered.
+  const draft =
+    playerRows.status === 'ready' && banRows.status === 'ready'
+      ? { playerGames: playerRows.data, bans: banRows.data }
       : null
-  const players =
-    detail.status === 'ready'
-      ? championPlayers(visibleGames, detail.data.playerGames, champion.champion_key)
-      : []
-  const roleStats =
-    detail.status === 'ready'
-      ? championRoleStats(visibleGames, detail.data.playerGames, champion.champion_key)
-      : []
+  const draftFailures = [
+    ...(playerRows.status === 'failed'
+      ? [{ what: 'the picks', error: playerRows.error }]
+      : []),
+    ...(banRows.status === 'failed' ? [{ what: 'the bans', error: banRows.error }] : []),
+  ]
+  const retryDraft = () => {
+    if (playerRows.status === 'failed') playerRows.retry()
+    if (banRows.status === 'failed') banRows.retry()
+  }
+  const record = draft
+    ? championRecord(
+        visibleGames,
+        draft.playerGames,
+        draft.bans,
+        champion.champion_key,
+        champion.release_date,
+      )
+    : null
+  const players = draft
+    ? championPlayers(visibleGames, draft.playerGames, champion.champion_key)
+    : []
+  const roleStats = draft
+    ? championRoleStats(visibleGames, draft.playerGames, champion.champion_key)
+    : []
   const reason = emptyReason(scoped, filter)
-  const index = buildIndexes(dataset.data)
+  const index = prepared.index
 
   return (
     <>
@@ -117,7 +151,13 @@ export default function ChampionDetail() {
         eyebrow="champion"
         title={champion.champion_name}
         lead={
-          former.length > 0 ? (
+          aliases.status === 'failed' ? (
+            <LoadFailure
+              inline
+              failures={[{ what: 'former names', error: aliases.error }]}
+              onRetry={aliases.retry}
+            />
+          ) : former.length > 0 ? (
             <span className="text-fog-500 text-sm">
               Previously{' '}
               {former.map((name) => (
@@ -149,11 +189,10 @@ export default function ChampionDetail() {
         onClear={() => applyFilters(NO_FILTER)}
       />
 
-      {record === null ? (
-        <div className="space-y-3">
-          <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
-          <div className="bg-ink-900 border-line h-56 animate-pulse rounded-xl border" />
-        </div>
+      {draftFailures.length > 0 ? (
+        <LoadFailure failures={draftFailures} onRetry={retryDraft} />
+      ) : record === null ? (
+        <Skeleton shape="table" tableHeight="h-56" />
       ) : record.picked === 0 && record.banned === 0 && visibleGames.length !== scoped.length ? (
         <div className="border-line bg-ink-900 rounded-xl border p-6">
           <h2 className="text-fog-100 text-base font-semibold">
@@ -184,7 +223,7 @@ export default function ChampionDetail() {
             <Stat
               label="Released"
               value={<span className="text-lg">{champion.release_date ? dayMonthYear(champion.release_date) : '—'}</span>}
-              hint={champion.release_date ? `${champion.release_date.slice(0, 4)} · source: Leaguepedia` : undefined}
+              hint={champion.release_date ? `${champion.release_date.slice(0, 4)} · from the dataset` : undefined}
             />
             <Stat label="Games since release" value={count(record.games)} />
             <Stat label="Picked" value={<Ratio part={record.picked} total={record.games} />} />
@@ -213,9 +252,11 @@ export default function ChampionDetail() {
           <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">By era</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Each era is measured against the games played in it since the champion was released,
-              so an era that ended before it existed carries no count at all rather than a row of
-              zeroes.
+              Each era is measured against the games played in it since the champion was released.
+              An era that ended before it existed has no row at all rather than a row of zeroes, so
+              every row here is an era the champion could be drafted in and a zero in it is a
+              measurement of those games. Only Won falls back to a dash, where no pick leaves it no
+              denominator.
             </p>
 
             <DataTable
@@ -238,25 +279,29 @@ export default function ChampionDetail() {
                   key: 'picked',
                   label: 'Picked',
                   align: 'right',
-                  render: (era) => (presenceOf(era) === 0 ? '—' : count(era.picked)),
+                  // Zero is measured here: the row exists only because the champion was
+                  // eligible for the games in it, and it was not picked in any of them.
+                  render: (era) => count(era.picked),
                 },
                 {
                   key: 'banned',
                   label: 'Banned',
                   align: 'right',
-                  render: (era) => (presenceOf(era) === 0 ? '—' : count(era.banned)),
+                  render: (era) => count(era.banned),
                 },
                 {
                   key: 'presence',
                   label: 'Presence',
                   align: 'right',
-                  render: (era) => <Ratio part={presenceOf(era)} total={era.games} empty="not present" />,
+                  render: (era) => <Ratio part={presenceOf(era)} total={era.games} />,
                 },
                 {
                   key: 'won',
                   label: 'Won',
                   align: 'right',
-                  render: (era) => <Ratio part={era.won} total={era.picked} empty="—" />,
+                  // A win rate over no picks has no denominator, so this is the one
+                  // column where a dash still means nothing was measured.
+                  render: (era) => <Ratio part={era.won} total={era.picked} />,
                 },
               ]}
             />

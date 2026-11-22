@@ -2,14 +2,15 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
+import { LoadFailure } from '../components/LoadFailure'
 import { CareerFilters } from '../components/CareerFilters'
 import { EmptyFilter } from '../components/EmptyFilter'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { namesFor } from '../lib/aliases'
-import { useAliases, useDataset, usePlayerGames } from '../lib/data'
+import { useAliases, useDataset, useGameCorpus, usePlayerGames, type Dataset } from '../lib/data'
 import {
   applyFilter,
   emptyReason,
@@ -24,6 +25,7 @@ import { count, dayMonthYear } from '../lib/format'
 import { buildIndexes, playerName, playerPath } from '../lib/indexes'
 import { rosterFrom, rosterOfGame, teamAppearancesFor, teamSummaryFrom } from '../lib/team'
 import { championships, groupTitlesByCompetition, titlesForTeam } from '../lib/titles'
+import type { Team } from '../lib/types'
 
 /**
  * One team's record.
@@ -32,28 +34,59 @@ import { championships, groupTitlesByCompetition, titlesForTeam } from '../lib/t
  * page states both instead of hiding them: the roster is derived from who appeared
  * in the games, not from a contract table the model does not have, and the side
  * split is reported per view because side advantage belongs to the era.
+ *
+ * The id is resolved against the eager set alone, in `TeamDetail`; the lazy set
+ * lives in `TeamPage`, which a found id mounts and a typo'd one never does.
  */
 export default function TeamDetail() {
   const { team: id } = useParams()
   const dataset = useDataset()
+
+  if (dataset.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'failed')
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: dataset.error }]}
+        onRetry={dataset.retry}
+      />
+    )
+
+  const team = dataset.data.teams.find((row) => row.team_id === id)
+  if (!team) {
+    return (
+      <div className="py-12">
+        <p className="text-fog-600 mb-3 font-mono text-xs tracking-widest uppercase">Not found</p>
+        <h1 className="text-fog-100 text-2xl font-semibold tracking-tight">No team with that id.</h1>
+        <p className="text-fog-300 mt-3 max-w-xl text-sm leading-relaxed">
+          The id in the URL is the one the dataset uses, not a name. A team is reachable from any
+          game it played.{' '}
+          <Link to="/eras" className="text-gold">
+            Back to the eras
+          </Link>
+          .
+        </p>
+      </div>
+    )
+  }
+
+  return <TeamPage team={team} data={dataset.data} />
+}
+
+function TeamPage({ team, data }: { team: Team; data: Dataset }) {
+  const corpus = useGameCorpus()
   const rows = usePlayerGames()
   const aliases = useAliases()
   const [searchParams, setSearchParams] = useSearchParams()
   const filter = parseFilter(searchParams)
 
   const prepared = useMemo(() => {
-    if (dataset.status !== 'ready') return null
-    const team = dataset.data.teams.find((row) => row.team_id === id)
-    if (!team) return { team: undefined } as const
+    if (corpus.status !== 'ready') return null
 
-    const competitions = new Map(
-      dataset.data.events.map((event) => [event.event_key, event.competition]),
-    )
+    const index = buildIndexes(data)
 
     return {
-      team,
       ready: rows.status === 'ready',
-      appearances: teamAppearancesFor(dataset.data.games, competitions, team.team_key),
+      appearances: teamAppearancesFor(corpus.data.games, index.competitions, team.team_key),
       playerGames: rows.status === 'ready' ? rows.data : [],
       former:
         aliases.status === 'ready'
@@ -63,40 +96,24 @@ export default function TeamDetail() {
               to: row.valid_to,
             }))
           : [],
-      events: new Map(dataset.data.events.map((event) => [event.event_key, event])),
-      champs: championships(dataset.data.games, dataset.data.matches),
-      index: buildIndexes(dataset.data),
+      champs: championships(corpus.data.games, corpus.data.matches),
+      index,
     } as const
-  }, [dataset, rows, aliases, id])
+  }, [data, corpus, rows, aliases, team])
 
   const applyFilters = (next: typeof filter) => {
     setSearchParams(new URLSearchParams(filterSearch(next)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <PageSkeleton />
-  if (dataset.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
-
-  if (!prepared?.team) {
+  if (corpus.status === 'failed')
     return (
-      <div className="py-12">
-        <p className="text-fog-600 mb-3 font-mono text-xs tracking-widest uppercase">Not found</p>
-        <h1 className="text-fog-100 text-2xl font-semibold tracking-tight">No team with that id.</h1>
-        <p className="text-fog-300 mt-3 max-w-xl text-sm leading-relaxed">
-          The id in the URL is the one the dataset uses, not a name. A team is reachable from any
-          game it played.{' '}
-          <Link to="/" className="text-gold">
-            Back to the eras
-          </Link>
-          .
-        </p>
-      </div>
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
     )
-  }
+  if (!prepared) return <Skeleton shape="page" />
 
-  const { team, index, events, playerGames } = prepared
+  const { index, playerGames } = prepared
   const titles = titlesForTeam(prepared.champs, team.team_key)
-  const titleGroups = groupTitlesByCompetition(titles, (key) => events.get(key)?.competition)
+  const titleGroups = groupTitlesByCompetition(titles, (key) => index.events.get(key)?.competition)
   const all = prepared.appearances
   const visible = applyFilter(all, filter)
   const summary = teamSummaryFrom(visible)
@@ -113,7 +130,13 @@ export default function TeamDetail() {
         eyebrow={team.region ? `team · ${team.region}` : 'team'}
         title={team.team_name}
         lead={
-          prepared.former.length > 0 ? (
+          aliases.status === 'failed' ? (
+            <LoadFailure
+              inline
+              failures={[{ what: 'former names', error: aliases.error }]}
+              onRetry={aliases.retry}
+            />
+          ) : prepared.former.length > 0 ? (
             <span className="text-fog-500 text-sm">
               Previously{' '}
               {prepared.former.map((name, position) => (
@@ -213,12 +236,12 @@ export default function TeamDetail() {
                           className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
                         >
                           <span className="text-fog-100 text-sm">
-                            {events.get(title.eventKey) ? (
+                            {index.events.get(title.eventKey) ? (
                               <Link
-                                to={`/events/${events.get(title.eventKey)!.event_id}`}
+                                to={`/events/${index.events.get(title.eventKey)!.event_id}`}
                                 className="hover:text-gold"
                               >
-                                {events.get(title.eventKey)!.event_name}
+                                {index.events.get(title.eventKey)!.event_name}
                               </Link>
                             ) : (
                               'Unknown event'
@@ -274,7 +297,7 @@ export default function TeamDetail() {
                 </thead>
                 <tbody className="divide-line divide-y">
                   {summary.events.map((entry) => {
-                    const event = events.get(entry.eventKey)
+                    const event = index.events.get(entry.eventKey)
                     return (
                       <tr key={entry.eventKey} className="hover:bg-ink-850/50">
                         <td className="text-fog-100 px-2 py-2 sm:px-4">
@@ -323,74 +346,85 @@ export default function TeamDetail() {
             </div>
           </section>
 
-          <section className="mt-12">
-            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Current roster</h2>
-            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              The players who appeared in the most recent game of this selection
-              {visible.length > 0 ? ` (${dayMonthYear(visible[visible.length - 1]!.game.date_time_utc)})` : ''}
-              . The corpus records who played, not who is signed, so the last game is the only
-              evidence of who is on the team today.
-            </p>
+          {rows.status === 'failed' ? (
+            <section className="mt-12">
+              <LoadFailure
+                failures={[{ what: "this team's rosters", error: rows.error }]}
+                onRetry={rows.retry}
+              />
+            </section>
+          ) : (
+            <>
+              <section className="mt-12">
+                <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Current roster</h2>
+                <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+                  The players who appeared in the most recent game of this selection
+                  {visible.length > 0 ? ` (${dayMonthYear(visible[visible.length - 1]!.game.date_time_utc)})` : ''}
+                  . The corpus records who played, not who is signed, so the last game is the only
+                  evidence of who is on the team today.
+                </p>
 
-            {!prepared.ready ? (
-              <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
-            ) : current.length === 0 ? (
-              <p className="text-fog-600 text-sm">No player rows for that game.</p>
-            ) : (
-              <ul className="flex flex-wrap gap-2">
-                {current.map((entry) => (
-                  <li key={entry.playerKey}>
-                    <PlayerChip index={index} entry={entry} />
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+                {!prepared.ready ? (
+                  <Skeleton shape="stack" heights={['h-24']} />
+                ) : current.length === 0 ? (
+                  <p className="text-fog-600 text-sm">No player rows for that game.</p>
+                ) : (
+                  <ul className="flex flex-wrap gap-2">
+                    {current.map((entry) => (
+                      <li key={entry.playerKey}>
+                        <PlayerChip index={index} entry={entry} />
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
 
-          <section className="mt-10">
-            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">
-              Everyone who played
-            </h2>
-            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              Derived from the player rows of every game in this selection. A player who joined and
-              never played does not appear; one who left mid-season appears for the games they
-              played.
-            </p>
+              <section className="mt-10">
+                <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">
+                  Everyone who played
+                </h2>
+                <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+                  Derived from the player rows of every game in this selection. A player who joined and
+                  never played does not appear; one who left mid-season appears for the games they
+                  played.
+                </p>
 
-            {!prepared.ready ? (
-              <div className="bg-ink-900 border-line h-32 animate-pulse rounded-xl border" />
-            ) : roster.length === 0 ? (
-              <p className="text-fog-600 text-sm">
-                No player rows are recorded for these games. Their player-statistics coverage is
-                unavailable.
-              </p>
-            ) : (
-              <ul className="divide-line border-line divide-y border-y">
-                {roster.map((entry) => (
-                  <li
-                    key={entry.playerKey}
-                    className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
-                  >
-                    <span className="text-fog-200 text-sm">
-                      {playerPath(index, entry.playerKey) ? (
-                        <Link to={playerPath(index, entry.playerKey)!} className="hover:text-gold">
-                          {playerName(index, entry.playerKey)}
-                        </Link>
-                      ) : (
-                        playerName(index, entry.playerKey)
-                      )}
-                    </span>
-                    <span className="text-fog-600 flex items-baseline gap-4 text-xs">
-                      <span className="tabular-nums">{count(entry.games)} games</span>
-                      <span className="font-mono">
-                        {dayMonthYear(entry.first)} → {dayMonthYear(entry.last)}
-                      </span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+                {!prepared.ready ? (
+                  <Skeleton shape="stack" heights={['h-32']} />
+                ) : roster.length === 0 ? (
+                  <p className="text-fog-600 text-sm">
+                    No player rows are recorded for these games. Their player-statistics coverage is
+                    unavailable.
+                  </p>
+                ) : (
+                  <ul className="divide-line border-line divide-y border-y">
+                    {roster.map((entry) => (
+                      <li
+                        key={entry.playerKey}
+                        className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
+                      >
+                        <span className="text-fog-200 text-sm">
+                          {playerPath(index, entry.playerKey) ? (
+                            <Link to={playerPath(index, entry.playerKey)!} className="hover:text-gold">
+                              {playerName(index, entry.playerKey)}
+                            </Link>
+                          ) : (
+                            playerName(index, entry.playerKey)
+                          )}
+                        </span>
+                        <span className="text-fog-600 flex items-baseline gap-4 text-xs">
+                          <span className="tabular-nums">{count(entry.games)} games</span>
+                          <span className="font-mono">
+                            {dayMonthYear(entry.first)} → {dayMonthYear(entry.last)}
+                          </span>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            </>
+          )}
         </>
       )}
     </>

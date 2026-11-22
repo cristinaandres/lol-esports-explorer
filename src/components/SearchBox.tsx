@@ -1,14 +1,28 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
+import { LoadFailure } from './LoadFailure'
 import { loadAliases, useDataset } from '../lib/data'
 import { buildSearchIndex, resultPath, search, type SearchResult } from '../lib/search'
 import type { AliasRow } from '../lib/types'
 
 /**
+ * The alias bridge has four states, not two.
+ *
+ * `ready` with an empty list is a fact about the corpus; `failed` is a fact about
+ * this session. Collapsing them into `null` is what left the box on "Loading
+ * names…" forever after a rejection.
+ */
+type AliasLoad =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'ready'; rows: AliasRow[] }
+  | { status: 'failed'; error: Error }
+
+/**
  * Search by any name an entity has ever had.
  *
- * The alias bridge is 63 KB and is fetched only after the reader touches the box:
+ * The alias bridge is 67 KB and is fetched only after the reader touches the box:
  * a page they are reading should not pay for a search they never start. The index
  * is built once and kept.
  *
@@ -21,7 +35,8 @@ export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
   const navigate = useNavigate()
 
   const [armed, setArmed] = useState(false)
-  const [aliases, setAliases] = useState<AliasRow[] | null>(null)
+  const [aliases, setAliases] = useState<AliasLoad>({ status: 'idle' })
+  const [attempt, setAttempt] = useState(0)
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const [active, setActive] = useState(0)
@@ -30,13 +45,16 @@ export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
   const wrapper = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!armed || aliases) return
+    if (!armed) return
     let live = true
-    loadAliases().then((rows) => live && setAliases(rows))
+    loadAliases().then(
+      (rows) => live && setAliases({ status: 'ready', rows }),
+      (error: Error) => live && setAliases({ status: 'failed', error }),
+    )
     return () => {
       live = false
     }
-  }, [armed, aliases])
+  }, [armed, attempt])
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -48,7 +66,12 @@ export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
 
   const index = useMemo(() => {
     if (dataset.status !== 'ready') return []
-    return buildSearchIndex(dataset.data.players, dataset.data.teams, dataset.data.champions, aliases ?? [])
+    return buildSearchIndex(
+      dataset.data.players,
+      dataset.data.teams,
+      dataset.data.champions,
+      aliases.status === 'ready' ? aliases.rows : [],
+    )
   }, [dataset, aliases])
 
   const results = useMemo(() => search(index, query), [index, query])
@@ -97,6 +120,7 @@ export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
         role="combobox"
         onFocus={() => {
           setArmed(true)
+          if (aliases.status === 'idle') setAliases({ status: 'loading' })
           if (query.length > 0) setOpen(true)
         }}
         onChange={(event) => {
@@ -112,7 +136,9 @@ export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
 
       <span role="status" aria-live="polite" className="sr-only">
         {open && query.length > 0
-          ? `${results.length} ${results.length === 1 ? 'result' : 'results'}`
+          ? `${aliases.status === 'failed' ? 'Other names did not load. ' : ''}${results.length} ${
+              results.length === 1 ? 'result' : 'results'
+            }`
           : ''}
       </span>
 
@@ -122,9 +148,27 @@ export function SearchBox({ fullWidth = false }: { fullWidth?: boolean }) {
           role="listbox"
           className="border-line bg-ink-900 absolute top-full right-0 z-40 mt-2 max-h-80 w-80 max-w-[calc(100vw-2.5rem)] overflow-y-auto rounded-xl border p-1.5 shadow-2xl"
         >
+          {aliases.status === 'failed' ? (
+            <div className="border-line mb-1 border-b px-2.5 pt-1.5 pb-2">
+              <LoadFailure
+                inline
+                failures={[{ what: 'other names', error: aliases.error }]}
+                onRetry={() => {
+                  setAliases({ status: 'loading' })
+                  setAttempt((count) => count + 1)
+                }}
+              />
+              <p className="text-fog-500 mt-1 text-xs">Results match current names only.</p>
+            </div>
+          ) : null}
+
           {results.length === 0 ? (
             <p className="text-fog-500 px-2.5 py-2 text-xs">
-              {aliases === null ? 'Loading names…' : `No player, team or champion matches “${query}”.`}
+              {aliases.status === 'idle' || aliases.status === 'loading'
+                ? 'Loading names…'
+                : aliases.status === 'failed'
+                  ? `No current player, team or champion matches “${query}”.`
+                  : `No player, team or champion matches “${query}”.`}
             </p>
           ) : (
             grouped.map((kind) => {

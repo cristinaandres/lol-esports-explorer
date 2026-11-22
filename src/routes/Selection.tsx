@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { LoadFailure } from '../components/LoadFailure'
+import { Skeleton } from '../components/Skeleton'
 import { PageHeader } from '../components/PageHeader'
 import { Stat, StatRow } from '../components/Stat'
 import { useSelection } from '../lib/data'
@@ -47,9 +48,14 @@ export default function Selection() {
     } as const
   }, [state])
 
-  if (state.status === 'loading') return <PageSkeleton />
+  if (state.status === 'loading') return <Skeleton shape="page" />
   if (state.status === 'failed')
-    return <p className="text-side-red">Could not load the selection: {state.error.message}</p>
+    return (
+      <LoadFailure
+        failures={[{ what: 'the selection', error: state.error }]}
+        onRetry={state.retry}
+      />
+    )
   if (!prepared) return null
 
   const { total, included, rejected, rules } = prepared

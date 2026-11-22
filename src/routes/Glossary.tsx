@@ -12,8 +12,12 @@ import { eraCopy } from '../lib/eras'
 
 
 export default function Glossary() {
-  const { data } = useDataset()
+  const { status, data } = useDataset()
   const gaps = data?.eras.filter((era) => era.games === 0) ?? []
+  // The prose stands without the data, but the list it promises must not vanish
+  // silently: a reader who is told there are two empty eras should learn why they
+  // are not shown.
+  const gapsFailed = status === 'failed'
 
   return (
     <>
@@ -44,7 +48,12 @@ export default function Glossary() {
           that opens onto nothing is not a navigable level — but they stay in the data, so the chain
           of boundaries and its citations stays complete.
         </p>
-        {gaps.length > 0 ? (
+        {gapsFailed ? (
+          <p className="border-line bg-ink-900 text-fog-300 mt-5 rounded-xl border p-4 text-sm">
+            The era table did not load, so the two boundaries cannot be named here. The rest of this
+            page is definitions and does not depend on it; reload to try again.
+          </p>
+        ) : gaps.length > 0 ? (
           <ul className="divide-line border-line mt-5 divide-y border-y">
             {gaps.map((era) => (
               <li key={era.era} className="flex flex-wrap items-baseline justify-between gap-2 py-3">

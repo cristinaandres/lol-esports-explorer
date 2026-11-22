@@ -2,10 +2,11 @@ import { useMemo } from 'react'
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
 import { PageHeader } from '../components/PageHeader'
 import { SeriesList } from '../components/SeriesList'
-import { useDataset } from '../lib/data'
+import { LoadFailure } from '../components/LoadFailure'
+import { useDataset, useGameCorpus } from '../lib/data'
 import { eraCopy } from '../lib/eras'
 import { count, dayMonthYear } from '../lib/format'
 import { buildIndexes } from '../lib/indexes'
@@ -23,19 +24,25 @@ import { groupGamesBySeries } from '../lib/series'
  */
 export default function PhaseDetail() {
   const { event: eventId, phase } = useParams()
-  const { status, data } = useDataset()
+  const dataset = useDataset()
+  const { status, data } = dataset
+  const corpus = useGameCorpus()
 
   const prepared = useMemo(() => {
-    if (status !== 'ready') return null
+    if (status !== 'ready' || corpus.status !== 'ready') return null
     const event = data.events.find((row) => row.event_id === eventId)
     if (!event) return { event: undefined } as const
 
-    const games = data.games.filter((game) => game.event_key === event.event_key)
+    const games = corpus.data.games.filter((game) => game.event_key === event.event_key)
     const matches = new Map(
-      data.matches.filter((match) => match.event_key === event.event_key).map((match) => [match.match_key, match]),
+      corpus.data.matches
+        .filter((match) => match.event_key === event.event_key)
+        .map((match) => [match.match_key, match]),
     )
     const grouped = groupGamesBySeries(games)
-    const wanted = phase ? decodeURIComponent(phase) : ''
+    // react-router hands a route param over already decoded, so a tab like
+    // "Day 1 (100%)" arrives as itself. Decoding it a second time throws URIError.
+    const wanted = phase ?? ''
     const found = groupByPhase(grouped.series, matches).find((entry) => entry.tab === wanted)
 
     return {
@@ -46,11 +53,15 @@ export default function PhaseDetail() {
       index: buildIndexes(data),
       all: groupByPhase(grouped.series, matches),
     } as const
-  }, [status, data, eventId, phase])
+  }, [status, data, corpus, eventId, phase])
 
-  if (status === 'loading') return <PageSkeleton />
+  if (status === 'loading' || corpus.status === 'loading') return <Skeleton shape="page" />
+  if (corpus.status === 'failed')
+    return (
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
+    )
   if (status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {status === 'failed' ? '' : ''}</p>
+    return <LoadFailure failures={[{ what: 'the dataset', error: dataset.error }]} onRetry={dataset.retry} />
 
   if (!prepared?.event) {
     return (

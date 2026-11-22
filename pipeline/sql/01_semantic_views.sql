@@ -27,8 +27,30 @@ create or replace view dim_player as
   select * from read_csv('data/model/dim_player.csv', header = true);
 create or replace view dim_champion as
   select * from read_csv('data/model/dim_champion.csv', header = true);
+
+-- `patch` is TEXT in the model, and the data dictionary calls it "the patch as the
+-- source states it, as text; never padded or inferred". Sniffing the CSV types it
+-- DOUBLE instead, so the label arrives as a number: a patch written '10.10' would
+-- read back as 10.1 and disagree with patch_name, and every row would break the
+-- string the site's type declares. The column types are declared here, as the DDL
+-- declares them, rather than sniffed.
 create or replace view dim_patch as
-  select * from read_csv('data/model/dim_patch.csv', header = true);
+  select * from read_csv(
+    'data/model/dim_patch.csv',
+    header = true,
+    columns = { patch_key: 'INTEGER', patch: 'VARCHAR', patch_name: 'VARCHAR' }
+  );
+
+-- The patch list the site publishes, minus the model's unknown member (key 0).
+-- It is a row of dim_patch so an absent reference has somewhere to point, and 279
+-- games carry patch_key 0 because the source states no patch. No page resolves
+-- that key here: `patchLabel` prints an em dash for 0 before it consults the list,
+-- and the unknown member is the only patch row with no patch string.
+create or replace view patch_rows as
+  select patch_key, patch, patch_name
+  from dim_patch
+  where patch_key <> 0;
+
 create or replace view dim_date as
   select * replace (cast(date as varchar) as date)
   from read_csv('data/model/dim_date.csv', header = true);
@@ -38,6 +60,26 @@ create or replace view fact_player_game as
   select * from read_csv('data/model/fact_player_game.csv', header = true);
 create or replace view fact_draft_slot as
   select * from read_csv('data/model/fact_draft_slot.csv', header = true);
+
+-- `place` and `place_number` are empty on every recorded row (the dictionary says so
+-- explicitly), and DuckDB types a wholly empty column as VARCHAR: the integer the
+-- dictionary declares would arrive as text the day the source states one, and a
+-- later pin would silently change this artifact's type. Declared, as the DDL does.
+create or replace view fact_player_honour as
+  select * from read_csv(
+    'data/model/fact_player_honour.csv',
+    header = true,
+    columns = {
+      player_key: 'INTEGER',
+      event_key: 'INTEGER',
+      team_key: 'INTEGER',
+      title: 'VARCHAR',
+      type: 'VARCHAR',
+      source_page: 'VARCHAR',
+      place: 'VARCHAR',
+      place_number: 'INTEGER'
+    }
+  );
 
 -- One row per game, with the question "who won and on which side" already
 -- answered. Both sides are pivoted onto the game row because every page needs

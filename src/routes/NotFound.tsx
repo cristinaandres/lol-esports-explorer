@@ -8,7 +8,7 @@ export default function NotFound() {
         That page is not part of the record.
       </h1>
       <p className="text-fog-300 mt-3 text-sm">
-        <Link to="/" className="text-gold">
+        <Link to="/eras" className="text-gold">
           Back to the eras
         </Link>
         .

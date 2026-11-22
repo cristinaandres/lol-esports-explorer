@@ -36,6 +36,15 @@ describe('phaseSlug', () => {
     const segment = path.split('/').pop()!
     expect(decodeURIComponent(segment)).toBe('Group B')
   })
+
+  it('decodes a tab exactly once, which is all the route may decode it', () => {
+    // The route param arrives already decoded from react-router. A tab carrying a
+    // percent sign is what a second decode would throw on, and no tab in today's
+    // corpus carries one, so the case is pinned here rather than in the data.
+    const tab = 'Day 1 (100%)'
+    expect(decodeURIComponent(phaseSlug(tab))).toBe(tab)
+    expect(() => decodeURIComponent(tab)).toThrow(URIError)
+  })
 })
 
 describe('groupByPhase', () => {

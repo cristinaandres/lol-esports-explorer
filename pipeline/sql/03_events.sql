@@ -32,6 +32,13 @@ from dim_event;
 -- Series metadata. The event page needs the format (best-of) and the series name,
 -- and the series route needs a natural id: match_key is build-local and would
 -- break every shared link on the next rebuild, so the route uses match_id.
+--
+-- The model's unknown member (match_key 0) is not published. It exists so a game
+-- that belongs to no series has somewhere to point, and 42 games carry match_key 0
+-- for that reason; no series route resolves it, and every reader words key 0 as
+-- "series not stated" before consulting this artifact. The row is the only one
+-- whose match_id, tab and date_time_utc are null, so dropping it is what makes the
+-- type's promise of three strings true.
 create or replace view match_rows as
 select
   match_key,
@@ -43,7 +50,8 @@ select
   tab,
   is_nullified,
   forfeit
-from dim_match;
+from dim_match
+where match_key <> 0;
 
 create or replace view event_summary as
 with per_game as (
@@ -54,6 +62,9 @@ with per_game as (
     min(substr(date_time_utc, 1, 10))                     as first_date,
     max(substr(date_time_utc, 1, 10))                     as last_date,
     count(*) filter (where blue_win = 1)                  as blue_wins,
+    -- count(expr) skips nulls, so this is the row set the average divides by:
+    -- an average states its n on the page, and this is the n.
+    count(duration_seconds)                               as games_duration_stated,
     round(avg(duration_seconds))                          as avg_duration_seconds,
     string_agg(distinct era, ', ' order by era)           as eras
   from game_facts
@@ -88,7 +99,12 @@ select
   coalesce(players.players, 0) as players,
   per_game.first_date,
   per_game.last_date,
-  per_game.blue_wins,
+  -- Coalesced like games, series, teams and players: an admitted event with no game
+  -- played has a stated count of zero, not an absent one. `first_date`, `last_date`
+  -- and the average stay null, because an event with no game has no span and no
+  -- length to average — those are absences, and the type says so.
+  coalesce(per_game.blue_wins, 0) as blue_wins,
+  coalesce(per_game.games_duration_stated, 0) as games_duration_stated,
   per_game.avg_duration_seconds,
   per_game.eras
 from dim_event e

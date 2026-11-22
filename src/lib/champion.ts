@@ -8,15 +8,20 @@ import type { DraftSlot, Game, PlayerGame } from './types'
  * of 120" would only say it was always picked by someone. A champion released
  * mid-corpus therefore shows no presence before its first game, which is correct
  * and is not the same fact as zero.
+ *
+ * An era row exists only for eras that carry games after the release date, because
+ * those games are filtered out first. So when the date is known, a zero on a row is
+ * a result — it was eligible for every game the row counts and was neither picked
+ * nor banned — never the absence of one.
  */
 
 export type ChampionEra = {
   era: string
   /** Games played in the era, whatever the champion did. The denominator. */
   games: number
-  /** Distinct games in which this champion was picked. */
+  /** Distinct games in which this champion was picked. Zero is measured, not missing. */
   picked: number
-  /** Distinct games in which this champion was banned. */
+  /** Distinct games in which this champion was banned. Zero is measured, not missing. */
   banned: number
   /** Games where it was picked and the picking side won. */
   won: number
@@ -119,6 +124,10 @@ export function championRecord(
  *
  * An era figure is the sum of both, but the two are also reported apart, because a
  * champion banned in most of its games was respected, not played.
+ *
+ * Zero is a measurement: the era's games were played with the champion eligible and
+ * it was neither picked nor banned. An era it was never eligible for has no row at
+ * all, which is how "not yet released" stays apart from "never picked".
  */
 export function presenceOf(era: ChampionEra): number {
   return era.picked + era.banned

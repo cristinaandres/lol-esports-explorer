@@ -44,10 +44,10 @@ forgotten: `62% (8/13)`.
 | D2 | The era spine is declared upstream, not derived from games | Inferring it would make "no game before a boundary carries a field that era cannot have" true by construction. Two declared eras govern no game; the site shows them as gaps. |
 | D3 | Entity pages sit outside the era axis | A player's career crosses every era. Nesting players under events would make "Faker across Worlds" unreachable. |
 | D4 | Filters live in the URL | Every view is a link someone can paste into Discord. A filter state that only exists in memory is a filter state nobody shares. |
-| D5 | No backend, no runtime query engine | The corpus is 5.4 MB and the artifacts are 37 KB. Shipping DuckDB-WASM (~30 MB) to query it in the browser would cost more than it returns. |
+| D5 | No backend, no runtime query engine | The pinned model is 5.5 MB and the eager payload is ~46 KB gzip. Shipping DuckDB-WASM (~30 MB) to query it in the browser would cost more than it returns. |
 | D6 | Artifacts are committed and checksummed | A clone renders without Python, and `data:check` proves the committed bytes are current. |
 | D7 | Coverage is shown per game, not summarised away | Partial is a property of the source. Hiding it would make the chart clean and the claim false. |
-| D8 | Series is a level only when best-of is greater than one | 1,455 of 1,964 played series are best-of-one. A three-level spine that assumes a series would be wrong two thirds of the time. |
+| D8 | Series is a level only when best-of is greater than one | 1,389 of the 1,964 played series are best-of-one (1,455 of the 2,068 admitted). A three-level spine that assumes a series would be wrong two thirds of the time. |
 | D9 | Empty declared eras are documented, not navigable | Two of the eight declared eras govern no game. Keeping them as cards puts two dead doors in the primary navigation; dropping them from the data would break the chain of patch citations. They stay in the data, appear in the glossary, and remain reachable by URL. |
 | D10 | The product name is not the repository name | A repository is a filing decision, a product is a brand decision, and they change for different reasons. The name lives in `src/lib/site.ts`; the repository stays descriptive so it is findable. |
 

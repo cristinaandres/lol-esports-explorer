@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import { eraCopy } from '../lib/eras'
+import { eraCopy, eraSpan } from '../lib/eras'
 import { count } from '../lib/format'
 import type { Era } from '../lib/types'
 
@@ -43,13 +43,6 @@ export function EraGrid({ eras }: { eras: Era[] }) {
       ) : null}
     </>
   )
-}
-
-export function eraSpan(era: Era): string {
-  if (!era.first_date || !era.last_date) return `from ${era.from}`
-  const from = era.first_date.slice(0, 4)
-  const to = era.last_date.slice(0, 4)
-  return from === to ? from : `${from} – ${to}`
 }
 
 function EraCard({ era, index }: { era: Era; index: number }) {

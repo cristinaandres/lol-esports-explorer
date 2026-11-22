@@ -20,6 +20,8 @@ export type Era = {
   games_draft_complete: number
   games_player_complete: number
   games_team_complete: number
+  /** Games whose duration the source states; the n the average is over. */
+  games_duration_stated: number
   avg_duration_seconds: number | null
   patches: number
 }
@@ -29,8 +31,14 @@ export type EventRow = {
   event_key: number
   event_id: string
   event_name: string
-  /** The source's raw league string, kept for provenance. */
-  league: string
+  /**
+   * The source's raw league string, kept for provenance.
+   *
+   * Null when the model states none (WCG 2011); `competition` already coalesces
+   * that to 'Unknown'. An absent string is not an empty one: the event has no
+   * league, it was not admitted under a blank.
+   */
+  league: string | null
   /** The canonical competition: 'Worlds', 'MSI', 'IEM', 'Rift Rivals', ... */
   competition: string
   region: string
@@ -43,6 +51,8 @@ export type EventRow = {
   first_date: string | null
   last_date: string | null
   blue_wins: number
+  /** Games whose duration the source states; the n the average is over. */
+  games_duration_stated: number
   avg_duration_seconds: number | null
   eras: string | null
   /** Coverage as the dataset measured it, null for an event with no game. */
@@ -113,7 +123,15 @@ export type Game = {
   player_stats_coverage: Coverage
 }
 
-/** One row of public/data/matches.json: one series. */
+/**
+ * One row of public/data/matches.json: one series.
+ *
+ * The model's unknown member (`match_key` 0, the target of a game that belongs to
+ * no series) is not published here: no series route resolves it, and every reader
+ * words key 0 as "series not stated" before it consults this file. Games keep the
+ * sentinel -- `Game.match_key` 0 still means "no series" -- so the artifact would
+ * only add a row of nulls under three names the type says are strings.
+ */
 export type Match = {
   /** Build-local. Never put this in a URL. */
   match_key: number
@@ -122,7 +140,10 @@ export type Match = {
   event_key: number
   match_name: string
   date_time_utc: string
-  /** 1, 3 or 5. Null when the source stated no format (one series in the corpus). */
+  /**
+   * 1, 3 or 5. The only null in the model is its `match_key` 0 unknown member,
+   * which this artifact does not publish.
+   */
   best_of: number | null
   tab: string
   is_nullified: number | null
@@ -175,19 +196,61 @@ export type DraftSlot = {
   game_key: number
   side: 'blue' | 'red'
   entry_index: number
-  slot: number
+  /**
+   * The position of the pick or ban within its phase, or null when the source
+   * recorded no order.
+   *
+   * 3,821 bans -- every ban of the 641 unordered-draft games -- carry no slot: an
+   * unordered draft states which champions were banned, not when. That is an
+   * absence, not slot 0, which would sort a ban before every recorded one. Every
+   * row of picks.json carries a slot, because the pipeline publishes ordered picks
+   * only (`is_ordered = 1`), and a test holds that.
+   */
+  slot: number | null
   champion_key: number
+}
+
+/**
+ * One row of public/data/honours.json: a distinction the source states for a player
+ * at a tournament (`fact_player_honour`).
+ *
+ * Stated, not derived: `Titles` is the site's reading of which team won a final, and
+ * this is somebody's statement about a player. The title is kept in the source's own
+ * words -- `Finals MVP`, `All Pro Team`, `MVP` are three strings, not one label.
+ */
+export type HonourRow = {
+  player_key: number
+  event_key: number
+  /** The team the source states for the award; 0 when it names none, or none resolves. */
+  team_key: number
+  title: string
+  /** The source's award type, verbatim: `Season Award` on every recorded row. */
+  type: string
+  /** The page the award was stated on, kept as provenance. */
+  source_page: string
+  /**
+   * The source's place text and its number, both null on every recorded row so far
+   * (the dictionary says so). Carried so a later pin that states one needs no build.
+   */
+  place: string | null
+  place_number: number | null
 }
 
 export type Team = {
   team_key: number
   team_id: string
   team_name: string
-  overview_page: string
-  region: string
+  /** The wiki page the record comes from; null when it states none (4 teams). */
+  overview_page: string | null
+  /** Null when the model states no region (the same 4 teams). */
+  region: string | null
   /** Games the team appears in, for the index. Zero when the corpus carries none. */
   games: number
-  /** The abbreviation the game client shows, pinned from the wiki. Not a former name. */
+  /**
+   * The registry abbreviation the model states on the team row (`dim_team.short`,
+   * upstream v1.2.0). A label for search and display, never an identity: two teams
+   * can state the same one. Null when the model states none (4 minted teams).
+   */
   short_name: string | null
 }
 
@@ -195,7 +258,8 @@ export type Player = {
   player_key: number
   player_id: string
   player_name: string
-  overview_page: string
+  /** The wiki page the record comes from; null for 39 players the model has none for. */
+  overview_page: string | null
   games: number
 }
 
@@ -205,12 +269,21 @@ export type Champion = {
   champion_name: string
   riot_key: number
   games: number
-  /** The date the champion went live. Pinned from the wiki: the model has no such column. */
+  /**
+   * The date the champion went live (`dim_champion.release_date` in the model).
+   * Never derived from the champion's first appearance in the corpus.
+   */
   release_date: string | null
 }
 
 export type Patch = {
   patch_key: number
+  /**
+   * The patch as the source states it, as text ('10.19', '25.05'). A label, not a
+   * quantity: 25.05 and 25.5 are different patches, so a leading zero is kept. The
+   * model declares it TEXT and the pipeline now reads it as such; it was arriving
+   * as a number because CSV sniffing typed the column DOUBLE.
+   */
   patch: string
   patch_name: string
 }

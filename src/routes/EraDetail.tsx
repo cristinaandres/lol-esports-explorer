@@ -1,22 +1,28 @@
 import { Link, useParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { LoadFailure } from '../components/LoadFailure'
+import { Skeleton } from '../components/Skeleton'
+import { CoverageRow } from '../components/Coverage'
 import { DataTable } from '../components/DataTable'
 import { PageHeader } from '../components/PageHeader'
 import { Ratio } from '../components/Ratio'
 import { Stat, StatRow } from '../components/Stat'
 import { useDataset } from '../lib/data'
-import { eraCopy } from '../lib/eras'
-import { count, duration, isoDate, monthYear } from '../lib/format'
+import { eraCopy, eraSpan } from '../lib/eras'
+import { count, duration, isoDate } from '../lib/format'
 import type { Era } from '../lib/types'
 
 export default function EraDetail() {
   const { era: id } = useParams()
-  const { status, data } = useDataset()
+  const dataset = useDataset()
+  const { status, data } = dataset
 
-  if (status === 'loading') return <PageSkeleton />
-  if (status !== 'ready') return <p className="text-fog-600">Nothing to show.</p>
+  if (status === 'loading') return <Skeleton shape="page" />
+  // A failed load is not an empty era: "Nothing to show" would tell the reader the
+  // era holds no games when in fact the file never arrived.
+  if (status === 'failed')
+    return <LoadFailure failures={[{ what: 'the dataset', error: dataset.error }]} onRetry={dataset.retry} />
 
   // Empty declared eras are documented in the glossary but are not part of the
   // navigation, so stepping through the spine never lands on a page with no game.
@@ -27,7 +33,7 @@ export default function EraDetail() {
     return (
       <p className="text-fog-300">
         No era called <code>{id}</code>.{' '}
-        <Link to="/" className="text-gold">
+        <Link to="/eras" className="text-gold">
           Back to the eras
         </Link>
         .
@@ -46,7 +52,7 @@ export default function EraDetail() {
       <Breadcrumbs items={[{ label: 'Eras', to: '/eras' }, { label: copy.title }]} />
 
       <PageHeader
-        eyebrow={span(era)}
+        eyebrow={eraSpan(era)}
         title={copy.title}
         lead={copy.whatChanged}
         aside={
@@ -72,6 +78,7 @@ export default function EraDetail() {
             <Stat
               label="Avg length"
               value={<span className="text-lg">{duration(era.avg_duration_seconds)}</span>}
+              hint={`${count(era.games_duration_stated)} of ${count(era.games)} games state a length`}
             />
           </StatRow>
 
@@ -178,17 +185,6 @@ export default function EraDetail() {
   )
 }
 
-function CoverageRow({ label, part, total }: { label: string; part: number; total: number }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 py-3">
-      <dt className="text-fog-300 text-sm">{label}</dt>
-      <dd>
-        <Ratio part={part} total={total} />
-      </dd>
-    </div>
-  )
-}
-
 function EraStep({
   era,
   direction,
@@ -207,14 +203,7 @@ function EraStep({
     >
       <div className="text-fog-600 text-[10px] tracking-[0.14em] uppercase">{direction}</div>
       <div className="text-fog-100 group-hover:text-gold mt-1 font-semibold">{eraCopy(era.era).title}</div>
-      <div className="text-fog-600 font-mono text-xs">{span(era)}</div>
+      <div className="text-fog-600 font-mono text-xs">{eraSpan(era)}</div>
     </Link>
   )
-}
-
-function span(era: Era): string {
-  if (!era.first_date || !era.last_date) return `from ${monthYear(era.from)}`
-  const from = era.first_date.slice(0, 4)
-  const to = era.last_date.slice(0, 4)
-  return from === to ? from : `${from} – ${to}`
 }

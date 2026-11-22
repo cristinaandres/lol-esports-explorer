@@ -15,6 +15,8 @@ export type Indexes = {
   champions: Map<number, Champion>
   patches: Map<number, Patch>
   events: Map<number, EventRow>
+  /** The canonical competition of an event ('Worlds', 'MSI', ...), read once per dataset. */
+  competitions: Map<number, string>
 }
 
 const UNKNOWN = 'Unknown'
@@ -26,6 +28,7 @@ export function buildIndexes(dataset: Dataset): Indexes {
     champions: new Map(dataset.champions.map((row) => [row.champion_key, row])),
     patches: new Map(dataset.patches.map((row) => [row.patch_key, row])),
     events: new Map(dataset.events.map((row) => [row.event_key, row])),
+    competitions: new Map(dataset.events.map((row) => [row.event_key, row.competition])),
   }
 }
 
@@ -52,32 +55,25 @@ export function championName(index: Indexes, key: number): string {
  */
 export function playerPath(index: Indexes, key: number): string | null {
   const player = index.players.get(key)
-  return player ? `/players/${player.player_id}` : null
+  // The unknown member has a row and no id; a path built from it would be
+  // `/players/null`. Null is the same answer as "no row", which callers already handle.
+  return player?.player_id ? `/players/${player.player_id}` : null
 }
 
 /** The route for a team, or null when the key names none. */
 export function teamPath(index: Indexes, key: number): string | null {
   const team = index.teams.get(key)
-  return team ? `/teams/${team.team_id}` : null
+  return team?.team_id ? `/teams/${team.team_id}` : null
 }
 
 /** The route for a champion, or null when the key names none. */
 export function championPath(index: Indexes, key: number): string | null {
   const champion = index.champions.get(key)
-  return champion ? `/champions/${champion.champion_id}` : null
+  return champion?.champion_id ? `/champions/${champion.champion_id}` : null
 }
 
 /** The patch string, or an em dash when the source stated none. */
 export function patchLabel(index: Indexes, key: number): string {
   if (key === 0) return '—'
   return index.patches.get(key)?.patch || '—'
-}
-
-/** Which team won a game, from the side flag rather than from the scoreboard. */
-export function winnerKey(game: {
-  blue_team_key: number
-  red_team_key: number
-  blue_win: number
-}): number {
-  return game.blue_win === 1 ? game.blue_team_key : game.red_team_key
 }

@@ -2,7 +2,8 @@ import { useMemo } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
-import { PageSkeleton } from '../components/PageSkeleton'
+import { Skeleton } from '../components/Skeleton'
+import { LoadFailure } from '../components/LoadFailure'
 import { CareerFilters } from '../components/CareerFilters'
 import { DataTable } from '../components/DataTable'
 import { EmptyFilter } from '../components/EmptyFilter'
@@ -24,7 +25,14 @@ import {
   type ChampionStat,
   type MeasureSummary,
 } from '../lib/career'
-import { useAliases, useDataset, usePlayerGames } from '../lib/data'
+import {
+  useAliases,
+  useDataset,
+  useGameCorpus,
+  useHonours,
+  usePlayerGames,
+  type Dataset,
+} from '../lib/data'
 import { contextFor, parseFrom } from '../lib/context'
 import { eraCopy } from '../lib/eras'
 import {
@@ -37,9 +45,18 @@ import {
   recoverFilter,
 } from '../lib/filters'
 import { championships, groupTitlesByCompetition, titlesForPlayer } from '../lib/titles'
-import { count, dayMonthYear, duration, monthYear, perGame, stripDateSuffix } from '../lib/format'
+import { distinctionsForPlayer, groupByCompetition } from '../lib/honours'
+import {
+  count,
+  dayMonthYear,
+  duration,
+  measureWithUnit,
+  monthYear,
+  perGame,
+  seriesLabel,
+} from '../lib/format'
 import { buildIndexes, championName, championPath, teamName, teamPath } from '../lib/indexes'
-import type { EventRow, Match } from '../lib/types'
+import type { EventRow, Match, Player } from '../lib/types'
 
 /**
  * One player's career.
@@ -51,40 +68,74 @@ import type { EventRow, Match } from '../lib/types'
  *    is absent from half the corpus and dividing by games would invent a figure;
  *  - nothing implies an order the source did not state. The champion list is by
  *    games played, not by pick order.
+ *
+ * The id is resolved against the eager set alone, in `PlayerDetail`; the lazy set
+ * lives in `PlayerPage`, which a found id mounts and a typo'd one never does.
  */
 export default function PlayerDetail() {
   const { player: id } = useParams()
   const dataset = useDataset()
+
+  if (dataset.status === 'loading') return <Skeleton shape="page" />
+  if (dataset.status === 'failed')
+    return (
+      <LoadFailure
+        failures={[{ what: 'the dataset', error: dataset.error }]}
+        onRetry={dataset.retry}
+      />
+    )
+
+  const player = dataset.data.players.find((row) => row.player_id === id)
+  if (!player) {
+    return (
+      <div className="py-12">
+        <p className="text-fog-600 mb-3 font-mono text-xs tracking-widest uppercase">Not found</p>
+        <h1 className="text-fog-100 text-2xl font-semibold tracking-tight">No player with that id.</h1>
+        <p className="text-fog-300 mt-3 max-w-xl text-sm leading-relaxed">
+          The id in the URL is the one the dataset uses, not a name. A player is reachable from any
+          game they played.{' '}
+          <Link to="/eras" className="text-gold">
+            Back to the eras
+          </Link>
+          .
+        </p>
+      </div>
+    )
+  }
+
+  return <PlayerPage player={player} data={dataset.data} />
+}
+
+function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
+  const corpus = useGameCorpus()
   const rows = usePlayerGames()
   const aliases = useAliases()
+  const honours = useHonours()
   const [searchParams, setSearchParams] = useSearchParams()
   const filter = parseFilter(searchParams)
   const from = parseFrom(searchParams)
 
   const prepared = useMemo(() => {
-    if (dataset.status !== 'ready') return null
-    const player = dataset.data.players.find((row) => row.player_id === id)
-    if (!player) return { player: undefined } as const
+    if (corpus.status !== 'ready') return null
+    const allGames = corpus.data.games
 
-    const competitions = new Map(
-      dataset.data.events.map((event) => [event.event_key, event.competition]),
-    )
+    const index = buildIndexes(data)
     const appearances =
       rows.status === 'ready'
-        ? appearancesFor(dataset.data.games, rows.data, player.player_key, competitions)
+        ? appearancesFor(allGames, rows.data, player.player_key, index.competitions)
         : []
 
     const hit = contextFor(appearances, from)
     const context = hit
       ? {
           appearance: hit,
-          event: dataset.data.events.find((event) => event.event_key === hit.game.event_key),
-          match: dataset.data.matches.find((match) => match.match_key === hit.game.match_key),
+          event: data.events.find((event) => event.event_key === hit.game.event_key),
+          match: corpus.data.matches.find((match) => match.match_key === hit.game.match_key),
           ...(() => {
             const siblings =
               hit.game.match_key === 0
                 ? []
-                : dataset.data.games
+                : allGames
                     .filter((game) => game.match_key === hit.game.match_key)
                     .sort((a, b) => a.date_time_utc.localeCompare(b.date_time_utc))
             const position = siblings.findIndex((game) => game.game_key === hit.game.game_key)
@@ -94,7 +145,6 @@ export default function PlayerDetail() {
       : null
 
     return {
-      player,
       ready: rows.status === 'ready',
       appearances,
       context,
@@ -106,11 +156,10 @@ export default function PlayerDetail() {
               to: row.valid_to,
             }))
           : [],
-      index: buildIndexes(dataset.data),
-      champs: championships(dataset.data.games, dataset.data.matches),
-      events: new Map(dataset.data.events.map((event) => [event.event_key, event])),
+      index,
+      champs: championships(allGames, corpus.data.matches),
     } as const
-  }, [dataset, rows, aliases, id, from])
+  }, [data, corpus, rows, aliases, player, from])
 
   const applyFilters = (next: typeof filter) => {
     const params = new URLSearchParams(filterSearch(next))
@@ -124,32 +173,32 @@ export default function PlayerDetail() {
     setSearchParams(new URLSearchParams(filterSearch(filter)), { replace: true })
   }
 
-  if (dataset.status === 'loading') return <PageSkeleton />
-  if (dataset.status === 'failed')
-    return <p className="text-side-red">Could not load the dataset: {dataset.error.message}</p>
-
-  if (!prepared?.player) {
+  if (corpus.status === 'failed')
     return (
-      <div className="py-12">
-        <p className="text-fog-600 mb-3 font-mono text-xs tracking-widest uppercase">Not found</p>
-        <h1 className="text-fog-100 text-2xl font-semibold tracking-tight">No player with that id.</h1>
-        <p className="text-fog-300 mt-3 max-w-xl text-sm leading-relaxed">
-          The id in the URL is the one the dataset uses, not a name. A player is reachable from any
-          game they played.{' '}
-          <Link to="/" className="text-gold">
-            Back to the eras
-          </Link>
-          .
-        </p>
-      </div>
+      <LoadFailure failures={[{ what: 'the games', error: corpus.error }]} onRetry={corpus.retry} />
     )
-  }
+  if (!prepared) return <Skeleton shape="page" />
 
-  const { player, former, index } = prepared
+  const { former, index } = prepared
   const all = prepared.appearances
   const titles = titlesForPlayer(prepared.champs, all)
   const eventStats = eventsOf(all)
-  const titleGroups = groupTitlesByCompetition(titles, (key) => prepared.events.get(key)?.competition)
+  const titleGroups = groupTitlesByCompetition(titles, (key) => prepared.index.events.get(key)?.competition)
+  // The source's own statements, never merged with the derived titles above.
+  const distinctions =
+    honours.status === 'ready'
+      ? distinctionsForPlayer(
+          honours.data,
+          player.player_key,
+          prepared.index.events,
+          prepared.index.players,
+        )
+      : []
+  const distinctionGroups = groupByCompetition(distinctions)
+  // How many events the source states a distinction for, so the copy's gap is
+  // measured rather than transcribed: 19 of 54 today.
+  const distinctionEvents =
+    honours.status === 'ready' ? new Set(honours.data.map((row) => row.event_key)).size : 0
   const visible = applyFilter(all, filter)
   const form = recentForm(visible)
   const roleSplits = byRole(visible)
@@ -190,7 +239,13 @@ export default function PlayerDetail() {
         eyebrow={roleLabel ? `player · ${roleLabel}` : 'player'}
         title={player.player_name}
         lead={
-          former.length > 0 ? (
+          aliases.status === 'failed' ? (
+            <LoadFailure
+              inline
+              failures={[{ what: 'former names', error: aliases.error }]}
+              onRetry={aliases.retry}
+            />
+          ) : former.length > 0 ? (
             <span className="text-fog-500 text-sm">
               Also known as{' '}
               {former.map((name, position) => (
@@ -231,11 +286,13 @@ export default function PlayerDetail() {
         />
       ) : null}
 
-      {career === null ? (
-        <div className="space-y-3">
-          <div className="bg-ink-900 border-line h-24 animate-pulse rounded-xl border" />
-          <div className="bg-ink-900 border-line h-48 animate-pulse rounded-xl border" />
-        </div>
+      {rows.status === 'failed' ? (
+        <LoadFailure
+          failures={[{ what: "this player's games", error: rows.error }]}
+          onRetry={rows.retry}
+        />
+      ) : career === null ? (
+        <Skeleton shape="table" tableHeight="h-48" />
       ) : career.games === 0 && all.length > 0 ? (
         <EmptyFilter
           title={
@@ -316,12 +373,12 @@ export default function PlayerDetail() {
                           className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
                         >
                           <span className="text-fog-100 text-sm">
-                            {prepared.events.get(title.eventKey) ? (
+                            {prepared.index.events.get(title.eventKey) ? (
                               <Link
-                                to={`/events/${prepared.events.get(title.eventKey)!.event_id}`}
+                                to={`/events/${prepared.index.events.get(title.eventKey)!.event_id}`}
                                 className="hover:text-gold"
                               >
-                                {prepared.events.get(title.eventKey)!.event_name}
+                                {prepared.index.events.get(title.eventKey)!.event_name}
                               </Link>
                             ) : (
                               'Unknown event'
@@ -338,9 +395,96 @@ export default function PlayerDetail() {
           </section>
 
           <section className="mt-12">
+            <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
+            <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+              Awards the source states for this player at a tournament, in its own words — MVPs
+              and All-Pro places. These are <em>stated</em>, where the titles above are derived
+              from which team won a final; the two are never merged.{' '}
+              {honours.status === 'ready' ? (
+                <>
+                  The source states a distinction at {count(distinctionEvents)} of the{' '}
+                  {count(data.events.length)} events in the corpus — it states no MVP for Worlds
+                  2012/2013/2015/2016/2018–2020, nor for MSI 2017–2021 — so an empty list here
+                  means the source says nothing, not that nothing was won.{' '}
+                </>
+              ) : null}
+              <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
+                What a distinction is
+              </Link>
+              .
+            </p>
+
+            {honours.status === 'failed' ? (
+              <LoadFailure
+                failures={[{ what: 'the distinctions', error: honours.error }]}
+                onRetry={honours.retry}
+              />
+            ) : honours.status === 'loading' ? (
+              <Skeleton shape="stack" heights={['h-24']} />
+            ) : distinctionGroups.length === 0 ? (
+              <p className="text-fog-600 text-sm">
+                The source states no distinction for this player. That is what it says, not what
+                they won.
+              </p>
+            ) : (
+              <div className="space-y-6">
+                {distinctionGroups.map((group) => (
+                  <div key={group.competition}>
+                    <h3 className="text-fog-600 border-line mb-2 flex items-baseline justify-between border-b pb-1.5 text-[11px] tracking-[0.14em] uppercase">
+                      <span>{group.competition}</span>
+                      <span className="text-fog-500">
+                        {group.distinctions.length}{' '}
+                        {group.distinctions.length === 1 ? 'distinction' : 'distinctions'}
+                      </span>
+                    </h3>
+                    <ul className="divide-line divide-y">
+                      {group.distinctions.map((row) => {
+                        const path = teamPath(prepared.index, row.team_key)
+                        return (
+                          <li
+                            key={`${row.event_key}-${row.title}`}
+                            className="flex flex-wrap items-baseline justify-between gap-3 py-2.5"
+                          >
+                            <span className="text-fog-100 text-sm">
+                              <span className="text-gold">{row.title}</span>
+                              {row.event ? (
+                                <>
+                                  {' at '}
+                                  <Link
+                                    to={`/events/${row.event.event_id}`}
+                                    className="hover:text-gold"
+                                  >
+                                    {row.event.event_name}
+                                  </Link>
+                                </>
+                              ) : (
+                                ' at an event this page cannot name'
+                              )}
+                            </span>
+                            <span className="text-fog-600 font-mono text-xs">
+                              {/* The unknown team is an absence, so it prints nothing: an
+                                  award whose team the source does not state is still the
+                                  player's distinction. */}
+                              {path ? (
+                                <Link to={path} className="hover:text-gold">
+                                  {teamName(prepared.index, row.team_key)}
+                                </Link>
+                              ) : null}
+                            </span>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="mt-12">
             <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Recent form</h2>
             <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-              The last {RECENT_FORM} games in this selection, newest first. A career average says what
+              Up to the last {RECENT_FORM} games in this selection, newest first. A career average says what
               a player is; this says how they are playing now, which is the question before an event.
             </p>
 
@@ -520,7 +664,7 @@ export default function PlayerDetail() {
                 </thead>
                 <tbody className="divide-line divide-y">
                   {eventStats.map((entry) => {
-                    const event = prepared.events.get(entry.eventKey)
+                    const event = prepared.index.events.get(entry.eventKey)
                     return (
                       <tr key={entry.eventKey} className="hover:bg-ink-850/50">
                         <td className="text-fog-100 px-2 py-2 sm:px-4">
@@ -593,7 +737,7 @@ function ContextCard({
   const { appearance, event, match, position, seriesGames } = context
   const { game, row } = appearance
   const won = row.side === 'blue' ? game.blue_win === 1 : game.blue_win === 0
-  const series = match ? stripDateSuffix(match.match_name) : null
+  const series = seriesLabel(game.match_key, match?.match_name)
 
   return (
     <section className="border-line bg-ink-900/60 mb-6 rounded-xl border p-4">
@@ -609,10 +753,22 @@ function ContextCard({
               'Event'
             )}
             <span className="text-fog-600 m-2">·</span>
-            <Link to={`/games/${game.game_id}`} className="hover:text-gold">
-              {series ?? 'Game'}
-              {position !== null && seriesGames > 1 ? ` · Game ${position}` : ''}
-            </Link>
+            <span className="text-fog-100">{series}</span>
+            {position !== null && seriesGames > 1 ? (
+              <>
+                <span className="text-fog-600 m-2">·</span>
+                <Link to={`/games/${game.game_id}`} className="hover:text-gold">
+                  Game {position}
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="text-fog-600 m-2">·</span>
+                <Link to={`/games/${game.game_id}`} className="hover:text-gold">
+                  the game
+                </Link>
+              </>
+            )}
           </p>
           <p className="text-fog-500 mt-1 text-xs">
             {dayMonthYear(game.date_time_utc)} · {row.side} side ·{' '}
@@ -633,7 +789,8 @@ function ContextCard({
           </p>
           <p className="text-fog-500 mt-1 font-mono text-xs">
             {row.kills} / {row.deaths} / {row.assists}
-            <span className="text-fog-600"> · {row.cs} CS · {count(row.gold ?? 0)} gold</span>
+            <span className="text-fog-600"> · {measureWithUnit(row.cs, 'CS')}</span>
+            <span className="text-fog-600"> · {measureWithUnit(row.gold, 'gold')}</span>
           </p>
         </div>
       </div>

@@ -1,7 +1,8 @@
 # Phase 3 — Entities, and the local/global split
 
-Status: proposed, broken into tickets. Depends on phase 2 (player and team names
-must be reachable from a game first). Phase 4 depends on this one for team identity.
+Status: built and deployed, broken into tickets. Depends on phase 2 (player and
+team names must be reachable from a game first). Phase 4 depends on this one for
+team identity.
 
 Tickets: `docs/specs/tickets/2026-11-20-phase-3-entities/`.
 
@@ -29,9 +30,9 @@ it on demand.**
 ## Current behavior
 
 - No `/players`, `/teams` or `/champions` routes exist.
-- Phase 2 ships `player-games.json` (30,910 rows, 661 KB gzip) lazily loaded and
-  cached, and `games.json` eagerly.
-- Measured: 1,140 players appear in at least one game; 181 teams; 173 champions.
+- Phase 2 ships `player-games.json` (30,910 rows, 688 KB gzip) lazily loaded and
+  cached, and `games.json` at the game level.
+- Measured: 1,140 players appear in at least one game; 181 teams; 171 champions.
   The most-modelled player in the corpus has 410 games, the median far fewer.
 - The model has **no per-minute data**. Career aggregates must be sums, ratios and
   counts over game rows; a "gold lead at 15" does not exist and cannot be derived.
@@ -106,9 +107,13 @@ ranking of players by a derived measure, and any per-minute or timeline figure.
 
 ## Test seams
 
-- **`src/lib/career.ts`** — `filterPlayerGames`, `summarise` and `deriveEra` are
-  pure and tested against fixtures: a career spanning two eras, a career with one
-  competition and no games in the year selected, and a career with zero deaths.
+- **`src/lib/career.ts`** — `appearancesFor`, `careerFrom` and `careerFor` are
+  pure and tested against fixtures: a career spanning two eras, a career with zero
+  deaths, a single-game career, and a measure stated on some rows only. The era is
+  not derived by a function of its own: `careerFrom` collects the eras the
+  surviving games fall in, and the page prints `mixed` when there is more than one.
+- **`src/lib/filters.ts`** — `applyFilter`, `emptyReason` and `recoverFilter` are
+  tested against a career with one competition and no games in the selected year.
 - **Cross-check against the pipeline** — a data test asserts that the browser
   summary for the most-modelled player equals the answer the same question gets in
   SQL (410 games, KDA 4.11). If the two diverge, one of them is wrong, and this is

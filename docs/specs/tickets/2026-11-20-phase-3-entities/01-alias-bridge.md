@@ -54,11 +54,15 @@ own; it is the ground R5 and R6 stand on.
 
 ## Built
 
-- The artifact is 632 KB raw, 63 KB gzip, and stays **out of the eager payload**: it
-  is fetched by the entity pages and by search, not by a list page.
-- Measured on the bridge, and worth knowing before tickets 05 and 06: 1,495 rows are
-  the entity's own name, 1,816 are dated, and 689 are undated redirects that search
-  matches but no page prints.
+- The artifact is 660 KB raw, 67 KB gzip, and stays **out of the eager payload**: it
+  is fetched by the entity pages and by search, not by a list page. It carries
+  3,985 rows: the model's 3,791 bridge rows plus the 194 team short names pinned
+  from the wiki (`pipeline/refresh-shortnames.sh`).
+- Measured on the bridge, and worth knowing before tickets 05 and 06: 1,816 of its
+  3,791 rows carry a window and 1,975 carry none. Of the 2,139 rows that are not
+  the entity's own name once case, accents and the source's `&amp;` are folded
+  (1,495 repeat it as an exact string), 326 are dated names a page may list and
+  1,813 are undated redirects that search matches but no page prints.
 - Ambiguity is not hypothetical: `APA` resolves to both the player APA and the
   player Frozen, and the data test asserts that so the list-returning signature
   cannot be "simplified" back to a single match.

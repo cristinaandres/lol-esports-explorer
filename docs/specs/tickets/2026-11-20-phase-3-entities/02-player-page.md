@@ -50,7 +50,7 @@ player. Covers spec R1 and R7.
 
 - **The loader was split.** A career page needs the player rows and nothing else,
   so `loadPlayerGames()` is its own cached promise and `loadGameDetail()` composes
-  it. A career page therefore pays 620 KB gzip rather than 950, and a game page
+  it. A career page therefore pays 688 KB gzip rather than 1,063, and a game page
   after it reuses the same answer.
 - **The in-session reuse is asserted at the loader, not in a browser.** It is a
   property of the module, not of a click, so the test stubs `fetch` and proves that

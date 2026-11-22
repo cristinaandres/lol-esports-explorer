@@ -1,7 +1,28 @@
 {
   "repository": "RRiboulet/lol-dataset",
-  "tag": "v1.1.0",
-  "commit": "714ce6fd0812a69e649c9bf77fb510fb079a71b6",
-  "manifestSha256": "872b43cff39683cca16cf84e8af42d9d2cf658932acb75c1f50a963130a968f0",
-  "note": "The model CSVs in data/model/ are a byte-for-byte copy of the pinned tag's build output. Refresh with pipeline/refresh-data.sh."
+  "tag": "v1.2.0",
+  "commit": "4044872c410e1f91ab597838c808d133b64a0202",
+  "manifestSha256": "f919082ad4ab90fa8c7e8a88d2bd55528bdc9739f0393cf02dcfb3a4e991a67d",
+  "files": {
+    "data/model/bridge_alias.csv": "6320c2f2561da6ebb9b5803f1f492ec30ae0e900d189bf8ec489627de867ca23",
+    "data/model/data-dictionary.md": "51fc743bf30128951c28d042f177bdcbf95df62413e0d2f93f56128f5bccdc54",
+    "data/model/dim_champion.csv": "5aeae0815267b780da47d725991715d05f4b409972af99d50a96c8b4dd278da7",
+    "data/model/dim_date.csv": "67bc1db3de2bef236f1089afdf027178d68812ce2bf7000ae2930d569a41c22c",
+    "data/model/dim_event.csv": "1e80c68ce55a59fcbd2094abc702f217ab961c49eec6699294083363bd3dc75e",
+    "data/model/dim_game.csv": "189f14d369e4d79c779a35fb0ef835091a079c1b8fbb52ea0c3c6beee0434b38",
+    "data/model/dim_match.csv": "e8616109d1a53b604946642e44f72600d633472bba83b0939f261429dd12f9de",
+    "data/model/dim_patch.csv": "39f5ac736597f38778ebc5aa32cb7f9319e1c41f2dd06048f4c8f026ecd33dca",
+    "data/model/dim_player.csv": "d61e75673ca85d2715b2bfa675342ccb26be5860e0e510b5e5d46297edf61d53",
+    "data/model/dim_team.csv": "06d49ad325993aacf5ebc29c4f059599b94e3d419abd0a172f519a2091ae460a",
+    "data/model/fact_draft_slot.csv": "57d9838384cc6bf15eebfe02792bef5187179f4138bb3182c1a030cf876b5cf7",
+    "data/model/fact_game_side.csv": "90551c13efbdbe3e6e03f98c647eec5929a370cdaab21e5b141d44dffcf0f9f8",
+    "data/model/fact_player_game.csv": "84d75fb4c0b7effb7dc6f0521f5ae536d55b748b4aacee5e04de3386c862c1db",
+    "data/model/fact_player_honour.csv": "1c9e66e13f09a3ec6ab6eb95192abd12a72a59564c241197561a08e3a3cc1963",
+    "data/model/schema.sql": "d9b2c29500644faf93e24e12df5ea20e9a11022403c3f0900211cd79ad43c833",
+    "data/upstream/event-coverage.json": "e0f2ffa50a5b4c8665cb6a515886fb3f472ee44c8e697cde6830340c75a85152",
+    "data/upstream/event-selection.json": "d4313a0fedf54fe32dbbe4325fb5f5a7ad8fe33e67f2b6da72d6b52ee100e0ba",
+    "data/upstream/game-eras.json": "a3758bccdb650792ab266b1100f41736c987c5a97b17e371dbdf03520ad4ab4c",
+    "data/upstream/manifest.json": "f919082ad4ab90fa8c7e8a88d2bd55528bdc9739f0393cf02dcfb3a4e991a67d"
+  },
+  "note": "The files in data/model/ -- the CSVs, the data dictionary and the DDL -- are a byte-for-byte copy of the pinned tag's build output. Refresh with pipeline/refresh-data.sh."
 }
