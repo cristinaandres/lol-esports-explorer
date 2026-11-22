@@ -395,11 +395,8 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
               )}
             </div>
             <div>
-              <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
-              <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-                Awards the source states for this player at a tournament, in its own words — MVPs
-                and All-Pro places. Stated, where the titles beside them are derived from who won a
-                final; the two are never merged. An empty list means the source says nothing here.{' '}
+              <div className="mb-1 flex items-center justify-between gap-3">
+                <h2 className="text-fog-100 text-lg font-semibold tracking-tight">Distinctions</h2>
                 {honours.status === 'ready' ? (
                   <HoverNote
                     variant="icon"
@@ -408,7 +405,12 @@ function PlayerPage({ player, data }: { player: Player; data: Dataset }) {
                   >
                     i
                   </HoverNote>
-                ) : null}{' '}
+                ) : null}
+              </div>
+              <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+                Awards the source states for this player at a tournament, in its own words — MVPs
+                and All-Pro places. Stated, where the titles beside them are derived from who won a
+                final; the two are never merged. An empty list means the source says nothing here.{' '}
                 <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
                   What a distinction is
                 </Link>

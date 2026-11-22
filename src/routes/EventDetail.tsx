@@ -169,17 +169,19 @@ export default function EventDetail() {
 
       {distinctions.length > 0 ? (
         <section className="mt-10">
-          <h2 className="text-fog-100 mb-1 text-lg font-semibold tracking-tight">Distinctions</h2>
-          <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
-            Who the source honoured at this event, and for what, in its own words — stated, where
-            the winner above is derived from the bracket.{' '}
+          <div className="mb-1 flex items-center justify-between gap-3">
+            <h2 className="text-fog-100 text-lg font-semibold tracking-tight">Distinctions</h2>
             <HoverNote
               variant="icon"
               label="what a distinction is, and how the list is ordered"
               note="A distinction is a statement about a player — MVP or an All-Pro place. MVP-named titles are listed before the other places."
             >
               i
-            </HoverNote>{' '}
+            </HoverNote>
+          </div>
+          <p className="text-fog-500 mb-5 max-w-3xl text-sm leading-relaxed">
+            Who the source honoured at this event, and for what, in its own words — stated, where
+            the winner above is derived from the bracket.{' '}
             <Link to="/glossary#distinction" className="text-fog-300 hover:text-gold">
               What a distinction is
             </Link>
