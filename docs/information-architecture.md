@@ -128,6 +128,7 @@ source says nothing about.
 | `CoverageBadge` | `complete` / `partial` / `unavailable`, with the group it refers to. |
 | `Breadcrumbs` | The path from the top is always visible; back is a link, not a gesture. |
 | `EmptyFilter` | The state a filter produces when nothing survives it: names the half that emptied the view and offers one control that brings the games back. |
+| `HoverNote` | The evidence behind a claim, on demand: a dotted underline under a figure, or a circled `i` beside a sentence, opening the same note on hover and on keyboard focus, with a native `title` as the fallback. The bubble is clamped inside the viewport, because a trigger near either edge would otherwise clip it. |
 
 ## Visual rules
 
