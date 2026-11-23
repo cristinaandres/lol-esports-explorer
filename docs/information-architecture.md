@@ -21,7 +21,7 @@ carries its context.
 **Axis C — the question: what is likely.** A pick'em asks about a tournament that
 has not been played, so its answer cannot hang under either axis: it is a window of
 the past, scored and labelled with its cut date. It has its own level, and its
-routes are marked not built until phase 4 ships them.
+routes are marked not built until round 4a ships them.
 
 ```
 /                       the era spine: every era, as cards

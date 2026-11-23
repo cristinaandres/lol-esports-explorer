@@ -31,8 +31,8 @@ forgotten: `62% (8/13)`.
 - **No predicted winner, in this phase.** A model over this corpus would be trained
   on a few hundred games per era, most between teams that met once. Its output would
   look more certain than the evidence. The site puts the record in front of the reader
-  instead. Prediction is deferred to a later phase, not dropped: the phase 4 spec says
-  why, and what would have to be true before it is built.
+  instead. Prediction is deferred to round 6, not dropped: the phase 4 spec says why,
+  and what would have to be true before it is built.
 - **No invented metrics.** Every measure is either a source-stated count or a
   ratio of two of them, and every one is defined in `metric-definitions.md`.
 - **No silent filtering.** A partial game is shown and marked, not dropped.

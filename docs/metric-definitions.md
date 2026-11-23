@@ -66,7 +66,7 @@ Not every quotient is a share: KDA divides by deaths, not by a total the reader
 can check against the games. It is shown with its formula and its game count, never
 in a leaderboard.
 
-**Amendment for the crystal ball (phase 4).** A question that asks for the highest
+**Amendment for the crystal ball (round 4a).** A question that asks for the highest
 KDA cannot be answered without ranking it, so the rule becomes: ranked only inside
 the `Answer` contract, always with the game count, a bootstrap interval and the
 `n ≥ 20` gate, and never in a table where a 410-game career sits beside a 12-game
@@ -92,13 +92,13 @@ size — and the ranked form gains the three things that made it honest.
 This arrives with the phase that needs it. Fixing the formula here first stops
 two pages from computing the same name two ways.
 
-| Metric | Definition | Phase |
+| Metric | Definition | Round |
 |---|---|---|
-| Presence rate | Games in which the champion was picked or banned, counted once per game, over the games in scope on or after its release date. Picks come from `fact_player_game.champion_key`, bans from `fact_draft_slot` where `phase = 'ban'` — the two disagree by two rows and by three games, and the phase 4 spec says how. Wilson interval. | 4 |
-| Champion win rate | Picks the picking side won (`fact_game_side.is_winner`, joined on `game_key` and `side`), over picks of that champion. Wilson interval; published only at `n ≥ 20` picks. | 4 |
-| Champion deaths per game | `sum(deaths) / count(*)` over the champion's player rows. A ratio of counts, so a bootstrap interval and not Wilson. | 4 |
-| Kill participation | `(sum(kills) + sum(assists)) / sum(team kills in the same games)`, from `fact_game_side.kills` on the player's side. A share, so Wilson, over the games it was measured on. | 4 |
-| Damage per game | `sum(damage) / count(damage)`: the denominator is the player rows that state damage (15,870 of 30,910), never the row count. | 4 |
-| Game length at 32:00 | Games with `duration_seconds <= 1920`, over the games that state a duration, counted once per game because the measure is repeated on both side rows. | 4 |
-| Unique champions | Not a share: the median and 90% interval of a seeded Monte Carlo over the tournament format, drawing each game's champions from the window's empirical per-game distribution. | 4 |
+| Presence rate | Games in which the champion was picked or banned, counted once per game, over the games in scope on or after its release date. Picks come from `fact_player_game.champion_key`, bans from `fact_draft_slot` where `phase = 'ban'` — the two disagree by two rows and by three games, and the phase 4 spec says how. Wilson interval. | 4a |
+| Champion win rate | Picks the picking side won (`fact_game_side.is_winner`, joined on `game_key` and `side`), over picks of that champion. Wilson interval; published only at `n ≥ 20` picks. | 4a |
+| Champion deaths per game | `sum(deaths) / count(*)` over the champion's player rows. A ratio of counts, so a bootstrap interval and not Wilson. | 4a |
+| Kill participation | `(sum(kills) + sum(assists)) / sum(team kills in the same games)`, from `fact_game_side.kills` on the player's side. A share, so Wilson, over the games it was measured on. | 4a |
+| Damage per game | `sum(damage) / count(damage)`: the denominator is the player rows that state damage (15,870 of 30,910), never the row count. | 4a |
+| Game length at 32:00 | Games with `duration_seconds <= 1920`, over the games that state a duration, counted once per game because the measure is repeated on both side rows. | 4a |
+| Unique champions | Not a share: the median and 90% interval of a seeded Monte Carlo over the tournament format, drawing each game's champions from the window's empirical per-game distribution. | 4a |
 | Head-to-head | Games where the two teams are the two sides of one game; the denominator is those games, nothing wider. | 6 |
