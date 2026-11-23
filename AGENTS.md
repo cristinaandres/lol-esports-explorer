@@ -96,6 +96,23 @@ A branch merges into `dev` through a pull request; `gh pr create --base dev`
 explicitly, because the repository default is `main`. Releases are `dev` → `main`
 with a merge commit, not a squash.
 
+After a release, prove what is deployed before calling it live. `gh run list
+--limit 1` is not enough: for the first minute or two it can still return the
+*previous* deploy, and a browser can serve the previous `index.html` from its
+10-minute cache, so a check run too early measures the old build and looks like a
+regression. Match the run to the merge commit and the bundle to the code:
+
+```bash
+gh run list --branch main --limit 1 --json headSha,status,conclusion   # headSha = the merge
+js=$(curl -s "$SITE/" | grep -o 'assets/index-[A-Za-z0-9_-]*\.js' | head -1)
+curl -s "$SITE/$js" | grep -c "<a string only the new build contains>"  # 0 means still the old build
+```
+
+The artifacts are the other half: they keep stable names, so the fetch revalidates
+them (`cache: 'no-cache'` in `src/lib/data.ts`) rather than trusting a 10-minute
+browser cache. A page that renders new chrome with old labels — every champion
+under "Unknown" — is that failure, not a data bug.
+
 ## Reviews
 
 One review per change, and only when the user asks for it. `triage_change` gives a

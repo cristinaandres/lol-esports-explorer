@@ -93,3 +93,12 @@ the five states designed, and an accessibility pass.
   pushes past it, split by level.
 - `data/model/` is committed as a pinned snapshot. If it grows past ~20 MB, move to
   a release artifact and keep only the hashes.
+- `.devcontainer/Dockerfile` installs Chromium's system libraries for the Playwright
+  MCP server, pinned to the Playwright build `@playwright/mcp` uses. That layer is the
+  one change CI cannot exercise: it is proved by a `devc rebuild` followed by
+  postCreate printing "Playwright Chromium is installed and launches". Until that has
+  been run once, the layer is written but unverified.
+- The player/event "Distinctions" render no `place`: `place` and `place_number` are
+  empty on every row of the pinned tag, so All-Pro first team and second team read as
+  one string. Reported upstream (`RRiboulet/lol-dataset#42`); render the place when a
+  tag carries one.
