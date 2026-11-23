@@ -104,7 +104,7 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
             // name in a column that is abbreviations; a last game naming no club (0)
             // prints nothing at all.
             club: club?.short_name ?? undefined,
-            clubYear: row.last_game_date ? row.last_game_date.slice(0, 4) : undefined,
+            clubYear: row.last_game_year ?? undefined,
           }
         })
     }
