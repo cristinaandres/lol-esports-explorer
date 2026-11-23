@@ -18,7 +18,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
  */
 
 function stubFetch(payload: unknown) {
-  const fetchMock = vi.fn(async () => ({ ok: true, json: async () => payload }))
+  // The init argument is typed because one test asserts the caching policy on it.
+  const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({
+    ok: true,
+    json: async () => payload,
+  }))
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
 }
@@ -239,5 +243,24 @@ describe('retrying a failed load', () => {
     // The eager set is eight files; a second attempt is another eight, not seven.
     expect(urlsOf(fetchMock).filter((url) => url.endsWith('eras.json'))).toHaveLength(2)
     expect(fetchMock).toHaveBeenCalledTimes(16)
+  })
+})
+
+describe('revalidation', () => {
+  it('asks the browser to revalidate every artifact against its ETag', async () => {
+    // Artifact URLs never change, so a deploy cannot invalidate them the way it
+    // invalidates the hashed bundle. Without `no-cache` a returning reader can run the
+    // new code against ten-minute-old JSON, which trips no error — it silently files
+    // every champion under "Unknown". Asserted on the fetch call, since the caching
+    // policy is the whole fix.
+    const fetchMock = stubFetch([])
+    const { loadGames, loadAliases } = await freshData()
+
+    await loadGames()
+    await loadAliases()
+
+    const options = fetchMock.mock.calls.map((call) => call[1] ?? {})
+    expect(options).toHaveLength(2)
+    for (const option of options) expect(option.cache).toBe('no-cache')
   })
 })

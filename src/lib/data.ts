@@ -73,8 +73,23 @@ export type GameDetail = {
 
 const base = import.meta.env.BASE_URL
 
+/**
+ * One artifact, revalidated rather than trusted.
+ *
+ * The bundle is content-hashed, so a deploy replaces it instantly; the artifacts keep
+ * stable names and Pages serves them with `cache-control: max-age=600`. A reader who
+ * visited before a deploy would therefore run the new code against ten-minute-old JSON —
+ * which does not fail loudly, it mislabels: every champion files under "Unknown" when the
+ * new code asks for a role the old rows do not carry.
+ *
+ * `no-cache` still stores the answer; it revalidates it against the ETag Pages already
+ * sends, so an unchanged file costs one 304 instead of a re-download, and a changed one
+ * arrives immediately. Versioned URLs (`?v=<build>`) would be the stricter fix and would
+ * make the files immutable; they need the build id in the bundle first, which is more
+ * machinery than eight small files justify.
+ */
 async function getJson<T>(name: string): Promise<T> {
-  const response = await fetch(`${base}data/${name}`)
+  const response = await fetch(`${base}data/${name}`, { cache: 'no-cache' })
   if (!response.ok) throw new Error(`data/${name}: HTTP ${response.status}`)
   return (await response.json()) as T
 }

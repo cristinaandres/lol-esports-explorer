@@ -12,13 +12,13 @@
 
 A player's role is the role they appear in most in `fact_player_game`, tie broken by
 the canonical order `Top, Jungle, Mid, Bot, Support` — the same rule ticket 01 settles
-for a champion, applied to a player's own rows. 68 of the 1,140 players appear in two
-roles and **6 tie at the top**, so the tie-break and its test are the substance of this
-ticket rather than an afterthought.
+for a champion, applied to a player's own rows. 68 of the 1,140 players appear in **more
+than one** role (57 in exactly two, 11 in three or four) and **6 tie at the top**, so the
+tie-break and its test are the substance of this ticket rather than an afterthought.
 
-The artifact carries the count behind the decision (`primary_role_games`), so the page
-can say "Mid, 214 of 410 games" if it ever wants to, and a reader can tell a majority
-from a coin flip.
+The count behind the decision (`primary_role_games`) stays on `player_index`, where the
+pipeline test uses it to prove the tie-break; a later review measured the eager payload
+and kept it out of the artifact, because nothing rendered it.
 
 ## Region: dropped, on purpose
 
@@ -35,7 +35,7 @@ what it is for before it needs a column.
   (`fact_player_game.role`), its tie-break, and what it is not (not the player's main
   position over their whole career, not a contract role).
 - `player_index` gains `primary_role` and `primary_role_games`; `players.json` carries
-  them.
+  the role and not the count.
 - The shared sort control from ticket 01; `?sort=` parsed and validated in one place,
   with a name tie-break in every comparator.
 - The `Unknown` role group is not expected on this pin — every player row states a role
@@ -62,7 +62,8 @@ MCP server for the group counts.
 ## Built
 
 - Same pipeline shape as ticket 01: `player_role_games` and `player_primary_role`, with
-  `primary_role` and `primary_role_games` on `player_index` and in `players.json`.
+  `primary_role` and `primary_role_games` on `player_index`; `players.json` publishes the
+  role, and the count left the artifact with the payload trim.
 - The six players who tie at the top are named in the test (Exosen, Hamezz, Kaigu,
   Reyk, Rock, Shushei); Exosen resolves to Mid and Shushei to Top by the canonical order,
   which is the one assertion a name-based tie-break would fail.
