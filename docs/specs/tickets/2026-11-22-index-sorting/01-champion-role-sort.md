@@ -33,9 +33,10 @@ So the tie-break is part of the definition, and both of those names belong in th
 - `docs/metric-definitions.md` first: a row for **Role (champion)** naming the source
   (`fact_player_game.role`), the rule above, and what it is not (not the champion's
   design, not its lane in a patch).
-- `pipeline/sql/06_indexes.sql`: `champion_index` gains `primary_role` and
-  `primary_role_games`; `champions.json` carries them, so the eager set stays 171
-  rows and the page needs no lazy fetch.
+- `pipeline/sql/06_indexes.sql`: `champion_index` gains `primary_role`; `champions.json`
+  carries it, so the eager set stays 171 rows and the page needs no lazy fetch. (The
+  count that decided it, `primary_role_games`, stays on the view for the test; the
+  payload trim below kept it out of the artifact.)
 - A shared sort control (ticket 02 uses it too) and the `?sort=` parameter.
 - The grouped layout the index already has: a role group is a section with a count,
   and inside it the existing order (games desc, then name).
@@ -67,7 +68,9 @@ five-group count and the fallback.
   entities that need it cannot drift; `champion_role_games` and
   `champion_primary_role` rank with `row_number() over (order by games desc, role_order)`.
 - `champion_index` carries `primary_role` and `primary_role_games`; `champions.json`
-  publishes both, so the index stays 171 rows and loads with the eager set.
+  publishes **only the role**, so the index stays 171 rows and loads with the eager set.
+  A later review measured the eager payload and moved the count out of the artifact: it
+  was rendered nowhere, and the test is where it earns its keep.
 - The sort is `?sort=name|role` and the filter is `?q=`, both URL parameters read through
   one `parseIndexSort`, with unknown values falling back to `name`.
 - `src/lib/indexGroups.ts` owns the grouping and the stable order (games desc, then
