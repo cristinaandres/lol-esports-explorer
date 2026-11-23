@@ -212,7 +212,7 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
               onChange={(event) => setQuery(event.target.value)}
               placeholder={`Filter ${kind}s`}
               aria-label={`Filter ${kind}s by name`}
-              className="border-line bg-ink-900 text-fog-100 placeholder:text-fog-600 focus-visible:outline-gold w-56 rounded-lg border px-3 py-1.5 text-sm"
+              className="border-line bg-ink-900 text-fog-100 placeholder:text-fog-600 focus-visible:outline-gold min-h-11 w-56 rounded-lg border px-3 py-1.5 text-sm"
             />
           </div>
         }
