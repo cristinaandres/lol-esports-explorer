@@ -43,7 +43,8 @@ Method: `<none — plain SQL | Wilson 95% | bootstrap percentile, 10 000 resampl
 simulation, 10 000 replications>` · Seed: `<20261123, only when there is randomness>`
 — a count needs no method line; a proportion with an interval, or anything random,
 does. Without the method the number is an opinion, and without the seed it cannot be
-reproduced.
+reproduced. A method with no standard name carries its function, not only its name:
+pasting the code is the one case where a dossier holds Python instead of SQL.
 
 What it changes: `<the decision, or the block it rules out>`
 
