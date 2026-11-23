@@ -64,7 +64,7 @@ export function ClampedText({ children }: { children: ReactNode }) {
           aria-expanded={expanded}
           aria-controls={id}
           onClick={() => setExpanded((open) => !open)}
-          className="text-fog-600 hover:text-fog-100 mt-1 text-xs"
+          className="text-fog-600 hover:text-fog-100 mt-1 min-h-9 py-2 text-xs"
         >
           {expanded ? 'See less' : 'See more'}
         </button>
