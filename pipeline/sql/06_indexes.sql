@@ -16,17 +16,99 @@
 -- only row whose id (and a champion's riot_key) is null, so dropping it is what
 -- makes those declarations true.
 
+-- A role's canonical order, and the role each entity was played in most.
+--
+-- The five roles are not alphabetical and not a continuum: a list sorted by role reads
+-- Top, Jungle, Mid, Bot, Support, which is the order a draft is read in. Ties are
+-- resolved by this order rather than by row order, because a tie is a tie and the
+-- answer must not depend on which row the CSV happened to list first; `coalesce` keeps
+-- a role the vocabulary does not know last rather than first.
+create or replace macro role_rank(role) as
+  coalesce(array_position(['Top', 'Jungle', 'Mid', 'Bot', 'Support'], role), 99);
+
+create or replace view champion_role_games as
+select
+  champion_key,
+  role,
+  count(*)           as games,
+  role_rank(role)    as role_order
+from fact_player_game
+where champion_key <> 0
+group by champion_key, role;
+
+-- One row per champion: the role it appears in most, and the rows that decided it.
+-- A champion that appears in several roles is decided by count and then by the canonical
+-- order above, so the value never depends on row order; which champions tie is a fact
+-- about the pin, and `test_primary_roles_resolve_ties_by_the_canonical_order` names them.
+create or replace view champion_primary_role as
+select champion_key, role as primary_role, games as primary_role_games
+from champion_role_games
+qualify row_number() over (
+  partition by champion_key
+  order by games desc, role_order
+) = 1;
+
+create or replace view player_role_games as
+select
+  player_key,
+  role,
+  count(*)           as games,
+  role_rank(role)    as role_order
+from fact_player_game
+where player_key <> 0
+group by player_key, role;
+
+-- The same rule for a player: an entity that appears in several roles is decided by count
+-- and then by the canonical order, and the players who tie are named in the pipeline test
+-- rather than here, so a re-pin cannot leave a stale sentence behind.
+create or replace view player_primary_role as
+select player_key, role as primary_role, games as primary_role_games
+from player_role_games
+qualify row_number() over (
+  partition by player_key
+  order by games desc, role_order
+) = 1;
+
+-- The club a player last played for, and when.
+--
+-- The same rule the team page's roster uses, so a player's row and a club's roster
+-- cannot disagree about each other. The model has no contracts, so this is what the
+-- corpus last saw rather than where a player is now: a player last seen in 2013 keeps
+-- that club, and the page prints the year so the staleness is visible.
+create or replace view player_last_game as
+select
+  pg.player_key,
+  pg.team_key                  as last_team_key,
+  g.date_time_utc              as last_game_date
+from fact_player_game pg
+join dim_game g using (game_key)
+where pg.player_key <> 0
+qualify row_number() over (
+  partition by pg.player_key
+  order by g.date_time_utc desc, pg.game_key desc
+) = 1;
+
 create or replace view player_index as
 select
   p.player_key,
   p.player_id,
   p.player_name,
   p.overview_page,
-  count(distinct f.game_key) as games
+  count(distinct f.game_key) as games,
+  r.primary_role,
+  coalesce(l.last_team_key, 0) as last_team_key,
+  -- The year, not the instant: the index prints "Zeus HLE 2026" and a full ISO
+  -- timestamp is 20 characters per player carried by every first page load for a
+  -- four-character label. The instant stays on player_last_game, which is where a test
+  -- can compare it.
+  left(l.last_game_date::varchar, 4) as last_game_year
 from dim_player p
 left join fact_player_game f on f.player_key = p.player_key
+left join player_primary_role r on r.player_key = p.player_key
+left join player_last_game l on l.player_key = p.player_key
 where p.player_key <> 0
-group by p.player_key, p.player_id, p.player_name, p.overview_page;
+group by p.player_key, p.player_id, p.player_name, p.overview_page,
+         r.primary_role, l.last_team_key, l.last_game_date;
 
 create or replace view team_index as
 select
@@ -56,9 +138,13 @@ select
   c.champion_name,
   c.riot_key,
   c.release_date,
-  count(distinct p.game_key) as games
+  count(distinct p.game_key) as games,
+  r.primary_role,
+  r.primary_role_games
 from dim_champion c
 left join fact_player_game p on p.champion_key = c.champion_key
+left join champion_primary_role r on r.champion_key = c.champion_key
 where c.champion_key <> 0
-group by c.champion_key, c.champion_id, c.champion_name, c.riot_key, c.release_date;
+group by c.champion_key, c.champion_id, c.champion_name, c.riot_key, c.release_date,
+         r.primary_role, r.primary_role_games;
 

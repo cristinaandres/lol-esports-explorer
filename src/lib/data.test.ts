@@ -147,9 +147,11 @@ const CONTRACT = {
       riot_key: 'number',
       games: 'number',
       release_date: 'string',
+      primary_role: 'string',
     },
-    // Two champions the wiki names have no row in the model's releases.
-    nullable: ['release_date'],
+    // Two champions the wiki names have no row in the model's releases; a champion with
+    // no player row would state no role, which no row does today.
+    nullable: ['release_date', 'primary_role'],
   },
   'eras.json': {
     rows: eras,
@@ -319,9 +321,13 @@ const CONTRACT = {
       player_name: 'string',
       overview_page: 'string',
       games: 'number',
+      primary_role: 'string',
+      last_team_key: 'number',
+      last_game_year: 'string',
     },
-    // 39 players have no wiki overview page; the model does not state one.
-    nullable: ['overview_page'],
+    // 39 players have no wiki overview page; a player with no game would state no role
+    // and no last game, which no row does today.
+    nullable: ['overview_page', 'primary_role', 'last_game_year'],
   },
   'selection.json': {
     rows: selection,
@@ -988,5 +994,35 @@ describe('honours.json', () => {
     expect(awards).toHaveLength(6)
     expect(awards.filter((row) => row.title === 'All Pro Team')).toHaveLength(5)
     expect(awards.filter((row) => row.title === 'MVP')).toHaveLength(1)
+  })
+})
+describe('players.json last club', () => {
+  it('names a club every published player has played for', () => {
+    const clubKeys = new Set(teams.map((row) => row.team_key))
+    const unresolved = players.filter(
+      (row) => row.games > 0 && row.last_team_key !== 0 && !clubKeys.has(row.last_team_key),
+    )
+    expect(unresolved).toEqual([])
+    // Key 0 is a stated absence — the last game names no club — and no row does today.
+    expect(players.filter((row) => row.last_team_key === 0 && row.games > 0)).toEqual([])
+  })
+
+  it('dates every last game by its year, and never after the corpus', () => {
+    const latestYear = games.reduce((max, game) => (game.date_time_utc.slice(0, 4) > max ? game.date_time_utc.slice(0, 4) : max), '')
+    const undated = players.filter((row) => row.games > 0 && row.last_game_year === null)
+    expect(undated).toEqual([])
+    const malformed = players.filter((row) => row.last_game_year !== null && !/^\d{4}$/.test(row.last_game_year))
+    expect(malformed).toEqual([])
+    expect(players.filter((row) => (row.last_game_year ?? '') > latestYear)).toEqual([])
+  })
+
+  it('follows a transfer: Zeus last played for Hanwha Life, not T1', () => {
+    // Worlds 2023 with T1, MSI 2026 and after with HLE. A rule that picked the club
+    // with the most games would answer T1, so this is the assertion that pins the rule.
+    const zeus = players.find((row) => row.player_name === 'Zeus')!
+    const club = teams.find((row) => row.team_key === zeus.last_team_key)!
+    expect(club.team_name).toBe('Hanwha Life Esports')
+    expect(club.short_name).toBe('HLE')
+    expect(zeus.last_game_year).toBe('2026')
   })
 })

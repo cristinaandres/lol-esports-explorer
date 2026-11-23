@@ -451,3 +451,108 @@ def test_honour_place_number_is_declared_rather_than_sniffed(
     csv = build.MODEL_DIR / "fact_player_honour.csv"
     stated = len(csv.read_text(encoding="utf-8").strip().splitlines()) - 1
     assert con.execute("select count(*) from fact_player_honour").fetchall() == [(stated,)]
+
+
+def test_primary_roles_resolve_ties_by_the_canonical_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The two tied champions and one ordinary one, read off the real SQL.
+
+    Rammus (Jungle 4, Top 4) and Teemo (Top 2, Bot 2) are the only champions whose top
+    role is a tie on this pin. The rule says the canonical order decides, so both are
+    Top; a later refactor that ranked by row order or by name would answer differently
+    and this is the test that would notice. Ahri is the control: 287 Mid rows against 1
+    Bot, so the tie-break is not doing the work.
+    """
+    monkeypatch.chdir(build.ROOT)
+    con = build.connect()
+
+    roles = dict(
+        con.execute(
+            "select champion_name, primary_role from champion_index "
+            "where champion_name in ('Rammus', 'Teemo', 'Ahri')"
+        ).fetchall()
+    )
+    assert roles == {"Rammus": "Top", "Teemo": "Top", "Ahri": "Mid"}
+
+    counts = dict(
+        con.execute(
+            "select player_name, primary_role from player_index "
+            "where player_name in ('Exosen', 'Shushei', 'Faker')"
+        ).fetchall()
+    )
+    # Exosen played Bot 8 and Mid 8; Mid comes first in the canonical order.
+    # Shushei played Mid 8 and Top 8; Top does.
+    assert counts == {"Exosen": "Mid", "Shushei": "Top", "Faker": "Mid"}
+
+    # Every published row has a role: a champion or player with no game would state
+    # none, and this pin has none. The five roles are the only values there are.
+    for view, expected in (("champion_index", 171), ("player_index", 1140)):
+        rows, with_role = con.execute(f"select count(*), count(primary_role) from {view}").fetchall()[0]
+        assert (rows, with_role) == (expected, expected), view
+        roles = {
+            row[0]
+            for row in con.execute(f"select distinct primary_role from {view}").fetchall()
+        }
+        assert roles <= {"Top", "Jungle", "Mid", "Bot", "Support"}, view
+
+
+def test_last_club_is_the_club_of_the_latest_game(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The club a player last played for, checked against a transfer.
+
+    Zeus won Worlds 2023 with T1 and was playing for Hanwha Life Esports in 2026, so a
+    rule that took the club with the most games would answer T1 and this asserts HLE.
+    Kingen is the second case: Kiwoom DRX at Worlds 2022, Nongshim RedForce last. Every
+    player the index publishes has a last game, and its date is the latest of theirs.
+    """
+    monkeypatch.chdir(build.ROOT)
+    con = build.connect()
+
+    rows = dict(
+        con.execute(
+            "select player_name, last_team_key from player_index "
+            "where player_name in ('Zeus', 'Kingen')"
+        ).fetchall()
+    )
+    expected = dict(
+        con.execute(
+            "select team_name, team_key from dim_team "
+            "where team_name in ('Hanwha Life Esports', 'Nongshim RedForce')"
+        ).fetchall()
+    )
+    assert rows == {"Zeus": expected["Hanwha Life Esports"], "Kingen": expected["Nongshim RedForce"]}
+
+    # The date is the player's own latest game, not the corpus's latest or the club's.
+    latest = dict(
+        con.execute(
+            """
+            select player_key, max(date_time_utc) from (
+              select pg.player_key, g.date_time_utc
+              from fact_player_game pg join dim_game g using (game_key)
+              where pg.player_key in (select player_key from dim_player where player_name in ('Zeus', 'Kingen'))
+            ) group by player_key
+            """
+        ).fetchall()
+    )
+    # The artifact publishes the year; the instant stays on `player_last_game`, which is
+    # where a reader of the SQL (and this test) can compare it.
+    stored = dict(
+        con.execute(
+            "select player_key, last_game_date from player_last_game "
+            "where player_key in (select player_key from dim_player where player_name in ('Zeus', 'Kingen'))"
+        ).fetchall()
+    )
+    assert stored == latest
+
+    years = dict(
+        con.execute(
+            "select player_key, last_game_year from player_index "
+            "where player_name in ('Zeus', 'Kingen')"
+        ).fetchall()
+    )
+    assert years == {key: value[:4] for key, value in latest.items()}
+
+    players, with_year = con.execute(
+        "select count(*), count(last_game_year) from player_index"
+    ).fetchall()[0]
+    assert (players, with_year) == (1140, 1140)

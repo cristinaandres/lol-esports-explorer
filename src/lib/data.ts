@@ -24,10 +24,11 @@ import type {
  *
  * Three shapes, chosen by what a page actually renders.
  *
- *  - The eager set is fetched by the first page a reader opens. It is ~45 KB
- *    gzipped and holds what every page needs: eras, events, totals, the pin, and
- *    the name of every team, player, champion and patch for the search in the
- *    header. It deliberately holds no game: a game list belongs to an event, and
+ *  - The eager set is fetched by the first page a reader opens. It is ~53 KB
+ *    gzipped (measured, not guessed: `for f in eras events totals meta teams
+ *    players champions patches; do gzip -9c public/data/$f.json | wc -c; done`)
+ *    and holds what every page needs: eras, events, totals, the pin, and the name of
+ *    every team, player, champion and patch for the search in the header. It deliberately holds no game: a game list belongs to an event, and
  *    an era with 1,325 games is read as 26 events.
  *  - The game level is the two artifacts a page that draws games needs -- every
  *    game, and the series they belong to -- fetched once by the pages that render

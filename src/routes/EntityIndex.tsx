@@ -1,12 +1,14 @@
-import { useMemo, useState } from 'react'
-import { Link } from 'react-router'
+import { useMemo } from 'react'
+import { Link, useSearchParams } from 'react-router'
 
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { LoadFailure } from '../components/LoadFailure'
 import { Skeleton } from '../components/Skeleton'
 import { PageHeader } from '../components/PageHeader'
+import { SelectField } from '../components/SelectField'
 import { useDataset } from '../lib/data'
 import { count } from '../lib/format'
+import { groupIndexEntries, parseIndexSort, type IndexGroup } from '../lib/indexGroups'
 
 /**
  * The index for one kind of entity.
@@ -22,7 +24,31 @@ import { count } from '../lib/format'
 
 type Kind = 'player' | 'team' | 'champion'
 
-type Entry = { id: string; name: string; meta: string; games: number; short?: string }
+type Entry = {
+  id: string
+  name: string
+  meta: string
+  games: number
+  short?: string
+  /** The entity's most-played role; null for teams, which have none. */
+  role: string | null
+  /**
+   * For a player: the abbreviation of the club they last played for, and the year of
+   * that game. Not "current" — the corpus states no contracts, so the year is what says
+   * how old the record is.
+   */
+  club?: string
+  clubYear?: string
+}
+
+// Only these two have a sort to offer: a team's grouping is its region, which is
+// stated by the model and is the only way a reader looks for a club.
+const SORTABLE: Record<Kind, boolean> = { player: true, team: false, champion: true }
+
+const SORT_OPTIONS = [
+  { value: 'name', label: 'Name' },
+  { value: 'role', label: 'Role' },
+]
 
 const COPY: Record<Kind, { title: string; blurb: string; groupLabel: string }> = {
   player: {
@@ -44,15 +70,43 @@ const COPY: Record<Kind, { title: string; blurb: string; groupLabel: string }> =
 
 export default function EntityIndex({ kind }: { kind: Kind }) {
   const state = useDataset()
-  const [query, setQuery] = useState('')
+  // The sort and the filter are query parameters, like the career filters, so a grouped
+  // index is a link a reader can send: `?sort=role&q=kaisa`. An unknown sort falls back
+  // to name rather than an empty page.
+  const [params, setParams] = useSearchParams()
+  const sort = parseIndexSort(params.get('sort'))
+  const sortable = SORTABLE[kind]
+  const query = params.get('q') ?? ''
+
+  const setQuery = (value: string) => {
+    const next = new URLSearchParams(params)
+    if (value) next.set('q', value)
+    else next.delete('q')
+    setParams(next, { replace: true })
+  }
 
   const entries = useMemo<Entry[]>(() => {
     if (state.status !== 'ready') return []
     const data = state.data
     if (kind === 'player') {
+      const clubs = new Map(data.teams.map((row) => [row.team_key, row]))
       return data.players
         .filter((row) => row.player_id && row.games > 0)
-        .map((row) => ({ id: row.player_id, name: row.player_name, meta: '', games: row.games }))
+        .map((row) => {
+          const club = clubs.get(row.last_team_key)
+          return {
+            id: row.player_id,
+            name: row.player_name,
+            meta: '',
+            games: row.games,
+            role: row.primary_role,
+            // A club the model states no abbreviation for prints none rather than a
+            // name in a column that is abbreviations; a last game naming no club (0)
+            // prints nothing at all.
+            club: club?.short_name ?? undefined,
+            clubYear: row.last_game_year ?? undefined,
+          }
+        })
     }
     if (kind === 'team') {
       return data.teams
@@ -63,14 +117,21 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
           meta: row.region || 'Unknown region',
           games: row.games,
           short: row.short_name ?? undefined,
+          role: null,
         }))
     }
     return data.champions
       .filter((row) => row.champion_id && row.games > 0)
-      .map((row) => ({ id: row.champion_id, name: row.champion_name, meta: '', games: row.games }))
+      .map((row) => ({
+        id: row.champion_id,
+        name: row.champion_name,
+        meta: '',
+        games: row.games,
+        role: row.primary_role,
+      }))
   }, [state, kind])
 
-  const groups = useMemo(() => {
+  const groups = useMemo<IndexGroup<Entry>[]>(() => {
     const needle = query.trim().toLowerCase()
     // A team is looked up by its abbreviation as often as by its name: someone who
     // watches the client types KC, not Karmine Corp.
@@ -82,26 +143,32 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
         )
       : entries
 
-    const grouped = new Map<string, Entry[]>()
-    for (const entry of visible) {
-      const key =
-        kind === 'team'
-          ? entry.meta
-          : /^[a-z]/i.test(entry.name)
-            ? entry.name[0]!.toUpperCase()
-            : '#'
-      const bucket = grouped.get(key)
-      if (bucket) bucket.push(entry)
-      else grouped.set(key, [entry])
+    if (kind === 'team') {
+      // A club has one region, and that is how a reader looks for it. The sort work
+      // below is for the two indexes whose entities are played in roles.
+      const grouped = new Map<string, Entry[]>()
+      for (const entry of visible) {
+        const bucket = grouped.get(entry.meta)
+        if (bucket) bucket.push(entry)
+        else grouped.set(entry.meta, [entry])
+      }
+      return [...grouped.entries()]
+        .sort((a, b) => a[0].localeCompare(b[0]))
+        .map(([label, items]) => ({
+          label,
+          items: items.sort((a, b) => b.games - a.games || a.name.localeCompare(b.name)),
+        }))
     }
 
-    return [...grouped.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, items]) => ({
-        label,
-        items: items.sort((a, b) => b.games - a.games || a.name.localeCompare(b.name)),
-      }))
-  }, [entries, query, kind])
+    return groupIndexEntries(visible, sort)
+  }, [entries, query, kind, sort])
+
+  const setSort = (value: string) => {
+    const next = new URLSearchParams(params)
+    if (value === 'name') next.delete('sort')
+    else next.set('sort', value)
+    setParams(next, { replace: true })
+  }
 
   const total = entries.length
   const shown = groups.reduce((sum, group) => sum + group.items.length, 0)
@@ -120,18 +187,34 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
     <>
       <Breadcrumbs items={[{ label: copy.title }]} />
       <PageHeader
-        eyebrow={`Index · ${copy.groupLabel}`}
+        eyebrow={`Index · ${sortable && sort === 'role' ? 'by role' : copy.groupLabel}`}
         title={copy.title}
-        lead={`${count(total)} in the corpus. Each one carries the number of games it appears in, and the list is ordered by that number inside each group.`}
+        lead={
+          kind === 'player'
+            ? `${count(total)} in the corpus. The club beside a name is the one that player last played for here, with the year of that game — the corpus states no contracts, so it is where they were last seen, not where they are now.`
+            : sortable && sort === 'role'
+              ? `${count(total)} in the corpus, grouped by the role they were played in most. Each one carries the number of games it appears in, and the list is ordered by that number inside each group.`
+              : `${count(total)} in the corpus. Each one carries the number of games it appears in, and the list is ordered by that number inside each group.`
+        }
         aside={
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={`Filter ${kind}s`}
-            aria-label={`Filter ${kind}s by name`}
-            className="border-line bg-ink-900 text-fog-100 placeholder:text-fog-600 focus-visible:outline-gold w-56 rounded-lg border px-3 py-2 text-sm"
-          />
+          <div className="flex flex-wrap items-end gap-3">
+            {sortable ? (
+              <SelectField
+                label="Sort by"
+                value={sort}
+                onChange={setSort}
+                options={SORT_OPTIONS}
+              />
+            ) : null}
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={`Filter ${kind}s`}
+              aria-label={`Filter ${kind}s by name`}
+              className="border-line bg-ink-900 text-fog-100 placeholder:text-fog-600 focus-visible:outline-gold min-h-11 w-56 rounded-lg border px-3 py-1.5 text-sm"
+            />
+          </div>
         }
       />
 
@@ -161,6 +244,19 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
                       {entry.short ? (
                         <span className="text-fog-600 shrink-0 font-mono text-[10px]">
                           {entry.short}
+                        </span>
+                      ) : null}
+                      {entry.club ? (
+                        <span className="text-fog-600 shrink-0 font-mono text-[10px]">
+                          {entry.club}
+                        </span>
+                      ) : null}
+                      {/* The year stands on its own: a club the model states no
+                          abbreviation for still has a last game, and the year is what
+                          says how old that record is. */}
+                      {entry.clubYear ? (
+                        <span className="text-fog-600 shrink-0 font-mono text-[10px] whitespace-nowrap">
+                          {entry.clubYear}
                         </span>
                       ) : null}
                     </Link>

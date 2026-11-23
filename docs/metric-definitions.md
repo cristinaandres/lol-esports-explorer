@@ -20,6 +20,16 @@ component except a ratio of two displayed counts.
 | Titles | Events whose final is the single series named Finals, won by the team with more game wins in it. Events that name several such series — most Rift Rivals relays, whose winner is a region — award nothing. A relay with one decisive final does award its winner. | `fact_game_side`, `dim_match`; derived in `src/lib/titles.ts` | all eras |
 | Distinctions | Awards the source states for a player at a tournament, in its own words (`Finals MVP`, `All Pro Team`, `MVP`) — one row per player, event and title, never normalised into one label and never merged with Titles, which is derived. Not a measure: a count of them is a `GROUP BY`. They exist for 19 of the 54 events, and the gaps are the source's (no MVP row for Worlds 2012/2013/2015/2016/2018–2020, nor MSI 2017–2021), so a player without one has not been told anything. | `fact_player_honour` | all eras |
 
+## Derived labels
+
+Not measures: a word printed next to a name, which the site therefore states a rule for.
+
+| Label | Rule | Source | Limits |
+|---|---|---|---|
+| Role (champion) | The role the champion appears in most: most `fact_player_game` rows in one role, tie broken by the canonical order `Top, Jungle, Mid, Bot, Support` (`06_indexes.sql`, `role_rank`). | `fact_player_game.role` | 139 of the 171 champions appear in more than one role, and two tie at the top: the tie-break is a decidable answer, not a better one. It is where the corpus played the champion, never its design or a claim about a patch. |
+| Last club (last played for) | The club the player appeared for in their most recent game: `fact_player_game.team_key` on the row with the greatest `dim_game.date_time_utc`, ties by `game_key`. The year printed beside it is the year of that game — the artifact carries the year, and `player_last_game` keeps the instant. | `fact_player_game`, `dim_game` | The model has no contracts and no roster table, and rosters change between seasons, so this is a record of where the corpus last saw the player — never "current". A player whose last game is in 2013 keeps that club and shows 2013, which is true and visibly old. A last game naming no club (key `0`) prints nothing. |
+| Role (player) | The same rule over the player's own rows, with the same tie-break. | `fact_player_game.role` | 68 of the 1,140 players appear in **more than one** role — 57 in exactly two, 11 in three or four — and six tie at the top, which the pipeline test names. It is the position they played most in this corpus, not the position they are known for, and not a contract role. |
+
 ## Shares
 
 All shares are `part / total` and are always rendered with both numbers.
