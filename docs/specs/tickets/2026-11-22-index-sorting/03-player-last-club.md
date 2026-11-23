@@ -36,9 +36,11 @@ Three consequences the copy and tests carry:
 - `docs/metric-definitions.md` first: a **Last club (last played for)** row naming
   `fact_player_game`, `fact_game_side` and `dim_game.date_time_utc`, the rule, and the
   limits above.
-- `pipeline/sql/06_indexes.sql`: `player_index` gains `latest_team_key` and
-  `latest_game_date`, taken from the player's last game ordered by
-  `date_time_utc desc, game_key desc` so a same-instant tie is deterministic.
+- `pipeline/sql/06_indexes.sql`: `player_index` gains `last_team_key` and the year of
+  that game, taken from the player's last game ordered by `date_time_utc desc, game_key
+  desc` so a same-instant tie is deterministic. (Built first as `latest_game_date`, a full
+  ISO instant; a later payload review published `last_game_year`, four characters, and
+  left the instant on `player_last_game` where the test compares it.)
 - `players.json` carries the key and the date; the page resolves the key against
   `teams.json` for the abbreviation, which keeps the artifact a key rather than a copied
   name.
@@ -58,7 +60,8 @@ Three consequences the copy and tests carry:
 
 ## Validation
 
-A pipeline test comparing `player_index.latest_team_key` and `latest_game_date` against
+A pipeline test comparing `player_index.last_team_key` and the instant on
+`player_last_game` against
 a hand-written query for two players (one who transferred, one whose last club states no
 short), and the page read through the Playwright MCP server at both widths.
 
@@ -67,7 +70,8 @@ short), and the page read through the Playwright MCP server at both widths.
 - `player_last_game` in `06_indexes.sql` takes `fact_player_game.team_key` and
   `dim_game.date_time_utc` from the row with the greatest instant, ties by `game_key`;
   `player_index` publishes `last_team_key` (0 when that game names no club) and
-  `last_game_date`.
+  `last_game_year`, four characters rather than the full instant, after the payload
+  review.
 - The players index prints the club's abbreviation (`dim_team.short`, resolved from the
   eager teams artifact) and the year of that game, in the same muted mono the teams
   index uses. The name keeps the link; the club and year are labels.
