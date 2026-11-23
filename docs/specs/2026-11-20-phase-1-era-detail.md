@@ -1,7 +1,7 @@
 # Phase 1 — Era detail
 
-Status: built and deployed. This is a retrospective spec: phases 0 and 1 landed
-in the same commit (`f1140c3`), and this document separates them afterwards so
+Status: round 1 — built and deployed. This is a retrospective spec: phases 0 and 1
+landed in the same commit (`f1140c3`), and this document separates them afterwards so
 every phase has the same record and so a later change that removes a panel has
 something to regress against.
 

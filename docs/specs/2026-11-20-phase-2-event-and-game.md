@@ -1,7 +1,7 @@
 # Phase 2 — Event and game
 
-Status: built and deployed. Depends on nothing; phase 3 depends on it. What the
-build changed against the plan is recorded at the end of this document.
+Status: round 2 — built and deployed. Depends on nothing; phase 3 depends on it.
+What the build changed against the plan is recorded at the end of this document.
 
 ## Objective
 
