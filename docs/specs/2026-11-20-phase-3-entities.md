@@ -1,8 +1,8 @@
 # Phase 3 — Entities, and the local/global split
 
 Status: round 3 — built and deployed, broken into tickets. Depends on phase 2 (player
-and team names must be reachable from a game first). Phase 4 depends on this one for
-team identity.
+and team names must be reachable from a game first). Round 4a depends on this one for
+team identity: a question about a player or a champion needs a name that resolves.
 
 Tickets: `docs/specs/tickets/2026-11-20-phase-3-entities/`.
 
@@ -75,9 +75,10 @@ prefactor for this phase (ticket 01), not a detail of the team page.
 
 ## Non-goals
 
-Head-to-head between two teams — deferred with prediction, not built here and not
-planned for phase 4 — player search, player comparisons, any ranking of players by a
-derived measure, and any per-minute or timeline figure.
+Head-to-head between two teams — deferred with prediction to round 6, and not part of
+round 4a, whose subject is a question and not a pair — player search, player
+comparisons, any ranking of players by a derived measure, and any per-minute or
+timeline figure.
 
 ## Constraints
 
