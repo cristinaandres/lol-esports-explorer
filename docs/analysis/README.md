@@ -35,9 +35,9 @@ not others, and what would make the choice wrong later.
    stay, with their pin, so the history of a decision is readable. A decision that
    reverses is recorded with its date and the measurement that caused it.
 5. **Tables, not screenshots, and no committed notebook output.** The dossier is
-   the record; a notebook is the instrument. Instruments live in `scratch/` (ignored
-   by git) or in a separate repository, and their results are copied here as a
-   table with its query.
+   the record; a notebook is the instrument. Instruments live in
+   [`notebooks/`](../notebooks/) — committed clean, without outputs — and their
+   results are copied here as a table with its query.
 
 ## Structure
 
@@ -52,7 +52,8 @@ inside.
 
 ## How a dossier is written
 
-1. Explore with whatever tool suits: a notebook, the DuckDB CLI, `pipeline/sql/`.
+1. Explore with whatever tool suits — [`notebooks/`](../notebooks/) has the setup
+   cell, so the kernel finds the views from either the repo root or that directory.
    Keep the queries that survive the exploration.
 2. Write the dossier top-down: the decision to be made, then findings, then the
    decisions table.

@@ -4,6 +4,10 @@
 > The section headings stay: they are what makes two dossiers comparable, and what
 > a reviewer checks for.
 
+> Queries in this document assume the semantic views are loaded from the repository
+> root: `.read pipeline/sql/01_semantic_views.sql`. They are evidence, not scripts:
+> nothing runs them.
+
 State: exploring · decided · superseded by `<file>`
 Pinned at: tag `<vX.Y.Z>` · model `manifestSha256` `<f919082a…>` · read on `<date>`
 Answers: `<the decision this dossier settles, in one sentence>`
@@ -34,6 +38,12 @@ Result (as of the pin above):
 | `<column>` | `<column>` | `<column>` |
 |---|---|---|
 |  |  |  |
+
+Method: `<none — plain SQL | Wilson 95% | bootstrap percentile, 10 000 resamples |
+simulation, 10 000 replications>` · Seed: `<20261123, only when there is randomness>`
+— a count needs no method line; a proportion with an interval, or anything random,
+does. Without the method the number is an opinion, and without the seed it cannot be
+reproduced.
 
 What it changes: `<the decision, or the block it rules out>`
 

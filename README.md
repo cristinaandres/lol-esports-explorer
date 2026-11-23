@@ -91,6 +91,7 @@ src/components/            Ratio, Scoreboard, DraftBoard, PlayerTable, Layout
 src/lib/                   types, formatters, era copy
 docs/                      product spec, IA, metric definitions, roadmap
 docs/analysis/             data dossiers: what each answer page shows, and why
+notebooks/                 the workshop: instrument, no outputs; see its README
 ```
 
 ## Scope
