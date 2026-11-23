@@ -1,13 +1,13 @@
 # Phase 5 — Design pass
 
-Status: proposed. Runs alongside phases 2 to 4, and closes them.
+Status: round 5 — proposed. Runs alongside rounds 2 to 4b, and closes them.
 
 ## Objective
 
 The site currently has a working visual language — a dark surface, one gold
 accent, blue and red only where a side is meant — but no design file, no designed
 empty state, and no accessibility pass. This phase turns the token set into a
-Figma file someone else could design from, and finishes the states the phases
+Figma file someone else could design from, and finishes the states the rounds
 above will need.
 
 ## Current behavior
@@ -35,8 +35,9 @@ above will need.
 - **R4** Body text at 4.5:1 contrast or better, a visible focus ring on every
   interactive element, landmark regions, and a table that can be read with a
   keyboard and announced sensibly by a screen reader.
-- **R5** Three widths designed: 390, 768, 1440. The comparison and draft boards
-  are the cases that break first.
+- **R5** Three widths designed: 390, 768, 1440. The answer block — a headline, an
+  evidence line, a limits list and a source line in one column — and the draft
+  boards are the cases that break first.
 - **R6** Colour never carries meaning alone: every state that is coloured also has
   a word.
 - **R7** A row in a series list declares its format, and a best-of-one is
@@ -45,6 +46,11 @@ above will need.
   of 1" and the fact that a best-of-one links to a game rather than a series.
   Two thirds of the corpus is best-of-one, so this is the most common row on the
   site, not an edge case.
+- **R8** *(Added with round 4a.)* The crystal ball's `Answer` is one block with
+  three verdict states — `answered`, `insufficient_data`, `not_verifiable` — and all
+  three are designed. `insufficient_data` must read as an answer with its counts, not
+  as an error or an empty state: it is the honest outcome for most per-event
+  champion questions, so it will be seen more often than the happy path.
 
 ## Non-goals
 
@@ -62,7 +68,7 @@ any animation that is not a state transition.
 - **The current palette is kept as the baseline.** It was chosen with the content
   in view (a dark surface makes the blue/red side distinction legible without
   shouting), and replacing it now would invalidate the screenshots the earlier
-  phases were reviewed on.
+  rounds were reviewed on.
 - **The unit of design is a block, not a page.** Entity pages compose context,
   career, filters and a pool; designing those four blocks once covers all three
   entity types.
@@ -85,6 +91,8 @@ any animation that is not a state transition.
 - [ ] Every `@theme` token has a Figma variable of the same name, and a test
       guards the list.
 - [ ] The five states are designed and implemented, not only the happy path.
+- [ ] The `Answer` block's three verdict states are designed, and
+      `insufficient_data` is drawn as an answer with its counts, not as an error.
 - [ ] Keyboard traversal through an era table and a game page is recorded with the
       order observed.
 - [ ] The three widths are screenshotted and compared against the Figma frames.
@@ -102,7 +110,7 @@ npm run check
 - **That Figma stays the source for the visual language.** If the design file
   drifts, the tokens in `src/index.css` become the source and the Figma file is
   regenerated from them; the direction is decided here, deliberately, so the
-  question does not reopen every phase.
+  question does not reopen every round.
 - **That the typeface stays the system stack.** A licensed typeface is a real
   improvement for a design portfolio and a real cost for a static site; it is left
   open rather than assumed.

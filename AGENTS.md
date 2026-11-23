@@ -8,11 +8,15 @@ only decides how it is navigated.
 **Language.** Every commit message, comment, identifier, document and user-facing
 string is in English. The project is public and meant to read internationally.
 
-**Current state.** Phases 2 and 3 are built, along with the 3b polish round and
-the 4b structure work: the era spine and era detail, event, series and game
-pages, the player, team and champion pages with their indexes and search, the
-glossary and the selection audit, over the DuckDB pipeline and the deploy. Phase
-4 (`/compare`) and the phase 5 design pass are not built.
+**Current state.** Rounds 0 to 3e are built: the era spine and era detail, event,
+series and game pages, the player, team and champion pages with their indexes and
+search, the glossary and the selection audit, the 3b polish round, the 3c structure
+work, 3d index sorting with the club a player last played for, and 3e player
+distinctions — over the DuckDB pipeline and the deploy. `docs/specs/README.md` lists
+the rounds in their build order. Round 4a — the crystal ball (`/answers`, spec in
+`docs/specs/2026-11-20-phase-4-crystal-ball.md`), its 4b backtest, and the phase 5
+design pass are not built. Prediction is not built either, and is not scoped to phase
+4: it is deferred to round 6, with its definition of ready in the phase 4 spec.
 
 ## The rules that matter here
 
@@ -95,6 +99,23 @@ git log --oneline dev..HEAD              # only this change's commits
 A branch merges into `dev` through a pull request; `gh pr create --base dev`
 explicitly, because the repository default is `main`. Releases are `dev` → `main`
 with a merge commit, not a squash.
+
+After a release, prove what is deployed before calling it live. `gh run list
+--limit 1` is not enough: for the first minute or two it can still return the
+*previous* deploy, and a browser can serve the previous `index.html` from its
+10-minute cache, so a check run too early measures the old build and looks like a
+regression. Match the run to the merge commit and the bundle to the code:
+
+```bash
+gh run list --branch main --limit 1 --json headSha,status,conclusion   # headSha = the merge
+js=$(curl -s "$SITE/" | grep -o 'assets/index-[A-Za-z0-9_-]*\.js' | head -1)
+curl -s "$SITE/$js" | grep -c "<a string only the new build contains>"  # 0 means still the old build
+```
+
+The artifacts are the other half: they keep stable names, so the fetch revalidates
+them (`cache: 'no-cache'` in `src/lib/data.ts`) rather than trusting a 10-minute
+browser cache. A page that renders new chrome with old labels — every champion
+under "Unknown" — is that failure, not a data bug.
 
 ## Reviews
 

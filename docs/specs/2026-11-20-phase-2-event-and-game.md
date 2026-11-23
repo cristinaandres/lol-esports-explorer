@@ -1,7 +1,7 @@
 # Phase 2 — Event and game
 
-Status: built and deployed. Depends on nothing; phase 3 depends on it. What the
-build changed against the plan is recorded at the end of this document.
+Status: round 2 — built and deployed. Depends on nothing; phase 3 depends on it.
+What the build changed against the plan is recorded at the end of this document.
 
 ## Objective
 
@@ -202,4 +202,7 @@ Final payloads, measured (`gzip -6` output over 1,024 bytes):
   breakdown proves heavier than 200 KB gzip, it gets split per event instead.
 - **That no reader needs the ban list before opening a game.** If a later phase
   shows a champion's ban rate, `bans.json` becomes eager and the budget is
-  revisited.
+  revisited. *(Settled by round 4a, and in the other direction: presence is computed
+  in DuckDB and shipped as an `Answer`, so the browser never loads `bans.json` to
+  answer it. The assumption held; the work moved out of the browser rather than into
+  the eager set.)*
