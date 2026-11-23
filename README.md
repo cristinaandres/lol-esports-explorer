@@ -57,6 +57,9 @@ when one opens a career or a game. Every filter after that is in memory.
   appear, because the gap is a fact about the source.
 - **Every artifact is reproducible.** `npm run data:check` rebuilds the JSON in
   memory and fails if a committed file differs by one byte.
+- **Every audit is re-runnable.** A number a spec claims about the data can be
+  re-derived in `notebooks/`, which reads the model and the artifacts and never
+  writes either.
 
 ## Running it
 
@@ -86,6 +89,7 @@ data/PROVENANCE.md         what is pinned, from where, and how to refresh
 pipeline/sql/              the semantic layer: DuckDB views over the model
 pipeline/build.py          emits public/data/*.json, and --check
 public/data/               the artifacts the site reads (generated, committed)
+notebooks/                 read-only investigations, the evidence behind a claim
 src/routes/                one file per level of the navigation
 src/components/            Ratio, Scoreboard, DraftBoard, PlayerTable, Layout
 src/lib/                   types, formatters, era copy
