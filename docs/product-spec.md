@@ -26,15 +26,19 @@ air, which is a record with a denominator, not a prediction.
 Implemented as the `Ratio` component rather than a convention, so it cannot be
 forgotten: `62% (8/13)`.
 
-## What it refuses to do
+## What it refuses to do — and what it defers
 
-- **No predicted winner.** A model over this corpus would be trained on a few
-  hundred games per era, most between teams that met once. Its output would look
-  more certain than the evidence. The site puts the record in front of the reader
-  instead.
+- **No predicted winner, in this phase.** A model over this corpus would be trained
+  on a few hundred games per era, most between teams that met once. Its output would
+  look more certain than the evidence. The site puts the record in front of the reader
+  instead. Prediction is deferred to a later phase, not dropped: the phase 4 spec says
+  why, and what would have to be true before it is built.
 - **No invented metrics.** Every measure is either a source-stated count or a
   ratio of two of them, and every one is defined in `metric-definitions.md`.
 - **No silent filtering.** A partial game is shown and marked, not dropped.
+- **No number without its uncertainty, since the crystal ball.** A share carries its
+  interval and its `n`; below `n ≥ 20` the answer says "insufficient data" instead
+  of drawing one.
 
 ## Decisions
 

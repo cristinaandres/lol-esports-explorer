@@ -1,6 +1,6 @@
 # Phase 5 — Design pass
 
-Status: proposed. Runs alongside phases 2 to 4, and closes them.
+Status: round 5 — proposed. Runs alongside phases 2 to 4, and closes them.
 
 ## Objective
 

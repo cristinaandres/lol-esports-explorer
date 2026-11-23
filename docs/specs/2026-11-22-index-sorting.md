@@ -1,6 +1,6 @@
 # Sorting the three indexes, and the club a player last played for
 
-Status: built — all four tickets. Four small navigation changes
+Status: round 3d — built, all four tickets. Four small navigation changes
 that share two decisions — a sort is a query parameter, and every label they print is
 a derived measure with a documented rule.
 

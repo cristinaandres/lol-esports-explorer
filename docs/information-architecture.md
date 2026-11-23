@@ -4,7 +4,7 @@ The spine, the URL for each level, and the component rules each screen must obey
 This document is also the brief for the Figma file: the names below are the frame
 names.
 
-## Two axes
+## Two axes, and a third that hangs off them
 
 **Axis A — the record: what happened.** Era → event → series (only when it is not
 a best-of-one) → game. Chronological, narrowing.
@@ -17,6 +17,11 @@ fills it, so reorganising the home page does not falsify every breadcrumb.
 
 The two axes meet at a game page, where every name is a link into Axis B that
 carries its context.
+
+**Axis C — the question: what is likely.** A pick'em asks about a tournament that
+has not been played, so its answer cannot hang under either axis: it is a window of
+the past, scored and labelled with its cut date. It has its own level, and its
+routes are marked not built until phase 4 ships them.
 
 ```
 /                       the era spine: every era, as cards
@@ -36,7 +41,9 @@ carries its context.
 /champions/:champion    pick and ban record across eras
 /glossary               every term, including the absent ones
 /selection              the audit: every candidate event and the rule that decided
-/compare                (not built) two teams side by side: the pick'em view
+/answers                (not built) the eighteen pick'em questions, grouped by family
+/answers/:id            (not built) one question, one Answer, its window in the URL
+/calibracion            (not built, round 4b) the backtest: precision@K per edition
 *                       not found: the only route that claims nothing
 ```
 
@@ -120,6 +127,34 @@ source says nothing about.
 
 **Figma frames:** `50-player/context`, `50-player/career`, `50-player/filters`.
 
+## Level Q — the question, and the crystal ball
+
+A third axis, and the only one that is not a level of the record: a question about
+the future is answered from a window of the past. It hangs off no era and no entity,
+because its subject is a tournament that has not been played.
+
+```
+/answers                        every question, grouped by answer family
+/answers/:id?competition=&year=&cut=
+                                one question, one Answer, its window in the URL
+/calibracion                    (round 4b) the backtest, per edition and family
+```
+
+Five families, and the shape of the answer differs by family: top-1 (returns a
+top-K, ordered by the lower bound of the interval), yes/no with a low base rate
+(a share of the games it could have happened in), count (a seeded simulation over
+the tournament format), comparison (two records with an exposure warning), and
+categorical (a census, or nothing).
+
+The page is one component repeated: headline with number, interval and `n`; evidence
+(metric, value, `n`, window, cut date); limits as visible text; source with the
+artifact's checksum. A question that cannot fill that shape is not published — three
+of the eighteen currently render as `not_verifiable`, with the query that shows why
+and the decision that would unblock them.
+
+**Figma frames:** `60-answers`, `60-answer/answered`, `60-answer/insufficient`,
+`60-answer/not-verifiable`, `60-answer/top-k`, `61-calibration`.
+
 ## Cross-cutting components
 
 | Component | Rule |
@@ -131,6 +166,7 @@ source says nothing about.
 | `HoverNote` | The evidence behind a figure, on demand: a dotted underline under it, opening the note on hover and on keyboard focus, with a native `title` as the fallback. The bubble is clamped inside the viewport, because a trigger near either edge would otherwise clip it. |
 | `SelectField` | The one labelled native `<select>`: the career filters and the index sort both use it. Native because it is keyboard-operable and announced correctly without a line of JavaScript. |
 | `ClampedText` | Prose that has to match the height of the column beside it: two lines, an ellipsis, and a `See more` control rendered only when the text really overflows. The full text stays in the DOM, so nothing is hidden from a screen reader or a search engine. |
+| `Answer` | The whole of a crystal-ball answer, and the only way one may be drawn: headline with number, interval and `n` together; evidence line with the window and the cut date; a visible `limits` list; the source and its checksum. Its verdict (`answered`, `insufficient_data`, `not_verifiable`) is a labelled chip, and no branch of it renders the number without the other three blocks. |
 
 ## Visual rules
 

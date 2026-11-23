@@ -1,7 +1,7 @@
 # Player distinctions — the awards the source states
 
-Status: built, broken into tickets. Depends on the v1.2.0 pin (PR #52), which
-carries `fact_player_honour` in the model and retired the two wiki pins.
+Status: round 3e — built, broken into tickets. Depends on the v1.2.0 pin (PR #52),
+which carries `fact_player_honour` in the model and retired the two wiki pins.
 
 Tickets: `docs/specs/tickets/2026-11-22-player-distinctions/`.
 
