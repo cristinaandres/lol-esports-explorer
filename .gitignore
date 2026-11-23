@@ -12,5 +12,5 @@ __pycache__/
 # Local scratch. Anything a reader needs belongs in data/ or public/data/.
 scratch/
 
-# Jupyter checkpoints, created by the notebook editor in notebooks/.
+# Jupyter checkpoints, created by the notebook editor in scratch/.
 .ipynb_checkpoints/

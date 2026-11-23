@@ -34,10 +34,9 @@ not others, and what would make the choice wrong later.
 4. **Append, do not overwrite.** A new pin opens a new dated section. Old numbers
    stay, with their pin, so the history of a decision is readable. A decision that
    reverses is recorded with its date and the measurement that caused it.
-5. **Tables, not screenshots, and no committed notebook output.** The dossier is
-   the record; a notebook is the instrument. Instruments live in
-   [`notebooks/`](../notebooks/) — committed clean, without outputs — and their
-   results are copied here as a table with its query.
+5. **Tables, not screenshots, and no committed notebook.** The dossier is the
+   record; a notebook is the instrument, and it lives in `scratch/` — ignored by git,
+   never committed. Its results are copied here as a table with its query.
 
 ## Structure
 
@@ -52,15 +51,64 @@ inside.
 
 ## How a dossier is written
 
-1. Explore with whatever tool suits — [`notebooks/`](../notebooks/) has the setup
-   cell, so the kernel finds the views from either the repo root or that directory.
-   Keep the queries that survive the exploration.
+1. Explore in `scratch/`, in a notebook or in the DuckDB CLI. Keep the queries that
+   survive the exploration; everything else disappears with the directory.
 2. Write the dossier top-down: the decision to be made, then findings, then the
    decisions table.
 3. Fill **What I did not check**. It is the first section a reviewer reads and the
    one that keeps the document honest.
 4. When a dossier changes a page, the change goes through the phase 4 spec and its
    ticket, not directly into a component. A dossier argues; a spec decides.
+
+## Doing the analysis
+
+In `scratch/`, which git ignores, so nothing half-finished reaches a commit. From the
+repository root:
+
+```bash
+uv run --project pipeline --with jupyterlab jupyter lab --no-browser --port 8888
+```
+
+`--with` installs Jupyter for that run and leaves `pipeline/pyproject.toml` alone, so
+`duckdb==2.0.0` — the version `data:check` compares bytes against — does not move.
+There is no Jupyter dependency to keep current and nothing for CI to install.
+
+First cell of any notebook, because the semantic SQL reads `data/model/*.csv` with
+relative paths and the kernel has to sit at the repository root:
+
+```python
+import os, pathlib
+
+here = pathlib.Path.cwd()
+for candidate in (here, *here.parents):
+    if (candidate / "data" / "model" / "fact_draft_slot.csv").exists():
+        os.chdir(candidate)
+        break
+else:
+    raise RuntimeError("not inside the repository: no data/model/ above this directory")
+
+import duckdb
+con = duckdb.connect()
+for sql_file in sorted(pathlib.Path("pipeline/sql").glob("0[1-4]_*.sql")):
+    con.execute(sql_file.read_text())
+print("cwd:", pathlib.Path.cwd())
+```
+
+### When a number is not SQL
+
+Almost every finding here is a query and a table. A few are not, and they are the
+exception the rules above leave room for:
+
+| Finding | What the dossier carries |
+|---|---|
+| A count, a sum, a mean, a median | the query and the table — nothing else |
+| A proportion with an interval | the query, the table, and one line: `Wilson 95%` (a named formula needs no code) |
+| Anything resampled | the query, the table, and `bootstrap percentile, 10 000 resamples, seed <…>` |
+| A simulation with no standard form — the tournament format step for *how many champions* | the steps, the seed, the replications, **and the function pasted in**. This is the one case in the eighteen where code belongs in a dossier, because it cannot be named instead of shown |
+
+If more than one dossier ever needs the same function, it stops being a paste and
+becomes a `pipeline/` module with a test — that is a later decision, with two
+findings behind it instead of one guess.
 
 ## What a dossier is not
 

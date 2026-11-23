@@ -40,8 +40,10 @@ design pass are not built. Prediction is not built either, and is not scoped to 
 4. **Artifacts are generated and committed.** `public/data/*.json` is written by
    `pipeline/build.py` and is deterministic: no timestamps, no dictionary
    ordering surprises. `npm run data:check` fails if a committed file is stale. A
-   notebook is never an artifact and its outputs are never committed: the dossier in
-   `docs/analysis/` is the record, and it dates itself so it cannot go quietly stale.
+   notebook is never an artifact and one is never committed: analysis is done in
+   `scratch/`, which git ignores, and what enters the repository is the dossier in
+   `docs/analysis/` — a query, its result, the decision, the pin and the date, so it
+   cannot go quietly stale.
 5. **No derived measures in the facts.** The upstream model refuses columns named
    like `kda`, `gpm` or `win_rate`. If the site needs one, it is computed in SQL
    in `pipeline/sql/` and documented in `docs/metric-definitions.md` first.
@@ -56,7 +58,6 @@ data/          pinned model + era table; see data/PROVENANCE.md
 pipeline/      DuckDB SQL and the build script (needs uv)
 public/data/   generated artifacts the site fetches (committed)
 src/           the site: routes, components, lib
-notebooks/     the workshop: instruments, committed without outputs
 docs/          product spec, information architecture, metrics, roadmap
 ```
 
