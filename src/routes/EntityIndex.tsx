@@ -144,8 +144,11 @@ export default function EntityIndex({ kind }: { kind: Kind }) {
       : entries
 
     if (kind === 'team') {
-      // A club has one region, and that is how a reader looks for it. The sort work
-      // below is for the two indexes whose entities are played in roles.
+      // A club has one region, and that is how a reader looks for it. This bucket loop
+      // is knowingly the third copy of the pattern in `indexGroups.ts`: those two group
+      // by initial or role, where the label comes from the entity, and a club's label is
+      // its region from `meta`. Folding it in would mean a 'region' mode that reads a
+      // different field, which is a worse abstraction than four lines of map.
       const grouped = new Map<string, Entry[]>()
       for (const entry of visible) {
         const bucket = grouped.get(entry.meta)
