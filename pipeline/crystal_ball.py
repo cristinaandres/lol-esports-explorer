@@ -370,7 +370,7 @@ def _iso(value: object) -> str:
 def windows(con: duckdb.DuckDBPyConnection) -> list[Window]:
     corpus = _rows(con, "select * from cb_corpus_window")[0]
     seasons = _rows(con, "select * from cb_season_window order by season")
-    patches = _rows(con, "select season, patch from cb_season_patches order by season, patch")
+    patches = _rows(con, "select season, patch from cb_season_patches order by season, first_game")
     by_season: dict[int, list[str]] = {}
     for row in patches:
         by_season.setdefault(row["season"], []).append(row["patch"])

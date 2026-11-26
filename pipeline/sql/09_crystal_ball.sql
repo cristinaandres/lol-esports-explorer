@@ -57,13 +57,16 @@ select
 from cb_event_season
 group by season;
 
--- The patches a season was played on, with the games each one governs. patch_key 0
--- is the model's unknown member and is named 'unknown' rather than dropped: 279
--- games state no patch, and a window must not silently exclude them.
+-- The patches a season was played on, with the games each one governs. Ordered by
+-- the first game they governed, because patch_key is a lexical natural key (9.8 sorts
+-- after 9.19) and a reader wants the order the season was played in. patch_key 0 is
+-- the model's unknown member and is named 'unknown' rather than dropped: 279 games
+-- state no patch, and a window must not silently exclude them.
 create or replace view cb_season_patches as
 select
   s.season,
   coalesce(nullif(p.patch, ''), 'unknown') as patch,
+  min(g.date_time_utc) as first_game,
   count(distinct g.game_key) as games
 from cb_event_season s
 join game_facts g using (event_key)

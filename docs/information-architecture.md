@@ -41,8 +41,8 @@ routes are marked not built until round 4a ships them.
 /champions/:champion    pick and ban record across eras
 /glossary               every term, including the absent ones
 /selection              the audit: every candidate event and the rule that decided
-/almanac                (not built) the eighteen questions, grouped by class
-/almanac/:id            (not built) one question, one Answer, its season in the URL
+/almanac                the eighteen questions, grouped by class
+/almanac/:id            one question, one Answer, its season in the URL
 /calibracion            (not built, round 4b) the backtest: precision@K per edition
 *                       not found: the only route that claims nothing
 ```

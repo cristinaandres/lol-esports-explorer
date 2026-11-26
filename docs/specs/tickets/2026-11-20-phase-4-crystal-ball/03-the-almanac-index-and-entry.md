@@ -1,7 +1,7 @@
 # 03: The Almanac index and the entry page
 
 **Blocked by:** 01, 02
-**Status:** planned
+**Status:** done
 
 ## What to build
 
@@ -58,3 +58,13 @@
 `npx vitest run src/lib/almanac.test.ts src/routes/AlmanacIndex.test.tsx
 src/routes/AlmanacEntry.test.tsx`, then `npm run dev` and the Playwright MCP server
 for the rendered page.
+
+## Built
+
+- **`/almanac`** groups the committed index into four class sections, each card with its family, verdict and all-games headline: 18 cards, 5 / 6 / 3 / 4.
+- **`/almanac/:id`** resolves `season`, `end` and `top` from the URL and renders the `Answer`, the window (season, games, events, patches, cut), the current-window chart with its table, the by-season chart, and the order/K lines. `?season=1999` says the season is not published and offers all games; an unknown id is the 404; a two-ended card switches ends; `top=10` and `top=20` slice the stored ranking and print the K.
+- **The chart layer is used, not just proved**: the top-K dot plot with its table and entity links, the interval bar for a share, the census histogram, the by-season columns; the count card shows the observed series.
+- **The route is split.** `React.lazy` keeps the visx code out of the first load: the main bundle is 117 KB gzip, the entry chunk 25 KB and the shared Almanac chunk 4 KB.
+- **The evidence line for kill participation** names the team kills as its denominator, and the patches are in the order the season played them (2019 reads 9.8, 9.12, 9.13, 9.19).
+- **Proved in the browser.** Playwright read `/almanac`, `/almanac/champion-presence?season=2025`, `?top=10`, the worst end, Teemo's census, the region verification, an unpublished season and an unknown id; no console error beyond the dev server's `/favicon.ico` request.
+- 19 new tests (the helpers, the index view, the entry view); `npm run check` green.

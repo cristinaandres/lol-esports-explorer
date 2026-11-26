@@ -103,7 +103,7 @@ nothing merges the two: one is the site's reading of the bracket, the other is
 somebody's statement about the player. The block is absent for the 35 events that
 state none, and the copy says so rather than printing an empty table.
 
-## 4a — The Almanac *(tickets written, not built)*
+## 4a — The Almanac *(in build)*
 
 Spec: `docs/specs/2026-11-20-phase-4-crystal-ball.md` (its "Phase 4b" section is the
 next round, kept in the same document because both are the same catalogue).
@@ -118,6 +118,8 @@ interactive chart per card. The catalogue is closed, the publication threshold i
 `n ≥ 20`, a top-1 card returns a top-K ordered by the bound of its end, and the one
 question the model cannot answer ships as `not_verifiable` with the query that shows
 why. The four named-entity questions are deferred, not dropped.
+
+Built so far: the contract, the season pipeline and artifacts, and the index and entry pages. The four classes are rendered generically; tickets 04–08 add their tables, distributions and the round close.
 
 This phase number used to hold the head-to-head comparison. Prediction moved out of
 it; "Deferred" below says where it went.

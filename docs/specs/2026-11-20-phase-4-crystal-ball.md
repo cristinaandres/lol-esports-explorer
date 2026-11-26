@@ -1,6 +1,6 @@
 # Phase 4 — The Almanac (the crystal ball)
 
-Status: round 4a — **tickets written, not built**; round 4b (the backtest) is a
+Status: round 4a — **in build: tickets 00–03 built, 04–08 planned**; round 4b (the backtest) is a
 section of this document, not a second spec. Amended 2026-11-26 after the pin audit:
 the page is **The Almanac**, the catalogue is **generic** and grouped by **class**
 rather than by answer family, the windows are **seasons derived from Worlds**, and the
