@@ -25,11 +25,17 @@ export function DataTable<T>({
   rows,
   rowKey,
   minWidth = '36rem',
+  activeKey = null,
+  onRowHover,
 }: {
   columns: Column<T>[]
   rows: T[]
   rowKey: (row: T) => string | number
   minWidth?: string
+  /** The row a chart is highlighting, if any. */
+  activeKey?: string | number | null
+  /** Reports the row under the pointer, so a chart can highlight its mark. */
+  onRowHover?: (key: string | number | null) => void
 }) {
   const primary = columns.find((column) => column.primary) ?? columns[0]
   const rest = columns.filter((column) => column !== primary)
@@ -52,36 +58,52 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody className="divide-line divide-y">
-            {rows.map((row) => (
-              <tr key={rowKey(row)} className="hover:bg-ink-850/50">
-                {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={`px-4 py-2 ${column.align === 'right' ? 'text-right tabular-nums' : ''}`}
-                  >
-                    {column.render(row)}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {rows.map((row) => {
+              const key = rowKey(row)
+              return (
+                <tr
+                  key={key}
+                  className={`hover:bg-ink-850/50 ${activeKey === key ? 'bg-ink-850' : ''}`}
+                  onMouseEnter={() => onRowHover?.(key)}
+                  onMouseLeave={() => onRowHover?.(null)}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`px-4 py-2 ${column.align === 'right' ? 'text-right tabular-nums' : ''}`}
+                    >
+                      {column.render(row)}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
 
       <ul className="divide-line divide-y sm:hidden">
-        {rows.map((row) => (
-          <li key={rowKey(row)} className="px-4 py-3">
-            <div className="text-fog-100 text-sm font-medium">{primary?.render(row)}</div>
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
-              {rest.map((column) => (
-                <div key={column.key} className="flex items-baseline justify-between gap-2">
-                  <dt className="text-fog-600 text-[10px] tracking-wider uppercase">{column.label}</dt>
-                  <dd className="text-fog-300 text-xs tabular-nums">{column.render(row)}</dd>
-                </div>
-              ))}
-            </dl>
-          </li>
-        ))}
+        {rows.map((row) => {
+          const key = rowKey(row)
+          return (
+            <li
+              key={key}
+              className={`px-4 py-3 ${activeKey === key ? 'bg-ink-850' : ''}`}
+              onMouseEnter={() => onRowHover?.(key)}
+              onMouseLeave={() => onRowHover?.(null)}
+            >
+              <div className="text-fog-100 text-sm font-medium">{primary?.render(row)}</div>
+              <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                {rest.map((column) => (
+                  <div key={column.key} className="flex items-baseline justify-between gap-2">
+                    <dt className="text-fog-600 text-[10px] tracking-wider uppercase">{column.label}</dt>
+                    <dd className="text-fog-300 text-xs tabular-nums">{column.render(row)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
