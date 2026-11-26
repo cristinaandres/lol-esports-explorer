@@ -1,7 +1,7 @@
 # 08: The round close
 
 **Blocked by:** 03, 04, 05, 06, 07
-**Status:** planned
+**Status:** done
 
 ## What to build
 
@@ -48,3 +48,10 @@ The proof that the Almanac is whole, and the documents that say so.
 
 `npm run check`; the deploy commands in `AGENTS.md`; a Playwright read of the
 deployed entry page.
+
+## Built
+
+- **The data contract is a test, not a convention.** `src/lib/almanacData.test.ts` reads the committed index and every question artifact and asserts: the eighteen ids and the class counts; every `source.sha256` equals the pin's manifest hash and every artifact is in `meta.json`; every `class`, `family` and threshold; `all` plus the sixteen seasons (region-knockouts has only `all`); a cut date equal to the end date; patches or `all patches`; every record through `assertShape`; the selection-bias limit; no interval on `insufficient_data` and a census; a verification block on `not_verifiable`; ordered candidates; the bins, marker and citation; and that the index card prints the default window's headline and verdict.
+- **The test found one honest gap.** A window can hold games but no rows for a measure (2011 states no damage; some seasons state no team kills). An `insufficient_data` record with empty candidates had an empty census; it now shows a `0 of 0` census for the measure, because an empty census would be the silent filtering R5 refuses.
+- **`npm run check` is green** over the 36 artifacts.
+- **The release** is a `dev → main` merge commit; the proof is the Pages run whose `headSha` is that merge and the bundle that contains `Almanac`, followed by a cold deep link to `/almanac/champion-presence?season=2025`. The commands are in `AGENTS.md`.

@@ -569,6 +569,11 @@ def _record_insufficient_top(q: Question, window: Window, candidates: list[dict]
         {"name": candidate["name"], "count": candidate[key] or 0, "n": candidate["n"]}
         for candidate in ordered[:5]
     ]
+    if not census:
+        # A window can hold games but no rows for this measure (2011 states no
+        # damage, and some seasons state no team kills). The count is zero, and it
+        # is shown: an empty census would be the silent filtering R5 refuses.
+        census = [{"name": q.metric, "count": 0, "n": 0}]
     headline = {
         "text": f"Insufficient data: no candidate reached {MIN_N} {q.threshold_label} in {window.label}.",
         "value": None,
