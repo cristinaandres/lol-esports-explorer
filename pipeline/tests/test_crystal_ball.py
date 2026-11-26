@@ -275,3 +275,31 @@ def test_team_measures_use_the_rows_that_state_them(con) -> None:
         ).fetchone()
         assert first["n"] == stated
         assert first["metric"] == pytest.approx(total / stated, rel=1e-9)
+
+
+def test_the_game_length_distribution_marks_32(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "game-length-32")
+    window = next(window for window in crystal_ball.windows(con) if window.key == "all")
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    assert best["marker"] == {"key": "32:01–34:59", "label": "32:00"}
+    assert sum(bin_["count"] for bin_ in best["bins"]) == 3_084
+    assert sum(
+        bin_["count"] for bin_ in best["bins"] if bin_["key"] in {"≤ 24:59", "25:00–29:59", "30:00–32:00"}
+    ) == 1_513
+
+
+def test_the_shortest_game_cites_its_holder(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "shortest-game")
+    window = next(window for window in crystal_ball.windows(con) if window.key == "all")
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    assert best["citation"]["path"] == "/games/gm-e8b4d3c2a610"
+    assert best["citation"]["detail"] == "961 s"
+    assert "Invictus Gaming vs T1" in best["citation"]["label"]
+    assert best["census"] == [
+        {"name": "Blue side", "count": 184, "n": 309},
+        {"name": "Red side", "count": 125, "n": 309},
+    ]
+    assert best["marker"]["key"] == "25:34–28:00"
+    assert sum(bin_["count"] for bin_ in best["bins"][:4]) == 309

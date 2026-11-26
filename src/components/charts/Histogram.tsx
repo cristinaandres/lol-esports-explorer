@@ -34,12 +34,15 @@ export function Histogram({
   bins,
   total,
   marker = null,
+  unitLabel = 'games',
 }: {
   title: string
   caption: string
   bins: HistogramBin[]
   total: number
   marker?: { key: string; label: string } | null
+  /** What one bin counts: games, player-games, simulations or awards. */
+  unitLabel?: string
 }) {
   const [active, setActive] = useState<string | null>(null)
   const { tooltipData, tooltipLeft, tooltipTop, tooltipOpen, showTooltip, hideTooltip } =
@@ -78,7 +81,7 @@ export function Histogram({
         <DataTable
           columns={[
             { key: 'bin', label: 'Bin', primary: true, render: (bin) => bin.label },
-            { key: 'count', label: 'Games', align: 'right', render: (bin) => count(bin.count) },
+            { key: 'count', label: unitLabel, align: 'right', render: (bin) => count(bin.count) },
             {
               key: 'share',
               label: 'Share',
@@ -136,7 +139,7 @@ export function Histogram({
                 key={bin.key}
                 tabIndex={0}
                 role="img"
-                aria-label={`${bin.label}: ${count(bin.count)} of ${count(total)} games`}
+                aria-label={`${bin.label}: ${count(bin.count)} of ${count(total)} ${unitLabel}`}
                 className="focus-visible:outline-gold cursor-pointer outline-none"
                 onMouseEnter={() => show(bin)}
                 onMouseMove={() => show(bin)}
@@ -163,7 +166,7 @@ export function Histogram({
           >
             <p className="font-medium">{tooltipData.label}</p>
             <p className="text-fog-300 tabular-nums">
-              {count(tooltipData.count)} of {count(total)} games
+              {count(tooltipData.count)} of {count(total)} {unitLabel}
             </p>
           </TooltipWithBounds>
         ) : null}

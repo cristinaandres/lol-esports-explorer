@@ -167,6 +167,42 @@ describe('the Almanac entry page', () => {
     expect(goldHtml).toContain('side rows')
   })
 
+  it('shows the 32:00 share with its duration distribution marked', () => {
+    const artifact = read('almanac-game-length-32.json')
+    const html = render(artifact, 'all')
+
+    expect(html).toContain('49% (95% CI: 47–51%, n=3,084)')
+    expect(html).toContain('The distribution')
+    expect(html).toContain('32:00')
+    expect(html).toContain('1,513')
+    expect(html).toContain('3,084')
+  })
+
+  it('cites the shortest game and splits the decile by side', () => {
+    const artifact = read('almanac-shortest-game.json')
+    const html = render(artifact, 'all')
+
+    expect(html).toContain('Record holder:')
+    expect(html).toContain('Invictus Gaming vs T1')
+    expect(html).toContain('961 s')
+    expect(html).toContain('Blue side')
+    expect(html).toContain('Red side')
+    expect(html).toContain('shortest decile')
+  })
+
+  it('renders the Finals MVP census as a labelled bar, not an estimate', () => {
+    const artifact = read('almanac-finals-mvp-role.json')
+    const html = render(artifact, 'all')
+
+    expect(html).toContain('Insufficient data')
+    expect(html).toContain('Finals MVP')
+    expect(html).toContain('Mid')
+    expect(html).toContain('Census')
+    expect(html).toContain('The census by group')
+    expect(html).toContain('awards')
+    expect(html).not.toContain('95% CI')
+  })
+
   it('shows the unique-champion simulation as a distribution', () => {
     const artifact = read('almanac-unique-champions.json')
     const record = artifact.windows.find((item) => item.key === 'season:2025')!.records.best!
