@@ -28,6 +28,7 @@ Not measures: a word printed next to a name, which the site therefore states a r
 |---|---|---|---|
 | Role (champion) | The role the champion appears in most: most `fact_player_game` rows in one role, tie broken by the canonical order `Top, Jungle, Mid, Bot, Support` (`06_indexes.sql`, `role_rank`). | `fact_player_game.role` | 139 of the 171 champions appear in more than one role, and two tie at the top: the tie-break is a decidable answer, not a better one. It is where the corpus played the champion, never its design or a claim about a patch. |
 | Last club (last played for) | The club the player appeared for in their most recent game: `fact_player_game.team_key` on the row with the greatest `dim_game.date_time_utc`, ties by `game_key`. The year printed beside it is the year of that game — the artifact carries the year, and `player_last_game` keeps the instant. | `fact_player_game`, `dim_game` | The model has no contracts and no roster table, and rosters change between seasons, so this is a record of where the corpus last saw the player — never "current". A player whose last game is in 2013 keeps that club and shows 2013, which is true and visibly old. A last game naming no club (key `0`) prints nothing. |
+| Season | The window from the day after Worlds N−1 final to Worlds N final; season 2011 starts at the first game of the corpus. Derived from the Worlds game dates, never read from `dim_event.year`. | `game_facts`, `dim_event` | The calendar year and the season disagree once at this pin: IPL 5 (29 Nov – 3 Dec 2012) belongs to season 2013. A season is a window of international games, not a domestic season. |
 | Role (player) | The same rule over the player's own rows, with the same tie-break. | `fact_player_game.role` | 68 of the 1,140 players appear in **more than one** role — 57 in exactly two, 11 in three or four — and six tie at the top, which the pipeline test names. It is the position they played most in this corpus, not the position they are known for, and not a contract role. |
 
 ## Shares
@@ -66,12 +67,14 @@ Not every quotient is a share: KDA divides by deaths, not by a total the reader
 can check against the games. It is shown with its formula and its game count, never
 in a leaderboard.
 
-**Amendment for the crystal ball (round 4a).** A question that asks for the highest
+**Amendment for The Almanac (round 4a).** A question that asks for the highest
 KDA cannot be answered without ranking it, so the rule becomes: ranked only inside
 the `Answer` contract, always with the game count, a bootstrap interval and the
 `n ≥ 20` gate, and never in a table where a 410-game career sits beside a 12-game
 one. The prohibition survives where it mattered — the leaderboard without a sample
-size — and the ranked form gains the three things that made it honest.
+size — and the ranked form gains the three things that made it honest. The same
+formula is used at champion grain (over the champion's player rows), with kills,
+deaths, assists and kill participation beside it.
 
 ## Pinned facts
 
@@ -84,7 +87,7 @@ size — and the ranked form gains the three things that made it honest.
 
 | Not shown | Why |
 |---|---|
-| KDA in a leaderboard | It appears on an entity page with its formula and its game count, never ranked beside players with ten times fewer games. The one ranked form is the crystal ball's `Answer`, which prints the interval, the game count and the `n ≥ 20` gate beside every name — see the amendment under Ratios that are not shares. |
+| KDA in a leaderboard | It appears on an entity page with its formula and its game count, never ranked beside players with ten times fewer games. The one ranked form is The Almanac's `Answer`, which prints the interval, the game count and the `n ≥ 20` gate beside every name — see the amendment under Ratios that are not shares. |
 | Gold per minute, CS per minute, damage share | Per-minute measures divide by a game length that changed across eras, and damage is stated on half the rows. The pages divide by the rows that state the measure, per game, and print how many did. |
 
 ## Planned, with the formula fixed now
@@ -95,10 +98,15 @@ two pages from computing the same name two ways.
 | Metric | Definition | Round |
 |---|---|---|
 | Presence rate | Games in which the champion was picked or banned, counted once per game, over the games in scope on or after its release date. Picks come from `fact_player_game.champion_key`, bans from `fact_draft_slot` where `phase = 'ban'` — the two disagree by two rows and by three games, and the phase 4 spec says how. Wilson interval. | 4a |
-| Champion win rate | Picks the picking side won (`fact_game_side.is_winner`, joined on `game_key` and `side`), over picks of that champion. Wilson interval; published only at `n ≥ 20` picks. | 4a |
-| Champion deaths per game | `sum(deaths) / count(*)` over the champion's player rows. A ratio of counts, so a bootstrap interval and not Wilson. | 4a |
-| Kill participation | `(sum(kills) + sum(assists)) / sum(team kills in the same games)`, from `fact_game_side.kills` on the player's side. A share, so Wilson, over the games it was measured on. | 4a |
-| Damage per game | `sum(damage) / count(damage)`: the denominator is the player rows that state damage (15,870 of 30,910), never the row count. | 4a |
-| Game length at 32:00 | Games with `duration_seconds <= 1920`, over the games that state a duration, counted once per game because the measure is repeated on both side rows. | 4a |
-| Unique champions | Not a share: the median and 90% interval of a seeded Monte Carlo over the tournament format, drawing each game's champions from the window's empirical per-game distribution. | 4a |
+| Champion win rate | Picks the picking side won (`fact_game_side.is_winner`, joined on `game_key` and `side`), over picks of that champion. Wilson interval; published only at `n ≥ 20` picks; best ordered by the lower bound, worst by the upper bound. | 4a |
+| Champion KDA | `(sum(kills) + sum(assists)) / max(1, sum(deaths))` over the champion's player rows; a ratio of counts, so a bootstrap interval. The card prints kills, deaths, assists and kill participation beside it. | 4a |
+| Kill participation | `(sum(kills) + sum(assists)) / sum(team kills in the same games)`, from `fact_game_side.kills` on the player's or the champion's side. A share, so Wilson, over the games it was measured on. | 4a |
+| Player kills per game | `sum(kills) / count(*)` over the player's games; a ratio of counts, so a bootstrap interval. The total kills and the games are printed beside the rate. | 4a |
+| Team win rate | `sum(is_winner) / count(*)` over the team's side rows; Wilson; published only at `n ≥ 20` team-games; best by the lower bound, worst by the upper bound. | 4a |
+| Team kills per game | `sum(kills) / count(kills)` over the team's side rows; a ratio of counts, so a bootstrap interval; the denominator is the rows that state kills. | 4a |
+| Team gold per game | `sum(gold) / count(gold)` over the team's side rows; a bootstrap interval; the denominator is the rows that state gold. | 4a |
+| Damage per game | `sum(damage) / count(damage)`: the denominator is the player rows that state damage (15,870 of 30,910), never the row count. A bootstrap interval. | 4a |
+| Game length at 32:00 | Games with `duration_seconds <= 1920`, over the games that state a duration, counted once per game because the measure is repeated on both side rows. Wilson interval. | 4a |
+| Shortest game | The blue-side share of the shortest decile of games that state a duration; the decile is a named constant. Wilson interval; the record holder is a citation, not the answer. | 4a |
+| Unique champions | Not a share: the median and 90% interval of a seeded Monte Carlo over the season's games, drawing each game's observed pick set. The replication count and the seed are recorded. | 4a |
 | Head-to-head | Games where the two teams are the two sides of one game; the denominator is those games, nothing wider. | 6 |

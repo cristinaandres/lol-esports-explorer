@@ -36,7 +36,7 @@ forgotten: `62% (8/13)`.
 - **No invented metrics.** Every measure is either a source-stated count or a
   ratio of two of them, and every one is defined in `metric-definitions.md`.
 - **No silent filtering.** A partial game is shown and marked, not dropped.
-- **No number without its uncertainty, since the crystal ball.** A share carries its
+- **No number without its uncertainty, since The Almanac.** A share carries its
   interval and its `n`; below `n ≥ 20` the answer says "insufficient data" instead
   of drawing one.
 

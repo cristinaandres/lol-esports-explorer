@@ -67,7 +67,7 @@ pages they touch.
 ## 3c — Structure before phase 4 *(done)*
 
 Filed as `4b` when it was built, because it came before phase 4. It takes the round
-number it earned in hindsight: `4b` is the crystal ball's backtest, and a round that
+number it earned in hindsight: `4b` is The Almanac's backtest, and a round that
 amends the phase 3 surfaces belongs beside the other ones.
 
 - `/eras` as a real index, so the breadcrumb can say `Home / Eras / …` without
@@ -103,17 +103,21 @@ nothing merges the two: one is the site's reading of the bracket, the other is
 somebody's statement about the player. The block is absent for the 35 events that
 state none, and the copy says so rather than printing an empty table.
 
-## 4a — The crystal ball *(not built)*
+## 4a — The Almanac *(tickets written, not built)*
 
 Spec: `docs/specs/2026-11-20-phase-4-crystal-ball.md` (its "Phase 4b" section is the
 next round, kept in the same document because both are the same catalogue).
+Tickets: `docs/specs/tickets/2026-11-20-phase-4-crystal-ball/` (nine, in dependency
+order).
 
-`/answers`: the eighteen recurring pick'em questions, grouped in five answer families
-and each rendered as one record — a number with its interval and its `n`, the window
-it was measured on, its cut date, and the sentences that say what it does not license.
-The catalogue is closed, the publication threshold is `n ≥ 20`, a top-1 question
-returns a top-K rather than a winner, and three questions ship as `not_verifiable`
-with the query that shows why.
+`/almanac`: eighteen generic pick'em questions in four classes — champions, players,
+teams, events — each rendered as one record with its interval and its `n`, over a
+season, with its patches and cut date, and the sentences that say what it does not
+license. The page is a card index and one page per question, with a table and an
+interactive chart per card. The catalogue is closed, the publication threshold is
+`n ≥ 20`, a top-1 card returns a top-K ordered by the bound of its end, and the one
+question the model cannot answer ships as `not_verifiable` with the query that shows
+why. The four named-entity questions are deferred, not dropped.
 
 This phase number used to hold the head-to-head comparison. Prediction moved out of
 it; "Deferred" below says where it went.
@@ -149,11 +153,12 @@ phase 4b builds. The definition of ready — four conditions, all of them — is
 
 ## Known follow-ups
 
-- **Three crystal-ball questions need a data decision, not a query.** A stage-order
-  table per event (so "who placed higher" and "how many regions reached knockouts"
-  stop being string comparisons), a declared region vocabulary with its eras, and a
-  curated team → league mapping. Until each exists, the phase 4 spec ships the
-  question as `not_verifiable` with its verification query printed on the page.
+- **The catalogue has one question that needs a data decision, not a query.** The
+  region-knockouts card needs a committed stage-order table per event (so "knockouts"
+  stops being a string comparison) and a declared region vocabulary with its eras;
+  until both exist it ships as `not_verifiable` with its verification query printed on
+  the page. The named-entity questions (Faker, Peyz vs Gumayusi, HLE vs T1, the LCS
+  team) are deferred with their queries kept.
 - **Deep links return HTTP 404 on GitHub Pages.** The single-page fallback serves
   the app for any path, so `/eras/atakhan` renders correctly, but the status code
   is 404. Fixing it means a static host that rewrites, or pre-rendering each route.

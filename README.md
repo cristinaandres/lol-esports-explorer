@@ -100,11 +100,12 @@ game page with its scoreboard, draft board and player rows, and the player, team
 champion pages with the context/career split and search. The 42 games the source
 attaches to no series are reachable from their event.
 
-Next: the crystal ball — the eighteen recurring pick'em questions, each answered as a
-record with its interval, its sample and its limits — and then the backtest that
-measures whether its rankings beat a carry-over baseline. Predicting a match winner
-is not in that phase; it is deferred to a later one, and `docs/roadmap.md` says why
-and what would have to be true first. See `docs/specs/README.md` for every spec.
+Next: The Almanac — the eighteen recurring pick'em questions, generic and grouped by
+class, each answered with its interval, its sample and its limits over a season — and
+then the backtest that measures whether its rankings beat a carry-over baseline.
+Predicting a match winner is not in that phase; it is deferred to a later one, and
+`docs/roadmap.md` says why and what would have to be true first. See
+`docs/specs/README.md` for every spec.
 
 ## Licence
 

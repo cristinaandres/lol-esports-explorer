@@ -46,7 +46,7 @@ above will need.
   of 1" and the fact that a best-of-one links to a game rather than a series.
   Two thirds of the corpus is best-of-one, so this is the most common row on the
   site, not an edge case.
-- **R8** *(Added with round 4a.)* The crystal ball's `Answer` is one block with
+- **R8** *(Added with round 4a.)* The Almanac's `Answer` is one block with
   three verdict states — `answered`, `insufficient_data`, `not_verifiable` — and all
   three are designed. `insufficient_data` must read as an answer with its counts, not
   as an error or an empty state: it is the honest outcome for most per-event
