@@ -188,7 +188,36 @@ export function AlmanacEntryView({
       render: (point) => (point.components?.kp ? String(point.components.kp) : '—'),
     },
   ]
-  const extraColumns = artifact.id === 'champion-kda' ? kdaColumns : undefined
+  const killsColumns: Column<DotPoint>[] = [
+    {
+      key: 'kills',
+      label: 'Kills',
+      align: 'right',
+      render: (point) =>
+        point.components?.kills === null || point.components?.kills === undefined
+          ? '—'
+          : count(Number(point.components.kills)),
+    },
+  ]
+  const teamKillsColumns: Column<DotPoint>[] = [
+    {
+      key: 'team_kills',
+      label: 'Team kills',
+      align: 'right',
+      render: (point) =>
+        point.components?.team_kills === null || point.components?.team_kills === undefined
+          ? '—'
+          : count(Number(point.components.team_kills)),
+    },
+  ]
+  const extraColumns =
+    artifact.id === 'champion-kda' || artifact.id === 'player-kda'
+      ? kdaColumns
+      : artifact.id === 'player-kills'
+        ? killsColumns
+        : artifact.id === 'player-kill-participation'
+          ? teamKillsColumns
+          : undefined
   const seriesPoints: BucketPoint[] = artifact.series.map((point) => ({
     key: point.label,
     label: point.label,
@@ -241,13 +270,18 @@ export function AlmanacEntryView({
       />
     ) : null
 
-  const simulationChart =
-    record.verdict === 'answered' && record.bins && record.bins.length > 0 ? (
+  const binsChart =
+    record.bins && record.bins.length > 0 ? (
       <Histogram
-        title="The simulation"
-        caption={`${count(record.evidence.n)} simulated seasons; the answer above is the median and the 90% interval.`}
+        title={artifact.id === 'unique-champions' ? 'The simulation' : 'The distribution'}
+        caption={
+          artifact.id === 'unique-champions'
+            ? `${count(record.evidence.n)} simulated seasons; the answer above is the median and the 90% interval.`
+            : `${count(record.evidence.n)} player-games in this window; the line marks ${record.marker?.label ?? 'the threshold'}.`
+        }
         bins={record.bins.map((bin) => ({ key: bin.key, label: bin.label, count: bin.count }))}
         total={record.evidence.n}
+        marker={record.marker ?? null}
       />
     ) : null
 
@@ -294,7 +328,7 @@ export function AlmanacEntryView({
       ) : null}
 
       {chart}
-      {simulationChart}
+      {binsChart}
       {seriesChart}
 
       <p className="text-fog-600 mt-10 max-w-3xl text-xs leading-relaxed">

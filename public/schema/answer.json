@@ -177,9 +177,19 @@
         "verification": { "$ref": "#/$defs/verification" },
         "top": { "type": "integer", "minimum": 1 },
         "limits": { "type": "array", "maxItems": 4, "items": { "type": "string", "minLength": 1 } },
+        "marker": {
+          "type": ["object", "null"],
+          "description": "The bin a threshold falls in, marked on the histogram.",
+          "required": ["key", "label"],
+          "additionalProperties": false,
+          "properties": {
+            "key": { "type": "string", "minLength": 1 },
+            "label": { "type": "string", "minLength": 1 }
+          }
+        },
         "bins": {
           "type": "array",
-          "description": "A simulation's replications, binned for its histogram.",
+          "description": "A simulation's replications, or a distribution, binned for its histogram.",
           "items": {
             "type": "object",
             "required": ["key", "label", "count"],

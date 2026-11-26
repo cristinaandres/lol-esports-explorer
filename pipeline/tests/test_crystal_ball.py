@@ -211,3 +211,43 @@ def test_the_unique_simulation_keeps_its_bins(con) -> None:
     assert best["headline"]["interval"]["level"] == 0.9
     assert sum(bin_["count"] for bin_ in best["bins"]) == crystal_ball.RESAMPLES
     assert all(int(bin_["key"]) == int(bin_["label"]) for bin_ in best["bins"])
+
+
+def test_player_kills_carries_the_total(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "player-kills")
+    window = next(window for window in crystal_ball.windows(con) if window.key == "all")
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    first = best["candidates"][0]
+    assert first["components"]["kills"] / first["n"] == pytest.approx(first["metric"], rel=1e-9)
+
+
+def test_player_kill_participation_carries_the_team_kills(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "player-kill-participation")
+    window = next(window for window in crystal_ball.windows(con) if window.key == "all")
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    first = best["candidates"][0]
+    assert first["components"]["team_kills"] > 0
+    assert first["part"] / first["components"]["team_kills"] == pytest.approx(
+        first["metric"], rel=1e-9
+    )
+
+
+def test_the_threshold_distributions_mark_their_line(con) -> None:
+    kills_question = next(q for q in crystal_ball.QUESTIONS if q.id == "player-kills-threshold")
+    cs_question = next(q for q in crystal_ball.QUESTIONS if q.id == "player-cs-threshold")
+    window = next(window for window in crystal_ball.windows(con) if window.key == "all")
+    kills, _ = crystal_ball.build_window(con, kills_question, window)
+    cs, _ = crystal_ball.build_window(con, cs_question, window)
+
+    assert kills["marker"] == {"key": "15–19", "label": "15 kills"}
+    assert sum(bin_["count"] for bin_ in kills["bins"]) == kills["headline"]["n"] == 30_910
+    assert sum(
+        bin_["count"] for bin_ in kills["bins"] if bin_["key"] in {"15–19", "20–24", "25+"}
+    ) == 49
+
+    assert cs["marker"] == {"key": "450–499", "label": "450 CS"}
+    assert sum(
+        bin_["count"] for bin_ in cs["bins"] if bin_["key"] in {"450–499", "500+"}
+    ) == 401

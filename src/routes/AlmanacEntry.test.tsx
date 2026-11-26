@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 
 import type { End, QuestionArtifact } from '../lib/answer'
+import { count } from '../lib/format'
 import { AlmanacEntryView } from './AlmanacEntry'
 
 const read = (name: string): QuestionArtifact =>
@@ -79,6 +80,52 @@ describe('the Almanac entry page', () => {
     expect(html).toContain('Kill participation')
     expect(html).toContain('Senna')
     expect(html).toContain('208')
+  })
+
+  it('shows the player kills rate with its total beside it', () => {
+    const artifact = read('almanac-player-kills.json')
+    const record = artifact.windows[0].records.best!
+    const html = render(artifact, 'all')
+
+    expect(html).toContain('Kills')
+    expect(html).toContain(record.candidates![0].name)
+    expect(html).toContain(count(Number(record.candidates![0].components!.kills)))
+  })
+
+  it('shows the kill-participation denominator', () => {
+    const artifact = read('almanac-player-kill-participation.json')
+    const record = artifact.windows[0].records.best!
+    const html = render(artifact, 'all')
+
+    expect(html).toContain('Team kills')
+    expect(html).toContain(record.candidates![0].name)
+    expect(html).toContain(count(Number(record.candidates![0].components!.team_kills)))
+  })
+
+  it('shows the player KDA with its kills, deaths and assists', () => {
+    const artifact = read('almanac-player-kda.json')
+    const html = render(artifact, 'all')
+
+    expect(html).toContain('Kills')
+    expect(html).toContain('Deaths')
+    expect(html).toContain('Assists')
+    expect(html).toContain('Kill participation')
+  })
+
+  it('shows the threshold distributions with the threshold marked', () => {
+    const kills = read('almanac-player-kills-threshold.json')
+    const cs = read('almanac-player-cs-threshold.json')
+
+    const killsHtml = render(kills, 'all')
+    expect(killsHtml).toContain('The distribution')
+    expect(killsHtml).toContain('15 kills')
+    expect(killsHtml).toContain('0.16%')
+    expect(killsHtml).toContain('49')
+
+    const csHtml = render(cs, 'all')
+    expect(csHtml).toContain('450 CS')
+    expect(csHtml).toContain('1.3%')
+    expect(csHtml).toContain('401')
   })
 
   it('shows the unique-champion simulation as a distribution', () => {
