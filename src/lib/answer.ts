@@ -141,6 +141,8 @@ export type Thresholds = {
   top_k: number
   top_max: number
   resamples: number
+  /** The fixed seed the bootstrap and the simulation were run with. */
+  seed: number
 }
 
 export type Source = {

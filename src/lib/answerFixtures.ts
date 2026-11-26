@@ -59,7 +59,7 @@ export const presence: QuestionArtifact = {
   class: 'champions',
   family: 'top-1',
   question: 'Which champion was present in the most games?',
-  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000 },
+  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000, seed: 20261126 },
   source: { view: 'cb_game_presence', artifact: 'almanac-champion-presence.json', sha256: PIN },
   limits: [
     'Only teams that qualified for an international event appear in the corpus.',
@@ -114,7 +114,7 @@ export const championKda: QuestionArtifact = {
   class: 'champions',
   family: 'top-1',
   question: 'Which champion had the best KDA, and the worst?',
-  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000 },
+  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000, seed: 20261126 },
   source: { view: 'cb_champion_games', artifact: 'almanac-champion-kda.json', sha256: PIN },
   limits: [
     'Only teams that qualified for an international event appear in the corpus.',
@@ -167,7 +167,7 @@ export const teemo: QuestionArtifact = {
   class: 'champions',
   family: 'yes-no',
   question: 'Will Teemo be picked?',
-  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000 },
+  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000, seed: 20261126 },
   source: { view: 'cb_season_presence', artifact: 'almanac-teemo-picked.json', sha256: PIN },
   limits: [
     'Only teams that qualified for an international event appear in the corpus.',
@@ -211,7 +211,7 @@ export const uniqueChampions: QuestionArtifact = {
   class: 'champions',
   family: 'count',
   question: 'How many distinct champions will a season hold?',
-  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000 },
+  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000, seed: 20261126 },
   source: { view: 'cb_champion_picks', artifact: 'almanac-unique-champions.json', sha256: PIN },
   limits: [
     'A simulation is a distribution, not a forecast: it draws from this window’s observed pick sets.',
@@ -261,7 +261,7 @@ export const finalsMvp: QuestionArtifact = {
   class: 'events',
   family: 'categorical',
   question: 'Which role wins Finals MVP?',
-  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000 },
+  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000, seed: 20261126 },
   source: { view: 'cb_awards', artifact: 'almanac-finals-mvp-role.json', sha256: PIN },
   limits: [
     'Only teams that qualified for an international event appear in the corpus.',
@@ -310,7 +310,7 @@ export const regions: QuestionArtifact = {
   class: 'events',
   family: 'categorical',
   question: 'How many regions reach knockouts?',
-  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000 },
+  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000, seed: 20261126 },
   source: { view: 'cb_region_verification', artifact: 'almanac-region-knockouts.json', sha256: PIN },
   limits: [
     'No number is printed while the two columns it needs do not exist.',
@@ -356,7 +356,7 @@ export const championWinRate: QuestionArtifact = {
   class: 'champions',
   family: 'top-1',
   question: 'Which champion won the most, and the least?',
-  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000 },
+  thresholds: { min_n: 20, top_k: 5, top_max: 20, resamples: 10000, seed: 20261126 },
   source: { view: 'cb_champion_games', artifact: 'almanac-champion-win-rate.json', sha256: PIN },
   limits: [
     'Only teams that qualified for an international event appear in the corpus.',

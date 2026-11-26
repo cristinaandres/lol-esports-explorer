@@ -164,6 +164,11 @@ describe('the published schema', () => {
     expect(schema.properties.id.enum).toEqual([...QUESTION_IDS])
   })
 
+  it('records the seed the bootstrap and the simulation were run with', () => {
+    expect((schema.$defs.thresholds as { properties: Record<string, unknown> }).properties.seed).toBeDefined()
+    expect(presence.thresholds.seed).toBe(20261126)
+  })
+
   it('defines the three record branches and the two window shapes', () => {
     expect(schema.$defs.record).toBeDefined()
     expect(schema.$defs.top1Record).toBeDefined()

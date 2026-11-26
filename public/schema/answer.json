@@ -49,13 +49,14 @@
   "$defs": {
     "thresholds": {
       "type": "object",
-      "required": ["min_n", "top_k", "top_max", "resamples"],
+      "required": ["min_n", "top_k", "top_max", "resamples", "seed"],
       "additionalProperties": false,
       "properties": {
         "min_n": { "type": "integer", "minimum": 1 },
         "top_k": { "type": "integer", "minimum": 1 },
         "top_max": { "type": "integer", "minimum": 1 },
-        "resamples": { "type": "integer", "minimum": 1 }
+        "resamples": { "type": "integer", "minimum": 1 },
+        "seed": { "type": "integer", "minimum": 0 }
       }
     },
     "source": {
