@@ -14,9 +14,8 @@ search, the glossary and the selection audit, the 3b polish round, the 3c struct
 work, 3d index sorting with the club a player last played for, and 3e player
 distinctions — over the DuckDB pipeline and the deploy. `docs/specs/README.md` lists
 the rounds in their build order. Round 4a — The Almanac (`/almanac`, spec in
-`docs/specs/2026-11-20-phase-4-crystal-ball.md`), whose first eight tickets (00–07) are built
-and whose remaining one (08) is planned, its 4b backtest, and the phase 5 design pass are
-not built. Prediction is
+`docs/specs/2026-11-20-phase-4-crystal-ball.md`) is built and deployed; its 4b backtest
+and the phase 5 design pass are not built. Prediction is
 not built either, and is not scoped to phase 4: it is deferred to round 6, with its
 definition of ready in the phase 4 spec.
 
