@@ -13,10 +13,11 @@ series and game pages, the player, team and champion pages with their indexes an
 search, the glossary and the selection audit, the 3b polish round, the 3c structure
 work, 3d index sorting with the club a player last played for, and 3e player
 distinctions — over the DuckDB pipeline and the deploy. `docs/specs/README.md` lists
-the rounds in their build order. Round 4a — the crystal ball (`/answers`, spec in
-`docs/specs/2026-11-20-phase-4-crystal-ball.md`), its 4b backtest, and the phase 5
-design pass are not built. Prediction is not built either, and is not scoped to phase
-4: it is deferred to round 6, with its definition of ready in the phase 4 spec.
+the rounds in their build order. Round 4a — The Almanac (`/almanac`, spec in
+`docs/specs/2026-11-20-phase-4-crystal-ball.md`), whose nine tickets are written and
+not built, its 4b backtest, and the phase 5 design pass are not built. Prediction is
+not built either, and is not scoped to phase 4: it is deferred to round 6, with its
+definition of ready in the phase 4 spec.
 
 ## The rules that matter here
 

@@ -43,11 +43,12 @@ not others, and what would make the choice wrong later.
 One dossier per question, named after it (`champion-presence.md`), starting from
 [`TEMPLATE.md`](TEMPLATE.md). Deliberately **without a date in the filename**: a
 spec is written once and dated, a dossier is kept current and dates its sections
-inside.
+inside. The catalogue audit is the exception: one dossier for the whole catalogue,
+because the decision it settles is the catalogue's shape, not one card's layout.
 
 | Dossier | Question | State |
 |---|---|---|
-| — | none written yet | — |
+| [`crystal-ball-audit.md`](crystal-ball-audit.md) | which eighteen generic questions ship as The Almanac, in which classes, over which windows | decided |
 
 ## How a dossier is written
 
