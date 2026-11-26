@@ -68,6 +68,41 @@ describe('the Almanac entry page', () => {
     expect(html).not.toContain('64% (95% CI')
   })
 
+  it('shows the champion KDA with kills, deaths, assists and kill participation', () => {
+    const artifact = read('almanac-champion-kda.json')
+    const html = render(artifact, '2025')
+
+    expect(html).toContain('8.44 (95% CI:')
+    expect(html).toContain('Kills')
+    expect(html).toContain('Deaths')
+    expect(html).toContain('Assists')
+    expect(html).toContain('Kill participation')
+    expect(html).toContain('Senna')
+    expect(html).toContain('208')
+  })
+
+  it('shows the unique-champion simulation as a distribution', () => {
+    const artifact = read('almanac-unique-champions.json')
+    const record = artifact.windows.find((item) => item.key === 'season:2025')!.records.best!
+    const html = render(artifact, '2025')
+
+    expect(html).toContain('The simulation')
+    expect(html).toContain('10,000 simulated seasons')
+    expect(html).toContain(record.headline.text)
+    expect(record.bins!.length).toBeGreaterThan(1)
+    expect(html).toContain(record.bins![0].label)
+  })
+
+  it('keeps the under-20-pick champions visible as a census', () => {
+    const artifact = read('almanac-champion-win-rate.json')
+    const record = artifact.windows.find((item) => item.key === 'season:2025')!.records.best!
+    const html = render(artifact, '2025')
+
+    expect(html).toContain('Census')
+    expect(html).toContain(record.census![0].name)
+    expect(html).toContain(`${record.census![0].count} of ${record.census![0].n}`)
+  })
+
   it('renders insufficient data with its census and without an interval', () => {
     const artifact = read('almanac-teemo-picked.json')
     const html = render(artifact, 'all')

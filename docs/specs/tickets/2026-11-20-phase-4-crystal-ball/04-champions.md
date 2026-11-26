@@ -1,7 +1,7 @@
 # 04: Champions, the five cards
 
 **Blocked by:** 01, 02 (03 for the page)
-**Status:** planned
+**Status:** done
 
 ## What to build
 
@@ -52,3 +52,12 @@ The five champion cards, each with its records, its table and its chart.
 
 `npm run data:test`, the data tests for `almanac-champion-*.json`, and a Playwright
 read of each card.
+
+## Built
+
+- **The five champion cards are live** on `/almanac/:id`: presence, win rate (best and worst), champion KDA (best and worst), unique champions and Teemo.
+- **KDA carries its parts.** The pipeline writes `components` on each KDA candidate — kills, deaths, assists and kill participation with its Wilson interval — and the dot plot's table appends Kills, Deaths, Assists and Kill participation after the contract's Name, Value, interval and n. Season 2025: Senna, 8.44 in 21 champion-games, 79 / 34 / 208, KP 83% (95% CI: 62–93%).
+- **The unique-champion simulation ships its distribution.** The pipeline stores the 10,000 replications as integer bins; the page renders the histogram with the replications' share of 10,000 and the observed by-season series beside it. Season 2025: 114–123, 90% of 10,000 simulations.
+- **The win-rate threshold was corrected to picks.** The old gate filtered on wins (`part`), so a champion with 30 picks and 15 wins was excluded; it now gates on picks (`n`), as the audit says. The census shows the champions under 20 picks with their pick counts (season 2025: Bel'Veth 17 picks).
+- **Presence and Teemo** were already correct: Azir 148 of 232 in season 2025, top five ordered by the lower bound; Teemo's four picks stay a census with no interval.
+- 3 new pipeline tests (threshold on picks, KDA components, simulation bins) and 3 new entry tests; Playwright read the KDA table, the simulation histogram and the win-rate census. `npm run check` is green.

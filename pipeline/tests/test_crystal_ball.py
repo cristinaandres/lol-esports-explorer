@@ -168,3 +168,46 @@ def test_the_reference_sentence_matches_the_contract() -> None:
         "interval": {"level": 0.9, "low": 61, "high": 79, "method": "simulation-percentile"},
     }
     assert crystal_ball.format_answer(count, "answered") == "61–79 (90% of 10,000 simulations)"
+
+
+def test_the_win_rate_threshold_is_picks_not_wins(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "champion-win-rate")
+    window = next(window for window in crystal_ball.windows(con) if window.season == 2025)
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    assert all(candidate["n"] >= crystal_ball.MIN_N for candidate in best["candidates"])
+    assert all(row["count"] < crystal_ball.MIN_N for row in best["census"])
+
+    # Thirty picks with fifteen wins is a published rate; nineteen picks is not.
+    assert crystal_ball._share_candidate("x", "/champions/x", 15, 30, None, "n")["eligible"]
+    assert not crystal_ball._share_candidate("y", "/champions/y", 15, 19, None, "n")["eligible"]
+
+
+def test_the_champion_kda_carries_its_components(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "champion-kda")
+    window = next(window for window in crystal_ball.windows(con) if window.season == 2025)
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    for candidate in best["candidates"]:
+        components = candidate["components"]
+        assert set(components) == {"kills", "deaths", "assists", "kp"}
+        value = (components["kills"] + components["assists"]) / max(1, components["deaths"])
+        assert value == pytest.approx(candidate["metric"], rel=1e-9)
+        assert "95% CI" in components["kp"]
+
+    senna = next(candidate for candidate in best["candidates"] if candidate["name"] == "Senna")
+    assert senna["n"] == 21
+    assert senna["components"]["kills"] == 79
+    assert senna["components"]["deaths"] == 34
+    assert senna["components"]["assists"] == 208
+
+
+def test_the_unique_simulation_keeps_its_bins(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "unique-champions")
+    window = next(window for window in crystal_ball.windows(con) if window.season == 2025)
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    assert best["headline"]["n"] == crystal_ball.RESAMPLES
+    assert best["headline"]["interval"]["level"] == 0.9
+    assert sum(bin_["count"] for bin_ in best["bins"]) == crystal_ball.RESAMPLES
+    assert all(int(bin_["key"]) == int(bin_["label"]) for bin_ in best["bins"])

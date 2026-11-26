@@ -82,6 +82,8 @@ export type Candidate = {
   interval: Interval | null
   lower_bound: number
   upper_bound: number
+  /** Question-specific columns the pipeline preformatted (KDA's kills, deaths, assists, KP). */
+  components?: Record<string, string | number | null>
 }
 
 export type CensusRow = {
@@ -108,6 +110,8 @@ export type AnswerRecord = {
   top?: number
   /** Window-specific limits, added to the artifact's shared list. */
   limits?: string[]
+  /** The 10,000 replications of a simulation, binned for its histogram. */
+  bins?: { key: string; label: string; count: number }[]
 }
 
 export type Window = {

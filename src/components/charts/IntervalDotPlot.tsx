@@ -10,6 +10,7 @@ import { intervalText, metricText } from '../../lib/answer'
 import type { Interval, Unit } from '../../lib/answer'
 import { count } from '../../lib/format'
 import { DataTable } from '../DataTable'
+import type { Column } from '../DataTable'
 import { ChartFrame } from './ChartFrame'
 
 export type DotPoint = {
@@ -22,6 +23,7 @@ export type DotPoint = {
   part: number | null
   interval: Interval | null
   href?: string
+  components?: Record<string, string | number | null>
 }
 
 const WIDTH = 660
@@ -44,6 +46,7 @@ export function IntervalDotPlot({
   unit,
   min = 0,
   max = 1,
+  extraColumns = [],
 }: {
   title: string
   caption: string
@@ -51,6 +54,8 @@ export function IntervalDotPlot({
   unit: Unit
   min?: number
   max?: number
+  /** Question-specific columns, appended after the contract's four. */
+  extraColumns?: Column<DotPoint>[]
 }) {
   const [active, setActive] = useState<string | null>(null)
   const height = Math.max(120, points.length * ROW + MARGIN.top + MARGIN.bottom)
@@ -105,6 +110,7 @@ export function IntervalDotPlot({
               render: (point) => (point.interval ? intervalText(point.interval, unit, point.n) : '—'),
             },
             { key: 'n', label: 'n', align: 'right', render: (point) => count(point.n) },
+            ...extraColumns,
           ]}
           rows={points}
           rowKey={(point) => point.key}
