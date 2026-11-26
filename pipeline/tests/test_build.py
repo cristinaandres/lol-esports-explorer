@@ -155,10 +155,15 @@ def refused(call: Callable[[], object]) -> str:
     return message
 
 
-def test_render_accepts_the_manifest_the_pin_names(root: pathlib.Path) -> None:
+def test_render_accepts_the_manifest_the_pin_names(
+    root: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """The control: with a matching manifest the same paths render."""
 
     pin_tree(root)
+    # The Almanac builder needs a real DuckDB; the refusal tests use a stub connection,
+    # so the builder is stubbed here and tested in test_crystal_ball.py.
+    monkeypatch.setattr(build.crystal_ball, "build", lambda connection, pin: {})
     rendered = build.render(NoRowsConnection())
 
     meta = json.loads(rendered["meta.json"])
@@ -413,6 +418,7 @@ def test_main_writes_the_artifacts_when_the_pin_holds(root: pathlib.Path, monkey
     """The control: nothing else gates `main()` now that the short-name guard is gone."""
     pin_tree(root)
     monkeypatch.setattr(build, "connect", NoRowsConnection)
+    monkeypatch.setattr(build.crystal_ball, "build", lambda connection, pin: {})
 
     cwd = os.getcwd()
     try:

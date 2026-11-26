@@ -98,6 +98,28 @@ export default function Home() {
           />
         </div>
       </section>
+
+      <section className="mt-14">
+        <div className="mb-5 flex items-baseline justify-between gap-4">
+          <h2 className="text-fog-100 text-lg font-semibold tracking-tight">Or ask the record</h2>
+          <Link to="/almanac" className="text-fog-600 hover:text-fog-100 text-xs no-underline">
+            open the Almanac →
+          </Link>
+        </div>
+        <p className="text-fog-500 mb-6 max-w-3xl text-sm leading-relaxed">
+          Eighteen recurring pick'em questions, each answered from a season of the past with its
+          interval, its sample and the limits that say what it does not license. Descriptive, not a
+          prediction: the judgement stays yours.
+        </p>
+        <div className="grid gap-4">
+          <BrowseCard
+            to="/almanac"
+            label="The Almanac"
+            value="18 questions"
+            blurb="presence, win rate, KDA, the thresholds a game crosses, the champion pool and the roles — with their evidence and their cut dates"
+          />
+        </div>
+      </section>
     </>
   )
 }

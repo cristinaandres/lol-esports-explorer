@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cristinaandres.github.io/lol-esports-explorer/schema/answer.json",
+  "title": "Almanac question artifact",
+  "description": "One question of The Almanac: its windows, their Answer records and the series its chart reads. The record rules are structural: a small sample cannot acquire an interval, a not_verifiable record cannot print a number, and an answered top-1 record cannot lose its candidates.",
+  "type": "object",
+  "required": ["id", "class", "family", "question", "thresholds", "source", "limits", "windows", "series"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "enum": [
+        "champion-presence",
+        "champion-win-rate",
+        "champion-kda",
+        "unique-champions",
+        "teemo-picked",
+        "player-kda",
+        "player-kills",
+        "player-kill-participation",
+        "player-damage",
+        "player-kills-threshold",
+        "player-cs-threshold",
+        "team-win-rate",
+        "team-kills",
+        "team-gold",
+        "game-length-32",
+        "shortest-game",
+        "finals-mvp-role",
+        "region-knockouts"
+      ]
+    },
+    "class": { "type": "string", "enum": ["champions", "players", "teams", "events"] },
+    "family": { "type": "string", "enum": ["top-1", "yes-no", "count", "categorical"] },
+    "question": { "type": "string", "minLength": 1 },
+    "thresholds": { "$ref": "#/$defs/thresholds" },
+    "source": { "$ref": "#/$defs/source" },
+    "limits": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "type": "string", "minLength": 1 } },
+    "windows": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/window" } },
+    "series": { "type": "array", "items": { "$ref": "#/$defs/seriesPoint" } }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "family": { "const": "top-1" } }, "required": ["family"] },
+      "then": { "properties": { "windows": { "items": { "$ref": "#/$defs/top1Window" } } } },
+      "else": { "properties": { "windows": { "items": { "$ref": "#/$defs/window" } } } }
+    }
+  ],
+  "$defs": {
+    "thresholds": {
+      "type": "object",
+      "required": ["min_n", "top_k", "top_max", "resamples", "seed"],
+      "additionalProperties": false,
+      "properties": {
+        "min_n": { "type": "integer", "minimum": 1 },
+        "top_k": { "type": "integer", "minimum": 1 },
+        "top_max": { "type": "integer", "minimum": 1 },
+        "resamples": { "type": "integer", "minimum": 1 },
+        "seed": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "required": ["view", "artifact", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "view": { "type": "string", "minLength": 1 },
+        "artifact": { "type": "string", "pattern": "^almanac-[a-z0-9-]+\\.json$" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "interval": {
+      "type": "object",
+      "required": ["level", "low", "high", "method"],
+      "additionalProperties": false,
+      "properties": {
+        "level": { "type": "number" },
+        "low": { "type": "number" },
+        "high": { "type": "number" },
+        "method": { "type": "string", "enum": ["wilson", "bootstrap-percentile", "simulation-percentile"] }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "level": { "const": 0.95 },
+            "method": { "enum": ["wilson", "bootstrap-percentile"] }
+          }
+        },
+        {
+          "properties": {
+            "level": { "const": 0.9 },
+            "method": { "const": "simulation-percentile" }
+          }
+        }
+      ]
+    },
+    "headline": {
+      "type": "object",
+      "required": ["text", "value", "unit", "n", "interval"],
+      "additionalProperties": false,
+      "properties": {
+        "text": { "type": "string", "minLength": 1 },
+        "value": { "type": ["number", "null"] },
+        "unit": {
+          "type": ["string", "null"],
+          "enum": ["share", "per-game", "count", "kda", "seconds", null]
+        },
+        "n": { "type": "integer", "minimum": 0 },
+        "interval": { "anyOf": [{ "$ref": "#/$defs/interval" }, { "type": "null" }] }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["metric", "value", "part", "n", "denominator", "grain", "role"],
+      "additionalProperties": false,
+      "properties": {
+        "metric": { "type": "string", "minLength": 1 },
+        "value": { "type": ["number", "null"] },
+        "part": { "type": ["integer", "null"], "minimum": 0 },
+        "n": { "type": "integer", "minimum": 0 },
+        "denominator": { "type": ["integer", "null"], "minimum": 0 },
+        "grain": { "type": "string", "enum": ["game", "player-game", "side", "award", "champion-game"] },
+        "role": { "type": ["string", "null"] }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "required": ["name", "path", "metric", "part", "n", "interval", "lower_bound", "upper_bound"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "pattern": "^/(players|teams|champions)/" },
+        "metric": { "type": "number" },
+        "part": { "type": ["integer", "null"], "minimum": 0 },
+        "n": { "type": "integer", "minimum": 0 },
+        "interval": { "anyOf": [{ "$ref": "#/$defs/interval" }, { "type": "null" }] },
+        "lower_bound": { "type": "number" },
+        "upper_bound": { "type": "number" },
+        "components": {
+          "type": "object",
+          "description": "Question-specific, preformatted columns; the page never computes them.",
+          "additionalProperties": { "type": ["string", "number", "null"] }
+        }
+      }
+    },
+    "censusRow": {
+      "type": "object",
+      "required": ["name", "count", "n"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "count": { "type": "integer", "minimum": 0 },
+        "n": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["query", "result_today", "unblocked_by"],
+      "additionalProperties": false,
+      "properties": {
+        "query": { "type": "string", "minLength": 1 },
+        "result_today": { "type": "string", "minLength": 1 },
+        "unblocked_by": { "type": "string", "minLength": 1 }
+      }
+    },
+    "record": {
+      "type": "object",
+      "required": ["end", "verdict", "headline", "evidence"],
+      "additionalProperties": false,
+      "properties": {
+        "end": { "type": ["string", "null"], "enum": ["best", "worst", null] },
+        "verdict": { "type": "string", "enum": ["answered", "insufficient_data", "not_verifiable"] },
+        "headline": { "$ref": "#/$defs/headline" },
+        "evidence": { "$ref": "#/$defs/evidence" },
+        "candidates": { "type": "array", "maxItems": 21, "items": { "$ref": "#/$defs/candidate" } },
+        "census": { "type": "array", "items": { "$ref": "#/$defs/censusRow" } },
+        "verification": { "$ref": "#/$defs/verification" },
+        "top": { "type": "integer", "minimum": 1 },
+        "limits": { "type": "array", "maxItems": 4, "items": { "type": "string", "minLength": 1 } },
+        "marker": {
+          "type": ["object", "null"],
+          "description": "The bin a threshold falls in, marked on the histogram.",
+          "required": ["key", "label"],
+          "additionalProperties": false,
+          "properties": {
+            "key": { "type": "string", "minLength": 1 },
+            "label": { "type": "string", "minLength": 1 }
+          }
+        },
+        "citation": {
+          "type": ["object", "null"],
+          "description": "A record held by a game or an event, cited rather than answered.",
+          "required": ["label", "detail", "path"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "minLength": 1 },
+            "detail": { "type": "string", "minLength": 1 },
+            "path": { "type": "string", "pattern": "^/(games|events)/" }
+          }
+        },
+        "bins": {
+          "type": "array",
+          "description": "A simulation's replications, or a distribution, binned for its histogram.",
+          "items": {
+            "type": "object",
+            "required": ["key", "label", "count"],
+            "additionalProperties": false,
+            "properties": {
+              "key": { "type": "string", "minLength": 1 },
+              "label": { "type": "string", "minLength": 1 },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "verdict": { "const": "not_verifiable" } }, "required": ["verdict"] },
+          "then": {
+            "required": ["verification"],
+            "properties": {
+              "headline": {
+                "properties": {
+                  "value": { "type": "null" },
+                  "interval": { "type": "null" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "verdict": { "const": "insufficient_data" } }, "required": ["verdict"] },
+          "then": {
+            "required": ["census"],
+            "properties": {
+              "census": { "minItems": 1 },
+              "headline": { "properties": { "interval": { "type": "null" } } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "verdict": { "const": "answered" } }, "required": ["verdict"] },
+          "then": {
+            "properties": {
+              "headline": {
+                "required": ["value", "interval"],
+                "properties": {
+                  "value": { "type": "number" },
+                  "interval": { "$ref": "#/$defs/interval" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "headline": { "properties": { "unit": { "const": "share" } }, "required": ["unit"] }
+            },
+            "required": ["headline"]
+          },
+          "then": {
+            "properties": {
+              "evidence": {
+                "required": ["part", "denominator"],
+                "properties": {
+                  "part": { "type": "integer" },
+                  "denominator": { "type": "integer" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "top1Record": {
+      "allOf": [
+        { "$ref": "#/$defs/record" },
+        {
+          "if": { "properties": { "verdict": { "const": "answered" } }, "required": ["verdict"] },
+          "then": {
+            "required": ["candidates", "top"],
+            "properties": { "candidates": { "minItems": 1 } }
+          }
+        }
+      ]
+    },
+    "window": {
+      "type": "object",
+      "required": ["key", "label", "season", "date_from", "date_to", "cut_date", "patches", "games", "events", "records"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "season": { "type": ["integer", "null"] },
+        "date_from": { "type": "string", "format": "date" },
+        "date_to": { "type": "string", "format": "date" },
+        "cut_date": { "type": "string", "format": "date" },
+        "patches": {
+          "oneOf": [
+            { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            { "type": "string", "enum": ["all patches"] }
+          ]
+        },
+        "games": { "type": "integer", "minimum": 0 },
+        "events": { "type": "integer", "minimum": 0 },
+        "records": {
+          "type": "object",
+          "required": ["best", "worst"],
+          "additionalProperties": false,
+          "properties": {
+            "best": { "anyOf": [{ "$ref": "#/$defs/record" }, { "type": "null" }] },
+            "worst": { "anyOf": [{ "$ref": "#/$defs/record" }, { "type": "null" }] }
+          }
+        }
+      }
+    },
+    "top1Window": {
+      "type": "object",
+      "required": ["key", "label", "season", "date_from", "date_to", "cut_date", "patches", "games", "events", "records"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "label": { "type": "string", "minLength": 1 },
+        "season": { "type": ["integer", "null"] },
+        "date_from": { "type": "string", "format": "date" },
+        "date_to": { "type": "string", "format": "date" },
+        "cut_date": { "type": "string", "format": "date" },
+        "patches": {
+          "oneOf": [
+            { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            { "type": "string", "enum": ["all patches"] }
+          ]
+        },
+        "games": { "type": "integer", "minimum": 0 },
+        "events": { "type": "integer", "minimum": 0 },
+        "records": {
+          "type": "object",
+          "required": ["best", "worst"],
+          "additionalProperties": false,
+          "properties": {
+            "best": { "anyOf": [{ "$ref": "#/$defs/top1Record" }, { "type": "null" }] },
+            "worst": { "anyOf": [{ "$ref": "#/$defs/top1Record" }, { "type": "null" }] }
+          }
+        }
+      }
+    },
+    "seriesPoint": {
+      "type": "object",
+      "required": ["bucket", "label", "value", "part", "n", "denominator", "interval"],
+      "additionalProperties": false,
+      "properties": {
+        "bucket": { "type": "string", "enum": ["season", "event", "era", "month"] },
+        "label": { "type": "string", "minLength": 1 },
+        "value": { "type": "number" },
+        "part": { "type": ["integer", "null"], "minimum": 0 },
+        "n": { "type": "integer", "minimum": 0 },
+        "denominator": { "type": ["integer", "null"], "minimum": 0 },
+        "interval": { "anyOf": [{ "$ref": "#/$defs/interval" }, { "type": "null" }] }
+      }
+    }
+  }
+}

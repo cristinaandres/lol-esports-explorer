@@ -30,6 +30,8 @@ import sys
 
 import duckdb
 
+import crystal_ball
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SQL_DIR = ROOT / "pipeline" / "sql"
 SOURCE_FILE = ROOT / "pipeline" / "source.json"
@@ -354,6 +356,12 @@ def render(con: duckdb.DuckDBPyConnection) -> dict[str, str]:
             for row in cursor.fetchall()
         ]
         rendered[name] = dumps(rows)
+
+    # The Almanac is assembled by its own module: the views in
+    # 09_crystal_ball.sql, the Wilson and bootstrap intervals, and one artifact per
+    # question. It returns serialised text, because the numbers are written once and
+    # never recomputed in the browser.
+    rendered.update(crystal_ball.build(con, str(source["manifestSha256"])))
 
     meta = {
         "source": source,

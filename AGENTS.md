@@ -13,10 +13,11 @@ series and game pages, the player, team and champion pages with their indexes an
 search, the glossary and the selection audit, the 3b polish round, the 3c structure
 work, 3d index sorting with the club a player last played for, and 3e player
 distinctions — over the DuckDB pipeline and the deploy. `docs/specs/README.md` lists
-the rounds in their build order. Round 4a — the crystal ball (`/answers`, spec in
-`docs/specs/2026-11-20-phase-4-crystal-ball.md`), its 4b backtest, and the phase 5
-design pass are not built. Prediction is not built either, and is not scoped to phase
-4: it is deferred to round 6, with its definition of ready in the phase 4 spec.
+the rounds in their build order. Round 4a — The Almanac (`/almanac`, spec in
+`docs/specs/2026-11-20-phase-4-crystal-ball.md`) is built and deployed; its 4b backtest
+and the phase 5 design pass are not built. Prediction is
+not built either, and is not scoped to phase 4: it is deferred to round 6, with its
+definition of ready in the phase 4 spec.
 
 ## The rules that matter here
 
@@ -39,7 +40,11 @@ design pass are not built. Prediction is not built either, and is not scoped to 
    and `meta.json` copies the record.
 4. **Artifacts are generated and committed.** `public/data/*.json` is written by
    `pipeline/build.py` and is deterministic: no timestamps, no dictionary
-   ordering surprises. `npm run data:check` fails if a committed file is stale.
+   ordering surprises. `npm run data:check` fails if a committed file is stale. A
+   notebook is never an artifact and one is never committed: analysis is done in
+   `scratch/`, which git ignores, and what enters the repository is the dossier in
+   `docs/analysis/` — a query, its result, the decision, the pin and the date, so it
+   cannot go quietly stale.
 5. **No derived measures in the facts.** The upstream model refuses columns named
    like `kda`, `gpm` or `win_rate`. If the site needs one, it is computed in SQL
    in `pipeline/sql/` and documented in `docs/metric-definitions.md` first.

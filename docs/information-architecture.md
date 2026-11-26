@@ -41,8 +41,8 @@ routes are marked not built until round 4a ships them.
 /champions/:champion    pick and ban record across eras
 /glossary               every term, including the absent ones
 /selection              the audit: every candidate event and the rule that decided
-/answers                (not built) the eighteen pick'em questions, grouped by family
-/answers/:id            (not built) one question, one Answer, its window in the URL
+/almanac                the eighteen questions, grouped by class
+/almanac/:id            one question, one Answer, its season in the URL
 /calibracion            (not built, round 4b) the backtest: precision@K per edition
 *                       not found: the only route that claims nothing
 ```
@@ -127,33 +127,33 @@ source says nothing about.
 
 **Figma frames:** `50-player/context`, `50-player/career`, `50-player/filters`.
 
-## Level Q — the question, and the crystal ball
+## Level Q — the question, and The Almanac
 
 A third axis, and the only one that is not a level of the record: a question about
 the future is answered from a window of the past. It hangs off no era and no entity,
 because its subject is a tournament that has not been played.
 
 ```
-/answers                        every question, grouped by answer family
-/answers/:id?competition=&year=&cut=
-                                one question, one Answer, its window in the URL
+/almanac                        every question, grouped by class
+/almanac/:id?season=&end=&top=
+                                one question, one Answer, its season in the URL
 /calibracion                    (round 4b) the backtest, per edition and family
 ```
 
-Five families, and the shape of the answer differs by family: top-1 (returns a
-top-K, ordered by the lower bound of the interval), yes/no with a low base rate
-(a share of the games it could have happened in), count (a seeded simulation over
-the tournament format), comparison (two records with an exposure warning), and
-categorical (a census, or nothing).
+Four classes — champions, players, teams, events — and the answer family is a tag on
+the card, not the navigation. Every card opens one page: the `Answer` (headline with
+number, interval and `n`; evidence; visible limits; source with the pin's checksum),
+then a table and an interactive chart for the reader to draw their own conclusion.
 
-The page is one component repeated: headline with number, interval and `n`; evidence
-(metric, value, `n`, window, cut date); limits as visible text; source with the
-artifact's checksum. A question that cannot fill that shape is not published — three
-of the eighteen currently render as `not_verifiable`, with the query that shows why
-and the decision that would unblock them.
+The window is a **season**, derived from Worlds: season N runs from the day after
+Worlds N−1 final to Worlds N final. The page offers "all games" and the sixteen
+seasons; `?end=worst` opens the other end of a two-ended card and `?top=10` widens the
+ranking. A chart never appears without its table, or without its `n` and denominator,
+and no number lives only in a tooltip. The one card the model cannot answer — regions
+in knockouts — renders its verification query and the decision that would unblock it.
 
-**Figma frames:** `60-answers`, `60-answer/answered`, `60-answer/insufficient`,
-`60-answer/not-verifiable`, `60-answer/top-k`, `61-calibration`.
+**Figma frames:** `60-almanac`, `60-almanac/answered`, `60-almanac/insufficient`,
+`60-almanac/not-verifiable`, `60-almanac/top-k`, `61-calibration`.
 
 ## Cross-cutting components
 
@@ -166,7 +166,8 @@ and the decision that would unblock them.
 | `HoverNote` | The evidence behind a figure, on demand: a dotted underline under it, opening the note on hover and on keyboard focus, with a native `title` as the fallback. The bubble is clamped inside the viewport, because a trigger near either edge would otherwise clip it. |
 | `SelectField` | The one labelled native `<select>`: the career filters and the index sort both use it. Native because it is keyboard-operable and announced correctly without a line of JavaScript. |
 | `ClampedText` | Prose that has to match the height of the column beside it: two lines, an ellipsis, and a `See more` control rendered only when the text really overflows. The full text stays in the DOM, so nothing is hidden from a screen reader or a search engine. |
-| `Answer` | The whole of a crystal-ball answer, and the only way one may be drawn: headline with number, interval and `n` together; evidence line with the window and the cut date; a visible `limits` list; the source and its checksum. Its verdict (`answered`, `insufficient_data`, `not_verifiable`) is a labelled chip, and no branch of it renders the number without the other three blocks. |
+| `Answer` | The whole of an Almanac answer, and the only way one may be drawn: headline with number, interval and `n` together; evidence line with the season's patches and the cut date; a visible `limits` list; the source and the pin's checksum. Its verdict (`answered`, `insufficient_data`, `not_verifiable`) is a labelled chip, and no branch of it renders the number without the other three blocks. |
+| `Chart` | A view of a table that is always beside it: interval dot plot, interval bar, histogram or bucket columns, drawn with visx and the site's tokens. Hover and focus show the numbers; the number also lives in the table. |
 
 ## Visual rules
 

@@ -11,6 +11,7 @@ const links = [
   { to: '/players', label: 'Players', end: false },
   { to: '/teams', label: 'Teams', end: false },
   { to: '/champions', label: 'Champions', end: false },
+  { to: '/almanac', label: 'Almanac', end: false },
 ]
 
 /**

@@ -22,7 +22,7 @@ never claims a writing date the document does not have. **The order below is the
 | 3c | Structure before phase 4 | built — roadmap entry only |
 | 3d | [Sorting the three indexes](2026-11-22-index-sorting.md) (2026-11-22) | built |
 | 3e | [Player distinctions](2026-11-22-player-distinctions.md) (2026-11-22) | built |
-| 4a | [Phase 4 — The crystal ball](2026-11-20-phase-4-crystal-ball.md) (2026-11-20) | proposed; replaces the head-to-head plan that carried this phase number |
+| 4a | [Phase 4 — The Almanac](2026-11-20-phase-4-crystal-ball.md) (2026-11-20; amended 2026-11-26) | built and deployed — nine tickets |
 | 4b | Calibration, the backtest | proposed — the "Phase 4b" section of the 4a spec |
 | 5 | [Phase 5 — Design pass](2026-11-20-phase-5-design-pass.md) (2026-11-20) | proposed |
 | 6 | Prediction | deferred, not scheduled — definition of ready in the 4a spec |
@@ -43,6 +43,7 @@ acceptance criteria.
 | 3b | [`2026-11-20-polish-round/`](tickets/2026-11-20-polish-round/) | the polish round | built (14 tickets) |
 | 3d | [`2026-11-22-index-sorting/`](tickets/2026-11-22-index-sorting/) | the index sorting spec | built (4 tickets) |
 | 3e | [`2026-11-22-player-distinctions/`](tickets/2026-11-22-player-distinctions/) | the distinctions spec | built (3 tickets) |
+| 4a | [`2026-11-20-phase-4-crystal-ball/`](tickets/2026-11-20-phase-4-crystal-ball/) | the Almanac | built (9 tickets) |
 
 ## What moved, and when
 
@@ -67,3 +68,15 @@ of teams is a filter on games and not a new table (a wider claim — same event,
 era, both beat a common opponent — is a different claim), and the small-sample
 warning is a component with a named threshold rather than a copy tweak. Whichever
 phase rebuilds it inherits them.
+
+**The 4a amendment (2026-11-26).** The pin audit moved three things, and they are
+recorded here because the spec alone cannot show them. The index is grouped by
+**class** — champions, players, teams, events — and the answer family is a tag,
+because a pick'em reader browses by subject. The catalogue is **generic**: the four
+questions that named a player or a team (Faker's 700 kills, Peyz vs Gumayusi, HLE vs
+T1, an LCS team) are deferred with their queries kept, and player kills, team win
+rate and region knockouts take their place. The windows are **seasons derived from
+Worlds**, not calendar years: season N runs from the day after Worlds N−1 final to
+Worlds N final, and the pin's one exception is IPL 5 (season 2013). The champion
+deaths card became a champion KDA card. The dossier is
+`docs/analysis/crystal-ball-audit.md`; the tickets are the nine beside it.
