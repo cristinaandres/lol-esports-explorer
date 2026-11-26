@@ -22,7 +22,7 @@ never claims a writing date the document does not have. **The order below is the
 | 3c | Structure before phase 4 | built — roadmap entry only |
 | 3d | [Sorting the three indexes](2026-11-22-index-sorting.md) (2026-11-22) | built |
 | 3e | [Player distinctions](2026-11-22-player-distinctions.md) (2026-11-22) | built |
-| 4a | [Phase 4 — The Almanac](2026-11-20-phase-4-crystal-ball.md) (2026-11-20; amended 2026-11-26) | in build — tickets 00–05 built; 06–08 planned |
+| 4a | [Phase 4 — The Almanac](2026-11-20-phase-4-crystal-ball.md) (2026-11-20; amended 2026-11-26) | in build — tickets 00–06 built; 07–08 planned |
 | 4b | Calibration, the backtest | proposed — the "Phase 4b" section of the 4a spec |
 | 5 | [Phase 5 — Design pass](2026-11-20-phase-5-design-pass.md) (2026-11-20) | proposed |
 | 6 | Prediction | deferred, not scheduled — definition of ready in the 4a spec |
@@ -43,7 +43,7 @@ acceptance criteria.
 | 3b | [`2026-11-20-polish-round/`](tickets/2026-11-20-polish-round/) | the polish round | built (14 tickets) |
 | 3d | [`2026-11-22-index-sorting/`](tickets/2026-11-22-index-sorting/) | the index sorting spec | built (4 tickets) |
 | 3e | [`2026-11-22-player-distinctions/`](tickets/2026-11-22-player-distinctions/) | the distinctions spec | built (3 tickets) |
-| 4a | [`2026-11-20-phase-4-crystal-ball/`](tickets/2026-11-20-phase-4-crystal-ball/) | the Almanac | in build (6 of 9 built) |
+| 4a | [`2026-11-20-phase-4-crystal-ball/`](tickets/2026-11-20-phase-4-crystal-ball/) | the Almanac | in build (7 of 9 built) |
 
 ## What moved, and when
 

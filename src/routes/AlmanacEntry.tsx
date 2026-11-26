@@ -210,6 +210,17 @@ export function AlmanacEntryView({
           : count(Number(point.components.team_kills)),
     },
   ]
+  const winsColumns: Column<DotPoint>[] = [
+    {
+      key: 'wins',
+      label: 'Wins',
+      align: 'right',
+      render: (point) =>
+        point.components?.wins === null || point.components?.wins === undefined
+          ? '—'
+          : count(Number(point.components.wins)),
+    },
+  ]
   const extraColumns =
     artifact.id === 'champion-kda' || artifact.id === 'player-kda'
       ? kdaColumns
@@ -217,7 +228,9 @@ export function AlmanacEntryView({
         ? killsColumns
         : artifact.id === 'player-kill-participation'
           ? teamKillsColumns
-          : undefined
+          : artifact.id === 'team-win-rate'
+            ? winsColumns
+            : undefined
   const seriesPoints: BucketPoint[] = artifact.series.map((point) => ({
     key: point.label,
     label: point.label,

@@ -251,3 +251,27 @@ def test_the_threshold_distributions_mark_their_line(con) -> None:
     assert sum(
         bin_["count"] for bin_ in cs["bins"] if bin_["key"] in {"450–499", "500+"}
     ) == 401
+
+
+def test_team_win_rate_carries_wins(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "team-win-rate")
+    window = next(window for window in crystal_ball.windows(con) if window.key == "all")
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    first = best["candidates"][0]
+    assert first["components"]["wins"] / first["n"] == pytest.approx(first["metric"], rel=1e-9)
+
+
+def test_team_measures_use_the_rows_that_state_them(con) -> None:
+    window = next(window for window in crystal_ball.windows(con) if window.key == "all")
+    for question_id, column in (("team-kills", "kills"), ("team-gold", "gold")):
+        question = next(q for q in crystal_ball.QUESTIONS if q.id == question_id)
+        best, _ = crystal_ball.build_window(con, question, window)
+        first = best["candidates"][0]
+        identifier = first["path"].rstrip("/").split("/")[-1]
+        stated, total = con.execute(
+            f"select count({column}), sum({column}) from mt_cb_team_games where team_id = ?",
+            (identifier,),
+        ).fetchone()
+        assert first["n"] == stated
+        assert first["metric"] == pytest.approx(total / stated, rel=1e-9)

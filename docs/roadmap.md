@@ -119,7 +119,7 @@ interactive chart per card. The catalogue is closed, the publication threshold i
 question the model cannot answer ships as `not_verifiable` with the query that shows
 why. The four named-entity questions are deferred, not dropped.
 
-Built so far: the contract, the season pipeline and artifacts, the index and entry pages, the champion class and the player class — KDA with its components, kills, participation, damage, and the 15-kill and 450-CS distributions. Tickets 06–08 add the team and event cards and the round close.
+Built so far: the contract, the season pipeline and artifacts, the index and entry pages, the champion class, the player class and the team class — win rate with its wins, kills and gold on the rows that state them. Tickets 07–08 add the event cards and the round close.
 
 This phase number used to hold the head-to-head comparison. Prediction moved out of
 it; "Deferred" below says where it went.
