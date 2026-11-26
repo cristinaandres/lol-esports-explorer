@@ -1,7 +1,7 @@
 # 05: Players, the six cards
 
 **Blocked by:** 01, 02 (03 for the page)
-**Status:** planned
+**Status:** done
 
 ## What to build
 
@@ -48,3 +48,12 @@ The six player cards, all generic: the subject is "a player", never a named one.
 
 `npm run data:test`, the data tests for the player artifacts, and a Playwright read
 of each card.
+
+## Built
+
+- **The six player cards are live** on `/almanac/:id`: KDA, kills per game, kill participation, damage per game, 15 kills and 450 CS.
+- **The KDA table states its parts.** The pipeline writes kills, deaths, assists and kill participation on each player KDA candidate; the table shows them after Value, interval and n. The best end at the pin is Bang, 6.38 in 118 player-games.
+- **Kills and participation carry their denominators.** Kills per game adds the total kills beside the rate (Peyz: 5.8 in 110 games, 635 kills); kill participation adds the team's kills (Meiko: 75%, 1,537 of 2,053 team kills in 144 player-games). Damage's `n` is the rows that state damage, as the limit says.
+- **The threshold cards show their distribution.** The pipeline bins the window's player-games — 0–4, 5–9, 10–14, 15–19, 20–24, 25+ for kills; 0–99 … 500+ for CS — and marks the threshold bin. All games: 49 of 30,910 player-games reach 15 kills (0.16%; the 15–19 bin holds 47 and the two above it the other 2); 401 reach 450 CS (1.3%; 236 in 450–499 and 165 at 500+). The histogram marks 15 kills / 450 CS and the table carries each bin's share of the window.
+- **No question names a player**; names appear only as candidates, linked to `/players/:id`.
+- Three new pipeline tests (the total kills, the team-kills denominator, the threshold bins and markers) and four new entry tests; Playwright read the player KDA, kills, participation and both threshold distributions. `npm run check` is green.

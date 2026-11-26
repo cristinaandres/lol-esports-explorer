@@ -110,8 +110,10 @@ export type AnswerRecord = {
   top?: number
   /** Window-specific limits, added to the artifact's shared list. */
   limits?: string[]
-  /** The 10,000 replications of a simulation, binned for its histogram. */
+  /** The 10,000 replications of a simulation, or a distribution, binned for its histogram. */
   bins?: { key: string; label: string; count: number }[]
+  /** The bin a threshold falls in, so the histogram can mark it. */
+  marker?: { key: string; label: string } | null
 }
 
 export type Window = {

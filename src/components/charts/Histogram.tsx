@@ -1,7 +1,7 @@
 import { AxisBottom, AxisLeft } from '@visx/axis'
 import { Group } from '@visx/group'
 import { scaleBand, scaleLinear } from '@visx/scale'
-import { Bar } from '@visx/shape'
+import { Bar, Line } from '@visx/shape'
 import { TooltipWithBounds, useTooltip } from '@visx/tooltip'
 import { useState } from 'react'
 
@@ -33,11 +33,13 @@ export function Histogram({
   caption,
   bins,
   total,
+  marker = null,
 }: {
   title: string
   caption: string
   bins: HistogramBin[]
   total: number
+  marker?: { key: string; label: string } | null
 }) {
   const [active, setActive] = useState<string | null>(null)
   const { tooltipData, tooltipLeft, tooltipTop, tooltipOpen, showTooltip, hideTooltip } =
@@ -112,6 +114,20 @@ export function Histogram({
               tickLabelProps={() => ({ fill: 'currentColor', fontSize: 9, textAnchor: 'end' })}
             />
           </Group>
+          {marker && x(marker.key) !== undefined ? (
+            <g>
+              <Line
+                from={{ x: x(marker.key) ?? 0, y: MARGIN.top }}
+                to={{ x: x(marker.key) ?? 0, y: HEIGHT - MARGIN.bottom }}
+                strokeWidth={2}
+                strokeDasharray="4 4"
+                className="stroke-gold"
+              />
+              <text x={(x(marker.key) ?? 0) + 4} y={MARGIN.top - 2} className="fill-gold text-[10px]">
+                {marker.label}
+              </text>
+            </g>
+          ) : null}
           {bins.map((bin) => {
             const top = y(bin.count)
             const isActive = active === bin.key

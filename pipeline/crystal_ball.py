@@ -960,6 +960,7 @@ def build_player_kills(con: duckdb.DuckDBPyConnection, q: Question, window: Wind
             _ratio_candidate(
                 entry["name"], entry["path"], float(values.mean()), n,
                 _bootstrap_interval(low, high),
+                components={"kills": int(values.sum())},
             )
         )
     return _record_answer(q, window, candidates, "best"), None
@@ -973,9 +974,9 @@ def build_player_kp(con: duckdb.DuckDBPyConnection, q: Question, window: Window)
         n = entry["kp_n"]
         if n == 0 or denominator == 0:
             continue
-        candidates.append(
-            _share_candidate(entry["name"], entry["path"], part, n, denominator, "n")
-        )
+        candidate = _share_candidate(entry["name"], entry["path"], part, n, denominator, "n")
+        candidate["components"] = {"team_kills": int(denominator)}
+        candidates.append(candidate)
     return _record_answer(q, window, candidates, "best"), None
 
 
@@ -1001,12 +1002,37 @@ def build_threshold(
 ) -> tuple[dict, dict | None]:
     if window.season is None:
         sql = f"""select count(*) filter (where {column} >= ?) part, count(*) n from mt_cb_player_games"""
+        values_sql = f"select {column} from mt_cb_player_games"
         params = (cutoff,)
+        value_params: tuple = ()
     else:
         sql = f"""select count(*) filter (where {column} >= ?) part, count(*) n from mt_cb_player_games where season = ?"""
+        values_sql = f"select {column} from mt_cb_player_games where season = ?"
         params = (cutoff, window.season)
+        value_params = (window.season,)
     row = _rows(con, sql, params)[0]
-    return _record_share(q, window, row["part"], row["n"], q.question), None
+    values = [item[column] for item in _rows(con, values_sql, value_params)]
+
+    if column == "kills":
+        edges = (0, 5, 10, 15, 20, 25)
+        labels = ("0–4", "5–9", "10–14", "15–19", "20–24", "25+")
+        marker = {"key": "15–19", "label": "15 kills"}
+    else:
+        edges = (0, 100, 200, 300, 400, 450, 500)
+        labels = ("0–99", "100–199", "200–299", "300–399", "400–449", "450–499", "500+")
+        marker = {"key": "450–499", "label": "450 CS"}
+
+    bins = []
+    for index, label in enumerate(labels):
+        low = edges[index]
+        high = edges[index + 1] if index + 1 < len(edges) else None
+        count = sum(1 for value in values if value >= low and (high is None or value < high))
+        bins.append({"key": label, "label": label, "count": count})
+
+    record = _record_share(q, window, row["part"], row["n"], q.question)
+    record["bins"] = bins
+    record["marker"] = marker
+    return record, None
 
 
 def _team_rows(con: duckdb.DuckDBPyConnection, season: int | None) -> list[dict]:
