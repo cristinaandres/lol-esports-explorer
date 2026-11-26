@@ -3,11 +3,12 @@ import { Link, useParams, useSearchParams } from 'react-router'
 import { Answer } from '../components/Answer'
 import { Breadcrumbs } from '../components/Breadcrumbs'
 import { BucketColumns, Histogram, IntervalBar, IntervalDotPlot, TimeControls } from '../components/charts'
-import type { BucketPoint } from '../components/charts'
+import type { BucketPoint, DotPoint } from '../components/charts'
 import { LoadFailure } from '../components/LoadFailure'
 import { PageHeader } from '../components/PageHeader'
 import { Skeleton } from '../components/Skeleton'
 import { Stat, StatRow } from '../components/Stat'
+import type { Column } from '../components/DataTable'
 import {
   candidateSlice,
   classLabel,
@@ -145,12 +146,49 @@ export function AlmanacEntryView({
         part: candidate.part,
         interval: candidate.interval,
         href: candidate.path,
+        components: candidate.components,
       }))
     : []
   const bounds = rangeFor(
     points.flatMap((point) => [point.low, point.high]),
     unit,
   )
+  const kdaColumns: Column<DotPoint>[] = [
+    {
+      key: 'kills',
+      label: 'Kills',
+      align: 'right',
+      render: (point) =>
+        point.components?.kills === null || point.components?.kills === undefined
+          ? '—'
+          : count(Number(point.components.kills)),
+    },
+    {
+      key: 'deaths',
+      label: 'Deaths',
+      align: 'right',
+      render: (point) =>
+        point.components?.deaths === null || point.components?.deaths === undefined
+          ? '—'
+          : count(Number(point.components.deaths)),
+    },
+    {
+      key: 'assists',
+      label: 'Assists',
+      align: 'right',
+      render: (point) =>
+        point.components?.assists === null || point.components?.assists === undefined
+          ? '—'
+          : count(Number(point.components.assists)),
+    },
+    {
+      key: 'kp',
+      label: 'Kill participation',
+      align: 'right',
+      render: (point) => (point.components?.kp ? String(point.components.kp) : '—'),
+    },
+  ]
+  const extraColumns = artifact.id === 'champion-kda' ? kdaColumns : undefined
   const seriesPoints: BucketPoint[] = artifact.series.map((point) => ({
     key: point.label,
     label: point.label,
@@ -174,6 +212,7 @@ export function AlmanacEntryView({
         unit={unit}
         min={bounds.min}
         max={bounds.max}
+        extraColumns={extraColumns}
       />
     ) : record.verdict === 'answered' &&
       record.headline.unit === 'share' &&
@@ -198,6 +237,16 @@ export function AlmanacEntryView({
         title="The census by group"
         caption={`${windowText}. A census, not an estimate.`}
         bins={record.census.map((row) => ({ key: row.name, label: row.name, count: row.count }))}
+        total={record.evidence.n}
+      />
+    ) : null
+
+  const simulationChart =
+    record.verdict === 'answered' && record.bins && record.bins.length > 0 ? (
+      <Histogram
+        title="The simulation"
+        caption={`${count(record.evidence.n)} simulated seasons; the answer above is the median and the 90% interval.`}
+        bins={record.bins.map((bin) => ({ key: bin.key, label: bin.label, count: bin.count }))}
         total={record.evidence.n}
       />
     ) : null
@@ -245,6 +294,7 @@ export function AlmanacEntryView({
       ) : null}
 
       {chart}
+      {simulationChart}
       {seriesChart}
 
       <p className="text-fog-600 mt-10 max-w-3xl text-xs leading-relaxed">

@@ -71,7 +71,7 @@ QUESTIONS: tuple[Question, ...] = (
         "champion-win-rate", "champions", "top-1",
         "Which champion won the most, and the least?",
         "cb_champion_games", "win rate", "share", "champion-game", "champion_win_rate",
-        "part", "picks",
+        "n", "picks",
         ("best", "worst"),
         (BIAS, "A win is the picking side's side row; the denominator is picks, not games."),
     ),
@@ -458,9 +458,9 @@ def _share_candidate(
 
 def _ratio_candidate(
     name: str, path: str, value: float, n: int, interval: dict, part: int | None = None,
-    denominator: int | None = None,
+    denominator: int | None = None, components: dict | None = None,
 ) -> dict:
-    return {
+    candidate = {
         "name": name,
         "path": path,
         "metric": value,
@@ -472,6 +472,9 @@ def _ratio_candidate(
         "upper_bound": interval["high"],
         "eligible": n >= MIN_N,
     }
+    if components is not None:
+        candidate["components"] = components
+    return candidate
 
 
 def _sorted(candidates: list[dict], end: str) -> list[dict]:
@@ -496,7 +499,7 @@ def _take_top(candidates: list[dict], end: str) -> list[dict]:
 
 
 def _candidate_out(candidate: dict) -> dict:
-    return {
+    out = {
         "name": candidate["name"],
         "path": candidate["path"],
         "metric": candidate["metric"],
@@ -506,6 +509,9 @@ def _candidate_out(candidate: dict) -> dict:
         "lower_bound": candidate["lower_bound"],
         "upper_bound": candidate["upper_bound"],
     }
+    if "components" in candidate:
+        out["components"] = candidate["components"]
+    return out
 
 
 def _census(candidates: list[dict], threshold: str) -> list[dict]:
@@ -692,7 +698,8 @@ def build_champion_win_rate(con: duckdb.DuckDBPyConnection, q: Question, window:
     )
     candidates = [
         _share_candidate(
-            row["champion_name"], f"/champions/{row['champion_id']}", row["part"], row["n"]
+            row["champion_name"], f"/champions/{row['champion_id']}", row["part"], row["n"],
+            None, "n",
         )
         for row in rows
     ]
@@ -744,12 +751,30 @@ def build_champion_kda(con: duckdb.DuckDBPyConnection, q: Question, window: Wind
         low, high = _bootstrap_kda(
             kills, deaths, assists, _seed_for(q.id, window.key, str(key))
         )
+        kills_sum = int(kills.sum())
+        deaths_sum = int(deaths.sum())
+        assists_sum = int(assists.sum())
+        team_kills = int(entry["team_kills"])
+        kp_part = kills_sum + assists_sum
+        kp_interval = _wilson_share(kp_part, n, team_kills)
+        kp_value = kp_part / team_kills if team_kills else 0.0
+        components = {
+            "kills": kills_sum,
+            "deaths": deaths_sum,
+            "assists": assists_sum,
+            "kp": (
+                f"{_percent_number(kp_value)}% "
+                f"(95% CI: {_percent_number(kp_interval['low'])}–"
+                f"{_percent_number(kp_interval['high'])}%)"
+            ),
+        }
         candidates.append(
             _ratio_candidate(
                 entry["name"], entry["path"], float(value), n,
                 _bootstrap_interval(low, high),
-                part=int(kills.sum() + assists.sum()),
-                denominator=int(entry["team_kills"]),
+                part=kp_part,
+                denominator=team_kills,
+                components=components,
             )
         )
     return (
@@ -791,6 +816,11 @@ def build_unique(con: duckdb.DuckDBPyConnection, q: Question, window: Window) ->
         sample = rng.integers(0, len(games), size=len(games))
         counts.append(int(matrix[:, sample].any(axis=1).sum()))
     counts_array = np.array(counts)
+    values, frequencies = np.unique(counts_array, return_counts=True)
+    bins = [
+        {"key": str(int(value)), "label": str(int(value)), "count": int(frequency)}
+        for value, frequency in zip(values, frequencies)
+    ]
     low, high = np.percentile(counts_array, [5, 95])
     median = float(np.median(counts_array))
     interval = _interval(float(low), float(high), "simulation-percentile", SIM_LEVEL)
@@ -814,6 +844,7 @@ def build_unique(con: duckdb.DuckDBPyConnection, q: Question, window: Window) ->
             "grain": q.grain,
             "role": None,
         },
+        "bins": bins,
         "limits": [_window_limit(window)],
     }, None
 
@@ -890,12 +921,30 @@ def build_player_kda(con: duckdb.DuckDBPyConnection, q: Question, window: Window
         low, high = _bootstrap_kda(
             kills, deaths, assists, _seed_for(q.id, window.key, str(key))
         )
+        kills_sum = int(kills.sum())
+        deaths_sum = int(deaths.sum())
+        assists_sum = int(assists.sum())
+        team_kills = int(entry["team_kills"])
+        kp_part = kills_sum + assists_sum
+        kp_interval = _wilson_share(kp_part, n, team_kills)
+        kp_value = kp_part / team_kills if team_kills else 0.0
+        components = {
+            "kills": kills_sum,
+            "deaths": deaths_sum,
+            "assists": assists_sum,
+            "kp": (
+                f"{_percent_number(kp_value)}% "
+                f"(95% CI: {_percent_number(kp_interval['low'])}–"
+                f"{_percent_number(kp_interval['high'])}%)"
+            ),
+        }
         candidates.append(
             _ratio_candidate(
                 entry["name"], entry["path"], float(value), n,
                 _bootstrap_interval(low, high),
-                part=int(kills.sum() + assists.sum()),
-                denominator=int(entry["team_kills"]),
+                part=kp_part,
+                denominator=team_kills,
+                components=components,
             )
         )
     return _record_answer(q, window, candidates, "best"), None
@@ -1199,7 +1248,7 @@ def _series_candidate(
             """,
             (season, key),
         )
-        if not row or row[0]["part"] is None or row[0]["part"] < MIN_N:
+        if not row or row[0]["part"] is None or row[0]["n"] < MIN_N:
             return None
         part, n = row[0]["part"], row[0]["n"]
         return {"value": part / n, "part": part, "n": n, "denominator": n, "interval": _wilson_interval(part, n)}

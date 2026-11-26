@@ -135,7 +135,12 @@
         "n": { "type": "integer", "minimum": 0 },
         "interval": { "anyOf": [{ "$ref": "#/$defs/interval" }, { "type": "null" }] },
         "lower_bound": { "type": "number" },
-        "upper_bound": { "type": "number" }
+        "upper_bound": { "type": "number" },
+        "components": {
+          "type": "object",
+          "description": "Question-specific, preformatted columns; the page never computes them.",
+          "additionalProperties": { "type": ["string", "number", "null"] }
+        }
       }
     },
     "censusRow": {
@@ -171,7 +176,21 @@
         "census": { "type": "array", "items": { "$ref": "#/$defs/censusRow" } },
         "verification": { "$ref": "#/$defs/verification" },
         "top": { "type": "integer", "minimum": 1 },
-        "limits": { "type": "array", "maxItems": 4, "items": { "type": "string", "minLength": 1 } }
+        "limits": { "type": "array", "maxItems": 4, "items": { "type": "string", "minLength": 1 } },
+        "bins": {
+          "type": "array",
+          "description": "A simulation's replications, binned for its histogram.",
+          "items": {
+            "type": "object",
+            "required": ["key", "label", "count"],
+            "additionalProperties": false,
+            "properties": {
+              "key": { "type": "string", "minLength": 1 },
+              "label": { "type": "string", "minLength": 1 },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
       },
       "allOf": [
         {
