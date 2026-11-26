@@ -1,7 +1,7 @@
 # 07: Events, the four cards, and the one that is not verifiable
 
 **Blocked by:** 01, 02 (03 for the page)
-**Status:** planned
+**Status:** done
 
 ## What to build
 
@@ -51,3 +51,13 @@ The four event cards.
 
 `npm run data:test`, the data tests for the event artifacts, the hand-run of the
 region query, and a Playwright read of each card.
+
+## Built
+
+- **The four event cards are live** on `/almanac/:id`.
+- **32:00** shows the share — 1,513 of 3,084 games, 49% (95% CI: 47–51%) — and the duration distribution with the 32:00 line: ≤24:59 (246), 25:00–29:59 (879), 30:00–32:00 (388), 32:01–34:59 (543), 35:00–39:59 (599), 40:00+ (429). The first three bins are the share; the line marks the boundary.
+- **The shortest game** is the blue-side share of the shortest decile: 60% (95% CI: 54–65%, n=309), 184 blue to 125 red. The duration histogram marks the decile (≤25:33), and the record holder is a citation, not the answer: 961 s, MSI 2019, Invictus Gaming vs T1, linked to `/games/gm-e8b4d3c2a610`.
+- **Finals MVP** is the 11-award census (Mid 5, Top 3, Bot 2, Support 1, Jungle 0) with `insufficient_data` and no interval. The labelled bar reads **awards**, not games.
+- **Regions in knockouts** remains `not_verifiable`: the query, today's result and the stage-order/region-vocabulary decision, and no answer number.
+- **The histogram's unit is now stated**: games, player-games, simulations or awards, in the table header, the tooltip and the bar labels. The MVP bars no longer say "games".
+- Two new pipeline tests (the 32:00 bins and marker; the shortest decile, side split and citation) and three new entry tests; Playwright read all four event cards. `npm run check` is green.

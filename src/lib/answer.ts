@@ -114,6 +114,8 @@ export type AnswerRecord = {
   bins?: { key: string; label: string; count: number }[]
   /** The bin a threshold falls in, so the histogram can mark it. */
   marker?: { key: string; label: string } | null
+  /** A record held by a game or an event, cited rather than answered. */
+  citation?: { label: string; detail: string; path: string } | null
 }
 
 export type Window = {

@@ -27,7 +27,7 @@ import {
 import { orderRule, recordFor, seasonOptions, windowByKey, windowLabel } from '../lib/answer'
 import type { End, QuestionArtifact, QuestionId, Unit } from '../lib/answer'
 import { useQuestion } from '../lib/data'
-import { count, dayMonthYear } from '../lib/format'
+import { count, dayMonthYear, stripDateSuffix } from '../lib/format'
 import NotFound from './NotFound'
 
 /**
@@ -280,21 +280,34 @@ export function AlmanacEntryView({
         caption={`${windowText}. A census, not an estimate.`}
         bins={record.census.map((row) => ({ key: row.name, label: row.name, count: row.count }))}
         total={record.evidence.n}
+        unitLabel="awards"
       />
     ) : null
 
+  const binTotal = record.bins?.reduce((sum, bin) => sum + bin.count, 0) ?? 0
   const binsChart =
     record.bins && record.bins.length > 0 ? (
       <Histogram
         title={artifact.id === 'unique-champions' ? 'The simulation' : 'The distribution'}
         caption={
           artifact.id === 'unique-champions'
-            ? `${count(record.evidence.n)} simulated seasons; the answer above is the median and the 90% interval.`
-            : `${count(record.evidence.n)} player-games in this window; the line marks ${record.marker?.label ?? 'the threshold'}.`
+            ? `${count(binTotal)} simulated seasons; the answer above is the median and the 90% interval.`
+            : artifact.id === 'game-length-32'
+              ? `${count(binTotal)} games with a stated duration; the line marks 32:00, and the share counts games at or under it.`
+              : artifact.id === 'shortest-game'
+                ? `${count(binTotal)} games with a stated duration; the line marks the shortest decile.`
+                : `${count(binTotal)} player-games in this window; the line marks ${record.marker?.label ?? 'the threshold'}.`
         }
         bins={record.bins.map((bin) => ({ key: bin.key, label: bin.label, count: bin.count }))}
-        total={record.evidence.n}
+        total={binTotal}
         marker={record.marker ?? null}
+        unitLabel={
+          artifact.id === 'unique-champions'
+            ? 'simulations'
+            : artifact.id === 'game-length-32' || artifact.id === 'shortest-game'
+              ? 'games'
+              : 'player-games'
+        }
       />
     ) : null
 
@@ -337,6 +350,19 @@ export function AlmanacEntryView({
         <p className="text-fog-600 mt-4 max-w-3xl text-xs leading-relaxed">
           {topLabel(top)}, {orderRule(effectiveEnd)}. The artifact stores up to{' '}
           {artifact.thresholds.top_max} candidates; a tie at the last place extends the list by one.
+        </p>
+      ) : null}
+
+      {record.citation ? (
+        <p className="text-fog-500 mt-4 max-w-3xl text-sm">
+          Record holder:{' '}
+          <Link
+            className="text-fog-100 hover:text-gold underline-offset-2 hover:underline"
+            to={record.citation.path}
+          >
+            {stripDateSuffix(record.citation.label)}
+          </Link>{' '}
+          · {record.citation.detail}
         </p>
       ) : null}
 

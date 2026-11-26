@@ -187,6 +187,17 @@
             "label": { "type": "string", "minLength": 1 }
           }
         },
+        "citation": {
+          "type": ["object", "null"],
+          "description": "A record held by a game or an event, cited rather than answered.",
+          "required": ["label", "detail", "path"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "type": "string", "minLength": 1 },
+            "detail": { "type": "string", "minLength": 1 },
+            "path": { "type": "string", "pattern": "^/(games|events)/" }
+          }
+        },
         "bins": {
           "type": "array",
           "description": "A simulation's replications, or a distribution, binned for its histogram.",

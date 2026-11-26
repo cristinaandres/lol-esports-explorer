@@ -1113,7 +1113,25 @@ def _durations(con: duckdb.DuckDBPyConnection, season: int | None) -> list[dict]
 def build_game_length(con: duckdb.DuckDBPyConnection, q: Question, window: Window) -> tuple[dict, dict | None]:
     rows = _durations(con, window.season)
     part = sum(1 for row in rows if row["duration_seconds"] <= THIRTY_TWO_MINUTES)
-    return _record_share(q, window, part, len(rows), "games at or under 32:00"), None
+    edges = (
+        (0, 1499, "≤ 24:59"),
+        (1500, 1799, "25:00–29:59"),
+        (1800, 1920, "30:00–32:00"),
+        (1921, 2099, "32:01–34:59"),
+        (2100, 2399, "35:00–39:59"),
+        (2400, None, "40:00+"),
+    )
+    bins = []
+    for low, high, label in edges:
+        count = sum(
+            1 for row in rows
+            if row["duration_seconds"] >= low and (high is None or row["duration_seconds"] <= high)
+        )
+        bins.append({"key": label, "label": label, "count": count})
+    record = _record_share(q, window, part, len(rows), "games at or under 32:00")
+    record["bins"] = bins
+    record["marker"] = {"key": "32:01–34:59", "label": "32:00"}
+    return record, None
 
 
 def build_shortest(con: duckdb.DuckDBPyConnection, q: Question, window: Window) -> tuple[dict, dict | None]:
@@ -1124,7 +1142,52 @@ def build_shortest(con: duckdb.DuckDBPyConnection, q: Question, window: Window) 
     threshold = float(np.percentile(durations, SHORTEST_DECILE * 100))
     decile = [row for row in rows if row["duration_seconds"] <= threshold]
     part = sum(int(row["blue_win"] or 0) for row in decile)
+
+    edges = (
+        (0, 1200, "≤ 20:00"),
+        (1201, 1320, "20:01–22:00"),
+        (1321, 1440, "22:01–24:00"),
+        (1441, 1533, "24:01–25:33"),
+        (1534, 1680, "25:34–28:00"),
+        (1681, 1920, "28:01–32:00"),
+        (1921, 2160, "32:01–36:00"),
+        (2161, None, "36:01+"),
+    )
+    bins = []
+    for low, high, label in edges:
+        count = sum(
+            1 for row in rows
+            if row["duration_seconds"] >= low and (high is None or row["duration_seconds"] <= high)
+        )
+        bins.append({"key": label, "label": label, "count": count})
+
     record = _record_share(q, window, part, len(decile), "blue side in the shortest decile")
+    record["census"] = [
+        {"name": "Blue side", "count": part, "n": len(decile)},
+        {"name": "Red side", "count": len(decile) - part, "n": len(decile)},
+    ]
+    record["bins"] = bins
+    record["marker"] = {
+        "key": "25:34–28:00",
+        "label": f"shortest decile (≤ {int(threshold) // 60}:{int(threshold) % 60:02d})",
+    }
+    season_clause = "" if window.season is None else " where l.season = ?"
+    params: tuple = () if window.season is None else (window.season,)
+    shortest = _rows(
+        con,
+        f"""
+        select l.duration_seconds, g.game_id, g.game_name
+        from mt_cb_game_length l join dim_game g using (game_key)
+        {season_clause}
+        order by l.duration_seconds, l.game_key limit 1
+        """,
+        params,
+    )[0]
+    record["citation"] = {
+        "label": shortest["game_name"],
+        "detail": f"{shortest['duration_seconds']:,} s",
+        "path": f"/games/{shortest['game_id']}",
+    }
     record["limits"] = [
         _window_limit(window),
         f"The shortest decile is at or under {int(threshold):,} s in this window; the record holder is a citation, not the answer.",
