@@ -128,6 +128,45 @@ describe('the Almanac entry page', () => {
     expect(csHtml).toContain('401')
   })
 
+  it('shows the team win rate with its wins', () => {
+    const artifact = read('almanac-team-win-rate.json')
+    const record = artifact.windows[0].records.best!
+    const html = render(artifact, 'all')
+
+    expect(html).toContain('Wins')
+    expect(html).toContain(record.candidates![0].name)
+    expect(html).toContain(count(Number(record.candidates![0].components!.wins)))
+    expect(html).toContain('Census')
+    expect(html).toContain(record.census![0].name)
+  })
+
+  it('switches the team win rate to the worst end', () => {
+    const artifact = read('almanac-team-win-rate.json')
+    const record = artifact.windows[0].records.worst!
+    const html = render(artifact, 'all', 'worst')
+
+    expect(html).toContain(record.headline.text)
+    expect(html).toContain(record.candidates![0].name)
+    expect(html).toContain('ordered by the upper bound')
+  })
+
+  it('shows the team measures with their stated-row denominators', () => {
+    const kills = read('almanac-team-kills.json')
+    const killsRecord = kills.windows[0].records.best!
+    const killsHtml = render(kills, 'all')
+    expect(killsHtml).toContain(killsRecord.candidates![0].name)
+    expect(killsHtml).toContain(count(killsRecord.candidates![0].n))
+    expect(killsHtml).toContain('side rows')
+
+    const gold = read('almanac-team-gold.json')
+    const goldRecord = gold.windows[0].records.best!
+    const goldHtml = render(gold, 'all')
+    expect(goldHtml).toContain(goldRecord.candidates![0].name)
+    expect(goldHtml).toContain(goldRecord.headline.text)
+    expect(goldHtml).toContain(count(goldRecord.candidates![0].n))
+    expect(goldHtml).toContain('side rows')
+  })
+
   it('shows the unique-champion simulation as a distribution', () => {
     const artifact = read('almanac-unique-champions.json')
     const record = artifact.windows.find((item) => item.key === 'season:2025')!.records.best!

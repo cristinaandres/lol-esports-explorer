@@ -160,7 +160,7 @@ QUESTIONS: tuple[Question, ...] = (
         "cb_team_games", "kills per game", "per-game", "side", "team_kills", "n",
         "team-games",
         ("best",),
-        (BIAS, "The denominator is the side rows that state kills."),
+        (BIAS, "The denominator is the side rows that state kills; a team whose rows state none is absent, not zero."),
     ),
     Question(
         "team-gold", "teams", "top-1",
@@ -168,7 +168,7 @@ QUESTIONS: tuple[Question, ...] = (
         "cb_team_games", "gold per game", "per-game", "side", "team_gold", "n",
         "team-games",
         ("best",),
-        (BIAS, "The denominator is the side rows that state gold."),
+        (BIAS, "The denominator is the side rows that state gold; a team whose rows state none is absent, not zero."),
     ),
     Question(
         "game-length-32", "events", "yes-no",
@@ -1055,10 +1055,11 @@ def build_team_win_rate(con: duckdb.DuckDBPyConnection, q: Question, window: Win
         )
         entry["wins"] += row["is_winner"]
         entry["n"] += 1
-    candidates = [
-        _share_candidate(entry["name"], entry["path"], entry["wins"], entry["n"], None, "n")
-        for _key, entry in sorted(grouped.items())
-    ]
+    candidates = []
+    for _key, entry in sorted(grouped.items()):
+        candidate = _share_candidate(entry["name"], entry["path"], entry["wins"], entry["n"], None, "n")
+        candidate["components"] = {"wins": int(entry["wins"])}
+        candidates.append(candidate)
     return (
         _record_answer(q, window, candidates, "best"),
         _record_answer(q, window, candidates, "worst"),
