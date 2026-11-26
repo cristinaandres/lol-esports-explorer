@@ -1,7 +1,7 @@
 # 02: The pipeline, the season windows, and the artifacts
 
 **Blocked by:** 00
-**Status:** planned
+**Status:** done
 
 ## What to build
 
@@ -57,3 +57,12 @@
 
 `npm run data:build`, `npm run data:test`, `npm run data:check`, and the season query
 run by hand against `09_crystal_ball.sql`.
+
+## Built
+
+- **The season spine.** `cb_event_season` assigns every event to the first Worlds final on or after its last game; `cb_season_window` builds the sixteen windows; IPL 5 is season 2013. `cb_game_presence`, `cb_season_presence`, `cb_champion_games`, `cb_player_games`, `cb_team_games`, `cb_game_length`, `cb_awards` and the region verification view publish the grain each question needs.
+- **Intervals once, in the pipeline.** Wilson for shares, bootstrap percentile (10,000 resamples, seed `20261126`) for ratios, and a 90% simulation for the unique-champion count. `numpy==2.4.6` is pinned.
+- **Artifacts.** Eighteen question files plus `almanac.json`; 36 files in `meta.json`, deterministic and `data:check`-green. The build is 50 s; the question files total 171 KB gzip (largest 31 KB) and the index is 2 KB.
+- **The grain traps are tests**: presence as pick ∪ ban once per game, duration over 3,084 games, damage over 15,870 rows, 11 awards against the 208-row fan-out, Teemo's 4 of 3,091, the 90% simulation and determinism.
+- **Three fixes found while building 03.** Kill participation uses only the games that state the team's kills (the old denominator made a 141% share); presence's all-window denominator includes zero-presence champion-seasons (Teemo was 4 of 408 instead of 4 of 3,091); the patches list is ordered by the first game each patch governed in the season, not lexicographically (2019 reads 9.8, 9.12, 9.13, 9.19; the model's `patch_key` is a lexical natural key, not a release order).
+- 27 pipeline tests; PR #81.

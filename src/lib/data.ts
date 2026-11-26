@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import type { AlmanacIndex, QuestionArtifact, QuestionId } from './answer'
 import type {
   AliasRow,
   DraftSlot,
@@ -230,6 +231,33 @@ export function loadHonours(): Promise<HonourRow[]> {
   return honourRows()
 }
 
+/** The Almanac index: eighteen cards, their classes and their default headlines. */
+const almanac = memoised<AlmanacIndex>(() => getJson<AlmanacIndex>('almanac.json'))
+
+export function loadAlmanac(): Promise<AlmanacIndex> {
+  return almanac()
+}
+
+/**
+ * One question's artifact, fetched by the entry page that renders it.
+ *
+ * One file per question, so a reader who opens Champion presence never pays for the
+ * seventeen files they did not ask for. The map is the same promise the page asked
+ * for; a rejection is forgotten as it passes through, like every other loader.
+ */
+const questionFiles = new Map<string, Promise<QuestionArtifact>>()
+
+export function loadQuestion(id: QuestionId): Promise<QuestionArtifact> {
+  const kept = questionFiles.get(id)
+  if (kept) return kept
+  const attempt = getJson<QuestionArtifact>(`almanac-${id}.json`).catch((error: unknown) => {
+    questionFiles.delete(id)
+    throw error
+  })
+  questionFiles.set(id, attempt)
+  return attempt
+}
+
 /** The candidate events the rule considered, fetched only by the selection page. */
 const selectionRows = memoised<SelectionCandidate[]>(() =>
   getJson<SelectionCandidate[]>('selection.json'),
@@ -345,4 +373,13 @@ export function useHonours(): AsyncState<HonourRow[]> {
 
 export function useSelection(): AsyncState<SelectionCandidate[]> {
   return useAsync(loadSelection)
+}
+
+export function useAlmanac(): AsyncState<AlmanacIndex> {
+  return useAsync(loadAlmanac)
+}
+
+export function useQuestion(id: QuestionId): AsyncState<QuestionArtifact> {
+  const load = useCallback(() => loadQuestion(id), [id])
+  return useAsync(load)
 }

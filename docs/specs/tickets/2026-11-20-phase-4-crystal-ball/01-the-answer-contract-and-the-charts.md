@@ -1,7 +1,7 @@
 # 01: The Answer contract, and the interactive chart layer
 
 **Blocked by:** 00
-**Status:** planned
+**Status:** done
 
 ## What to build
 
@@ -62,3 +62,11 @@ on fixtures before a real record exists.
 `npx vitest run src/lib/answer.test.ts src/components/Answer.test.tsx
 src/components/charts`; the fixtures are hand-written and every one is put through
 `assertShape` and the schema.
+
+## Built
+
+- **The contract is the schema, the module and the component.** `public/schema/answer.json` carries the three verdict branches and the two window shapes; `src/lib/answer.ts` carries `formatAnswer`, `verdictOf`, `assertShape`, `orderRule`, `limitsFor`, the window helpers and the seed; `Answer.tsx` renders the four blocks and no branch of it draws a number without its `n`.
+- **The chart layer is visx.** `IntervalDotPlot`, `IntervalBar`, `Histogram`, `BucketColumns` and `TimeControls`, each with the table that feeds it, keyboard focus, a tooltip that repeats the table and table ↔ mark highlighting. `DataTable` gained `activeKey` / `onRowHover` without changing its existing API.
+- **The seed is in the contract** (`thresholds.seed`). Ticket 02 writes it and a reader can reproduce an interval; it was added after the pipeline needed it, and the contract's fixtures and schema followed.
+- **The evidence line was corrected in 03** for a share whose denominator is not its sample: kill participation now reads "part of N team kills over n player-games", not "part of N player-games".
+- 34 vitest cases across the contract, the component and the charts; PR #80.

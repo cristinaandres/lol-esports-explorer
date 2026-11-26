@@ -31,7 +31,6 @@ export function Answer({
   assertShape(record, artifact.family)
 
   const limits = limitsFor(artifact, record)
-  const chip = verdictChip(record.verdict)
 
   return (
     <section
@@ -45,11 +44,7 @@ export function Answer({
         >
           {record.headline.text}
         </p>
-        <span
-          className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-wider uppercase ${chip.className}`}
-        >
-          {chip.label}
-        </span>
+        <VerdictChip verdict={record.verdict} />
       </div>
 
       <dl className="border-line mt-5 grid gap-x-4 gap-y-3 border-t pt-4 sm:grid-cols-[6.5rem_1fr]">
@@ -112,6 +107,18 @@ export function Answer({
 
 const LABEL_CLASS = 'text-fog-600 text-[11px] font-medium tracking-[0.14em] uppercase'
 
+/** The verdict as a labelled chip: colour never carries it alone. */
+export function VerdictChip({ verdict }: { verdict: AnswerRecord['verdict'] }) {
+  const chip = verdictChip(verdict)
+  return (
+    <span
+      className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium tracking-wider uppercase ${chip.className}`}
+    >
+      {chip.label}
+    </span>
+  )
+}
+
 function verdictChip(verdict: AnswerRecord['verdict']): { label: string; className: string } {
   switch (verdict) {
     case 'answered':
@@ -164,7 +171,13 @@ export function evidenceText(artifact: QuestionArtifact, window: Window, record:
   const bits: string[] = [evidence.metric]
 
   if (evidence.part !== null && evidence.denominator !== null) {
-    bits.push(`${count(evidence.part)} of ${count(evidence.denominator)} ${grain}`)
+    const total =
+      evidence.denominator === evidence.n
+        ? `${count(evidence.n)} ${grain}`
+        : `${count(evidence.denominator)} ${
+            evidence.metric === 'kill participation' ? 'team kills' : 'denominator'
+          } over ${count(evidence.n)} ${grain}`
+    bits.push(`${count(evidence.part)} of ${total}`)
   } else if (record.headline.unit === 'count' && record.headline.interval?.method === 'simulation-percentile') {
     bits.push(`${count(evidence.n)} simulations`)
   } else if (record.verdict === 'answered') {

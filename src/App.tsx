@@ -1,6 +1,8 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
 
 import { Layout } from './components/Layout'
+import { Skeleton } from './components/Skeleton'
 import { useDataset } from './lib/data'
 import ChampionDetail from './routes/ChampionDetail'
 import EntityIndex from './routes/EntityIndex'
@@ -18,13 +20,19 @@ import Selection from './routes/Selection'
 import SeriesDetail from './routes/SeriesDetail'
 import TeamDetail from './routes/TeamDetail'
 
+// The Almanac's chart layer is visx; a reader who never opens it should not pay for
+// the code. The routes are split so the main bundle stays the record's bundle.
+const AlmanacEntry = lazy(() => import('./routes/AlmanacEntry'))
+const AlmanacIndex = lazy(() => import('./routes/AlmanacIndex'))
+
 export default function App() {
   const { data } = useDataset()
 
   return (
     <Layout meta={data?.meta ?? null}>
-      <Routes>
-        <Route path="/" element={<Home />} />
+      <Suspense fallback={<Skeleton shape="page" />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
         <Route path="/eras" element={<ErasIndex />} />
         <Route path="/eras/:era" element={<EraDetail />} />
         <Route path="/events" element={<EventsIndex />} />
@@ -38,10 +46,13 @@ export default function App() {
         <Route path="/teams/:team" element={<TeamDetail />} />
         <Route path="/champions" element={<EntityIndex kind="champion" />} />
         <Route path="/champions/:champion" element={<ChampionDetail />} />
-        <Route path="/glossary" element={<Glossary />} />
-        <Route path="/selection" element={<Selection />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="/almanac" element={<AlmanacIndex />} />
+          <Route path="/almanac/:id" element={<AlmanacEntry />} />
+          <Route path="/glossary" element={<Glossary />} />
+          <Route path="/selection" element={<Selection />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Suspense>
     </Layout>
   )
 }

@@ -15,6 +15,7 @@ export function TimeControls({
   top,
   seasons,
   ends,
+  showTop = true,
   onChange,
 }: {
   season: string
@@ -22,6 +23,7 @@ export function TimeControls({
   top: number
   seasons: { value: string; label: string }[]
   ends: End[]
+  showTop?: boolean
   onChange: (patch: { season?: string; end?: End; top?: number }) => void
 }) {
   return (
@@ -43,16 +45,18 @@ export function TimeControls({
           onChange={(value) => onChange({ end: value as End })}
         />
       ) : null}
-      <SelectField
-        label="Ranking"
-        value={String(top)}
-        options={[
-          { value: '5', label: 'Top 5' },
-          { value: '10', label: 'Top 10' },
-          { value: '20', label: 'Top 20' },
-        ]}
-        onChange={(value) => onChange({ top: Number(value) })}
-      />
+      {showTop ? (
+        <SelectField
+          label="Ranking"
+          value={String(top)}
+          options={[
+            { value: '5', label: 'Top 5' },
+            { value: '10', label: 'Top 10' },
+            { value: '20', label: 'Top 20' },
+          ]}
+          onChange={(value) => onChange({ top: Number(value) })}
+        />
+      ) : null}
     </div>
   )
 }
