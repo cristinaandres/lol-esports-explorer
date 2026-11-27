@@ -78,10 +78,17 @@ export function questionHref(id: QuestionId): string {
   return `/almanac/${id}`
 }
 
-/** `?season=2025` is a year; no parameter is the whole corpus. */
+/**
+ * `?season=2025` is a year; no parameter, an empty one or `all` is the whole corpus.
+ *
+ * Anything else is kept as written, so the page can refuse it: a mistyped season must
+ * never quietly become the corpus-wide answer under a link that asked for something
+ * narrower. A whitespace-only value is an empty parameter, not a season.
+ */
 export function parseSeason(value: string | null): string {
-  if (!value || value === 'all') return 'all'
-  return value.trim()
+  const season = (value ?? '').trim()
+  if (!season || season === 'all') return 'all'
+  return season
 }
 
 export function parseTop(value: string | null): Top {

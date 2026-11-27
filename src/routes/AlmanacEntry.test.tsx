@@ -250,6 +250,25 @@ describe('the Almanac entry page', () => {
     expect(html).toContain('Source')
   })
 
+  it('names a share column’s own sample when it is not the row’s', () => {
+    const artifact = read('almanac-champion-kda.json')
+    const html = render(artifact, 'all')
+
+    // Janna's participation is measured on the 140 games that state side kills, not on
+    // her 196 champion-games: the cell says which sample its interval belongs to.
+    expect(html).toContain('78% (70–84%, n=140)')
+    expect(html).toContain('Team kills')
+  })
+
+  it('leaves a measure the window does not state empty, never zero', () => {
+    const artifact = read('almanac-champion-kda.json')
+    const html = render(artifact, '2012')
+
+    // Season 2012 states no side kills: the cells are em dashes, not a share of zero.
+    expect(html).not.toContain('(0–')
+    expect(html).toContain('—')
+  })
+
   it('states the publication rule on the page, not only in the data', () => {
     const artifact = read('almanac-champion-presence.json')
     const html = render(artifact, '2025')
@@ -273,6 +292,8 @@ describe('the Almanac entry page', () => {
 
     expect(html).not.toContain('<select')
     expect(html).toContain('Not verifiable')
+    // The publication rule is about estimates, and this card can never publish one.
+    expect(html).not.toContain('An estimate is published')
   })
 
   it('renders the region verification and no answer number', () => {

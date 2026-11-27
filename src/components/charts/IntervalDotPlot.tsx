@@ -23,7 +23,7 @@ export type DotPoint = {
   part: number | null
   interval: Interval | null
   href?: string
-  components?: Record<string, string | number | null>
+  components?: Record<string, number | null>
 }
 
 const WIDTH = 660

@@ -35,7 +35,7 @@ document.
 |---|---|---|---|---|---|---|
 | 1 | Champions | `champion-presence` | Which champion was present in the most games? | top-1 | pick ∪ ban per game; Wilson | best |
 | 2 | Champions | `champion-win-rate` | Which champion won the most, and the least? | top-1 | picks won / picks; Wilson; `n ≥ 20` picks | best + worst |
-| 3 | Champions | `champion-kda` | Which champion had the best KDA, and the worst? | top-1 | KDA bootstrap; kills, deaths, assists and KP in the table | best + worst |
+| 3 | Champions | `champion-kda` | Which champion had the best KDA, and the worst? | top-1 | KDA bootstrap; kills, deaths, assists, team kills and KP in the table | best + worst |
 | 4 | Champions | `unique-champions` | How many distinct champions will a season hold? | count | seeded Monte Carlo over the format; median + 90% | — |
 | 5 | Champions | `teemo-picked` | Will Teemo be picked? | yes-no | games with Teemo / eligible games; Wilson | — |
 | 6 | Players | `player-kda` | Which player had the best KDA? | top-1 | KDA bootstrap; `n ≥ 20` player-games | best |
@@ -591,6 +591,10 @@ Only what this round does not do, each pointing at where it went:
   the paired table exists; the tooltip is not the only place a value appears.
 - **`src/lib/almanac.ts`** — grouping by class, resolving `season`/`end`/`top`, the
   default window and the canonical URL.
+- **`src/lib/almanacPages.ts`** — the page's per-question recipe: what each census
+  counts, which columns the ranking adds, what a histogram counts. Checked against the
+  committed artifacts, so a card cannot inherit another card's wording, name a component
+  its candidates do not carry, or print a share column without its denominator.
 - **Data tests** — the eighteen ids; every `source.sha256` equals
   `meta.json.source.manifestSha256`; every `insufficient_data` has no interval and its
   census; every `not_verifiable` carries `verification.query`; every record lists its

@@ -27,7 +27,7 @@ function records(artifact: QuestionArtifact): AnswerRecord[] {
   )
 }
 
-function components(record: AnswerRecord): Record<string, string | number | null>[] {
+function components(record: AnswerRecord): Record<string, number | null>[] {
   return (record.candidates ?? []).map((candidate) => candidate.components ?? {})
 }
 
@@ -66,12 +66,14 @@ describe('the page recipe', () => {
       expect(rows.length, card.id).toBeGreaterThan(0)
 
       for (const spec of specs) {
-        const present = rows.filter((row) => row[spec.key] !== undefined)
+        const present = rows.filter((row) => typeof row[spec.key] === 'number')
         expect(present.length, `${card.id}.${spec.key}`).toBeGreaterThan(0)
 
         if (spec.kind === 'count') {
           for (const row of present) {
-            expect(Number.isInteger(row[spec.key]), `${card.id}.${spec.key}`).toBe(true)
+            const count = row[spec.key]
+            if (count === null) continue
+            expect(Number.isInteger(count), `${card.id}.${spec.key}`).toBe(true)
           }
           continue
         }
@@ -90,6 +92,33 @@ describe('the page recipe', () => {
       const specs = PAGE_CONFIG[card.id].columns
       if (!specs.some((spec) => spec.kind === 'share')) continue
       expect(specs.map((spec) => spec.key), card.id).toContain('team_kills')
+    }
+  })
+
+  it('prints a share column only where its value and its bounds agree', () => {
+    for (const card of index.cards) {
+      const specs = PAGE_CONFIG[card.id].columns.filter((spec) => spec.kind === 'share')
+      if (specs.length === 0) continue
+
+      const artifact = read<QuestionArtifact>(card.artifact)
+      for (const record of records(artifact)) {
+        for (const row of components(record)) {
+          for (const spec of specs) {
+            const value = row[spec.key]
+            if (value === null || value === undefined) {
+              expect(row[`${spec.key}_low`], `${card.id}.${spec.key}`).toBeNull()
+              continue
+            }
+            const low = row[`${spec.key}_low`]
+            const high = row[`${spec.key}_high`]
+            expect(low, `${card.id}.${spec.key}_low`).not.toBeNull()
+            expect(high, `${card.id}.${spec.key}_high`).not.toBeNull()
+            expect(low as number).toBeLessThanOrEqual(value)
+            expect(value).toBeLessThanOrEqual(high as number)
+            expect(high as number).toBeLessThanOrEqual(1)
+          }
+        }
+      }
     }
   })
 
