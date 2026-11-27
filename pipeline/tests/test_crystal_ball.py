@@ -190,16 +190,34 @@ def test_the_champion_kda_carries_its_components(con) -> None:
 
     for candidate in best["candidates"]:
         components = candidate["components"]
-        assert set(components) == {"kills", "deaths", "assists", "kp"}
+        assert set(components) == {
+            "kills", "deaths", "assists", "team_kills", "kp", "kp_low", "kp_high"
+        }
         value = (components["kills"] + components["assists"]) / max(1, components["deaths"])
         assert value == pytest.approx(candidate["metric"], rel=1e-9)
-        assert "95% CI" in components["kp"]
+        # The share, its interval and its denominator are numbers the page prints;
+        # a sentence would be formatted here and could not be checked or translated.
+        assert components["kp"] == pytest.approx(
+            (components["kills"] + components["assists"]) / components["team_kills"], rel=1e-9
+        )
+        assert 0.0 <= components["kp_low"] <= components["kp"] <= components["kp_high"] <= 1.0
 
     senna = next(candidate for candidate in best["candidates"] if candidate["name"] == "Senna")
     assert senna["n"] == 21
     assert senna["components"]["kills"] == 79
     assert senna["components"]["deaths"] == 34
     assert senna["components"]["assists"] == 208
+
+
+def test_the_threshold_census_names_the_measure(con) -> None:
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "player-cs-threshold")
+    window = next(window for window in crystal_ball.windows(con) if window.season == 2015)
+    best, _ = crystal_ball.build_window(con, question, window)
+
+    assert best["verdict"] == "insufficient_data"
+    assert best["census"] == [
+        {"name": "player-games with 450 CS", "count": 11, "n": 1200}
+    ]
 
 
 def test_the_unique_simulation_keeps_its_bins(con) -> None:

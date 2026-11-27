@@ -138,7 +138,7 @@
         "upper_bound": { "type": "number" },
         "components": {
           "type": "object",
-          "description": "Question-specific, preformatted columns; the page never computes them.",
+          "description": "Question-specific columns the pipeline measured (counts, and a share with its bounds). The page prints them and never derives one.",
           "additionalProperties": { "type": ["string", "number", "null"] }
         }
       }

@@ -288,6 +288,22 @@ def _bootstrap_interval(low: float, high: float) -> dict:
     return _interval(low, high, "bootstrap-percentile")
 
 
+def _kp_components(part: int, team_kills: int, n: int) -> dict:
+    """The numbers a kill-participation column needs, as numbers.
+
+    The page prints the share and its interval; it never derives one. The denominator
+    travels beside them, because a share without its denominator is the bug this
+    catalogue refuses, and the column used to hide it inside a sentence.
+    """
+    interval = _wilson_share(part, n, team_kills)
+    return {
+        "team_kills": team_kills,
+        "kp": part / team_kills if team_kills else 0.0,
+        "kp_low": interval["low"],
+        "kp_high": interval["high"],
+    }
+
+
 # ---------------------------------------------------------------------------
 # Formatting. The same sentence the browser prints; the reference is
 # src/lib/answer.ts#formatAnswer.
@@ -760,24 +776,17 @@ def build_champion_kda(con: duckdb.DuckDBPyConnection, q: Question, window: Wind
         deaths_sum = int(deaths.sum())
         assists_sum = int(assists.sum())
         team_kills = int(entry["team_kills"])
-        kp_part = kills_sum + assists_sum
-        kp_interval = _wilson_share(kp_part, n, team_kills)
-        kp_value = kp_part / team_kills if team_kills else 0.0
         components = {
             "kills": kills_sum,
             "deaths": deaths_sum,
             "assists": assists_sum,
-            "kp": (
-                f"{_percent_number(kp_value)}% "
-                f"(95% CI: {_percent_number(kp_interval['low'])}–"
-                f"{_percent_number(kp_interval['high'])}%)"
-            ),
+            **_kp_components(kills_sum + assists_sum, team_kills, n),
         }
         candidates.append(
             _ratio_candidate(
                 entry["name"], entry["path"], float(value), n,
                 _bootstrap_interval(low, high),
-                part=kp_part,
+                part=kills_sum + assists_sum,
                 denominator=team_kills,
                 components=components,
             )
@@ -930,24 +939,17 @@ def build_player_kda(con: duckdb.DuckDBPyConnection, q: Question, window: Window
         deaths_sum = int(deaths.sum())
         assists_sum = int(assists.sum())
         team_kills = int(entry["team_kills"])
-        kp_part = kills_sum + assists_sum
-        kp_interval = _wilson_share(kp_part, n, team_kills)
-        kp_value = kp_part / team_kills if team_kills else 0.0
         components = {
             "kills": kills_sum,
             "deaths": deaths_sum,
             "assists": assists_sum,
-            "kp": (
-                f"{_percent_number(kp_value)}% "
-                f"(95% CI: {_percent_number(kp_interval['low'])}–"
-                f"{_percent_number(kp_interval['high'])}%)"
-            ),
+            **_kp_components(kills_sum + assists_sum, team_kills, n),
         }
         candidates.append(
             _ratio_candidate(
                 entry["name"], entry["path"], float(value), n,
                 _bootstrap_interval(low, high),
-                part=kp_part,
+                part=kills_sum + assists_sum,
                 denominator=team_kills,
                 components=components,
             )
@@ -980,7 +982,7 @@ def build_player_kp(con: duckdb.DuckDBPyConnection, q: Question, window: Window)
         if n == 0 or denominator == 0:
             continue
         candidate = _share_candidate(entry["name"], entry["path"], part, n, denominator, "n")
-        candidate["components"] = {"team_kills": int(denominator)}
+        candidate["components"] = _kp_components(int(part), int(denominator), n)
         candidates.append(candidate)
     return _record_answer(q, window, candidates, "best"), None
 
@@ -1034,7 +1036,7 @@ def build_threshold(
         count = sum(1 for value in values if value >= low and (high is None or value < high))
         bins.append({"key": label, "label": label, "count": count})
 
-    record = _record_share(q, window, row["part"], row["n"], q.question)
+    record = _record_share(q, window, row["part"], row["n"], q.metric)
     record["bins"] = bins
     record["marker"] = marker
     return record, None

@@ -145,6 +145,13 @@ the card, not the navigation. Every card opens one page: the `Answer` (headline 
 number, interval and `n`; evidence; visible limits; source with the pin's checksum),
 then a table and an interactive chart for the reader to draw their own conclusion.
 
+The `Answer` is one click away and always in the page: a labelled button opens the
+block, which carries the number, its interval and its `n`, the evidence, the limits
+and the source, and the page below it keeps the table and the chart. What each
+question's page says about itself — what its census counts, which columns the
+ranking adds, what its histogram counts — is one table, one row per question
+(`src/lib/almanacPages.ts`); the route holds no per-question exception.
+
 The window is a **season**, derived from Worlds: season N runs from the day after
 Worlds N−1 final to Worlds N final. The page offers "all games" and the sixteen
 seasons; `?end=worst` opens the other end of a two-ended card and `?top=10` widens the

@@ -53,7 +53,10 @@ describe('the URL', () => {
     expect(parseSeason('2025')).toBe('2025')
     expect(parseSeason('all')).toBe('all')
     expect(parseSeason(null)).toBe('all')
-    expect(parseSeason('nope')).toBe('all')
+    // A season the page does not carry is kept as written, so the page refuses it
+    // instead of quietly answering for the whole corpus under a narrower link.
+    expect(parseSeason('25')).toBe('25')
+    expect(parseSeason('nope')).toBe('nope')
     expect(parseTop('10')).toBe(10)
     expect(parseTop('20')).toBe(20)
     expect(parseTop('7')).toBe(5)

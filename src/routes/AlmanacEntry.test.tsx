@@ -78,6 +78,7 @@ describe('the Almanac entry page', () => {
     expect(html).toContain('Deaths')
     expect(html).toContain('Assists')
     expect(html).toContain('Kill participation')
+    expect(html).toContain('Team kills')
     expect(html).toContain('Senna')
     expect(html).toContain('208')
   })
@@ -136,7 +137,7 @@ describe('the Almanac entry page', () => {
     expect(html).toContain('Wins')
     expect(html).toContain(record.candidates![0].name)
     expect(html).toContain(count(Number(record.candidates![0].components!.wins)))
-    expect(html).toContain('Census')
+    expect(html).toContain('Teams under 20 team-games')
     expect(html).toContain(record.census![0].name)
   })
 
@@ -197,7 +198,7 @@ describe('the Almanac entry page', () => {
     expect(html).toContain('Insufficient data')
     expect(html).toContain('Finals MVP')
     expect(html).toContain('Mid')
-    expect(html).toContain('Census')
+    expect(html).toContain('Finals MVP awards by role')
     expect(html).toContain('The census by group')
     expect(html).toContain('awards')
     expect(html).not.toContain('95% CI')
@@ -220,7 +221,7 @@ describe('the Almanac entry page', () => {
     const record = artifact.windows.find((item) => item.key === 'season:2025')!.records.best!
     const html = render(artifact, '2025')
 
-    expect(html).toContain('Census')
+    expect(html).toContain('Champions under 20 picks')
     expect(html).toContain(record.census![0].name)
     expect(html).toContain(`${record.census![0].count} of ${record.census![0].n}`)
   })
@@ -231,9 +232,47 @@ describe('the Almanac entry page', () => {
 
     expect(html).toContain('Insufficient data')
     expect(html).toContain('4 of 3,091 games with Teemo')
-    expect(html).toContain('Census')
+    expect(html).toContain('Presences of Teemo')
     expect(html).toContain('Teemo')
     expect(html).not.toContain('95% CI')
+  })
+
+  it('keeps the answer behind one visible button, with its text still in the page', () => {
+    const artifact = read('almanac-champion-presence.json')
+    const html = render(artifact, '2025')
+
+    expect(html).toContain('Show the answer')
+    expect(html).toContain('aria-expanded="false"')
+    // The number, the evidence, the limits and the source are in the DOM together: the
+    // click reveals them, it never fetches or derives them.
+    expect(html).toContain('64% (95% CI: 57–70%, n=232)')
+    expect(html).toContain('Limits')
+    expect(html).toContain('Source')
+  })
+
+  it('states the publication rule on the page, not only in the data', () => {
+    const artifact = read('almanac-champion-presence.json')
+    const html = render(artifact, '2025')
+
+    expect(html).toContain('An estimate is published from 20 games up')
+  })
+
+  it('refuses a season it cannot read instead of answering for the whole corpus', () => {
+    const artifact = read('almanac-champion-presence.json')
+    const html = render(artifact, '25')
+
+    expect(html).toContain('Season 25 is not published')
+    // The page names the seasons it does carry, rather than leaving the reader to guess.
+    expect(html).toContain('It carries Season 2011 to Season 2026, and all games.')
+    expect(html).not.toContain('64% (95% CI: 57–70%, n=232)')
+  })
+
+  it('offers no control when the card has nothing to change', () => {
+    const region = read('almanac-region-knockouts.json')
+    const html = render(region, 'all')
+
+    expect(html).not.toContain('<select')
+    expect(html).toContain('Not verifiable')
   })
 
   it('renders the region verification and no answer number', () => {
