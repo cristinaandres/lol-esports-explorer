@@ -279,17 +279,21 @@ export function AlmanacEntryView({
               {answerOpen ? 'Hide the answer' : 'Show the answer'}
             </span>
             <span className="text-fog-500 text-xs">
-              The number, its interval and its sample; the evidence, the limits and the source.
+              {record.verdict === 'not_verifiable'
+                ? 'Why this cannot be answered, the query that shows it, and what would unblock it.'
+                : 'The number, its interval and its sample; the evidence, the limits and the source.'}
             </span>
           </span>
           <span aria-hidden="true" className="text-fog-600 font-mono text-sm">
             {answerOpen ? '−' : '+'}
           </span>
         </button>
-        <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">
-          An estimate is published from {artifact.thresholds.min_n} games up; below that the
-          counts stay visible as a census.
-        </p>
+        {record.verdict === 'not_verifiable' ? null : (
+          <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">
+            An estimate is published from {artifact.thresholds.min_n} games up; below that the
+            answer keeps the counts as a census.
+          </p>
+        )}
         <div id={answerId} hidden={!answerOpen} className="mt-4">
           <Answer
             artifact={artifact}
@@ -344,22 +348,29 @@ function columnsFor(specs: ColumnSpec[]): Column<DotPoint>[] {
     key: spec.key,
     label: spec.label,
     align: 'right',
-    render: (point) => componentText(point.components, spec),
+    render: (point) => componentText(point, spec),
   }))
 }
 
-function componentText(
-  components: DotPoint['components'],
-  spec: ColumnSpec,
-): string {
-  const value = components?.[spec.key]
+/**
+ * One cell of the ranking table.
+ *
+ * A count prints as a count. A share prints its interval beside it, and names its own
+ * sample when that sample is not the row's: kill participation is measured on the
+ * games that state side kills, which can be fewer than the champion's games. A
+ * component the record does not carry is an em dash — absence is never a zero, and a
+ * share is never printed without the interval that qualifies it.
+ */
+function componentText(point: DotPoint, spec: ColumnSpec): string {
+  const value = point.components?.[spec.key]
   if (value === null || value === undefined) return '—'
-  if (spec.kind === 'count') return count(Number(value))
+  if (spec.kind === 'count') return count(value)
 
-  const low = components?.[`${spec.key}_low`]
-  const high = components?.[`${spec.key}_high`]
-  if (low === null || low === undefined || high === null || high === undefined) {
-    return percentOf(Number(value))
-  }
-  return `${percentOf(Number(value))} (${percentNumber(Number(low))}–${percentNumber(Number(high))}%)`
+  const low = point.components?.[`${spec.key}_low`]
+  const high = point.components?.[`${spec.key}_high`]
+  if (low === null || low === undefined || high === null || high === undefined) return '—'
+
+  const sample = point.components?.[`${spec.key}_n`]
+  const own = sample === null || sample === undefined || sample === point.n ? '' : `, n=${count(sample)}`
+  return `${percentOf(value)} (${percentNumber(low)}–${percentNumber(high)}%${own})`
 }

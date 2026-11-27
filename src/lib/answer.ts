@@ -87,7 +87,7 @@ export type Candidate = {
    * team kills, and the kill-participation share with its bounds). Numbers, so the page
    * prints them and never derives one; a share travels with its interval beside it.
    */
-  components?: Record<string, string | number | null>
+  components?: Record<string, number | null>
 }
 
 export type CensusRow = {

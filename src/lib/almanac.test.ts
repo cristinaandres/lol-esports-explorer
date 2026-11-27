@@ -57,6 +57,8 @@ describe('the URL', () => {
     // instead of quietly answering for the whole corpus under a narrower link.
     expect(parseSeason('25')).toBe('25')
     expect(parseSeason('nope')).toBe('nope')
+    // A whitespace-only value is an empty parameter, not a season called " ".
+    expect(parseSeason(' ')).toBe('all')
     expect(parseTop('10')).toBe(10)
     expect(parseTop('20')).toBe(20)
     expect(parseTop('7')).toBe(5)

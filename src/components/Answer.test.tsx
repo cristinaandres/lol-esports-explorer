@@ -7,7 +7,7 @@ import { championKda, championWinRate, presence, regions, teemo } from '../lib/a
 describe('the Answer block', () => {
   it('renders the four blocks together, with the limits in the DOM', () => {
     const window = presence.windows[1]
-    const html = renderToStaticMarkup(<Answer artifact={presence} window={window} end={null} />)
+    const html = renderToStaticMarkup(<Answer artifact={presence} window={window} end={null} censusTitle="Champions under 20 presences" />)
 
     expect(html).toContain('64% (95% CI: 57–70%, n=232)')
     expect(html).toContain('148 of 232 games')
@@ -29,7 +29,7 @@ describe('the Answer block', () => {
 
   it('keeps the champion KDA’s components and its method visible', () => {
     const window = championKda.windows[0]
-    const html = renderToStaticMarkup(<Answer artifact={championKda} window={window} end={null} />)
+    const html = renderToStaticMarkup(<Answer artifact={championKda} window={window} end={null} censusTitle="Champions under 20 champion-games" />)
 
     expect(html).toContain('8.44 (95% CI: 5.25–14.95, n=21)')
     expect(html).toContain('bootstrap 95%')
@@ -39,7 +39,12 @@ describe('the Answer block', () => {
 
   it('renders the other end of a two-ended card', () => {
     const html = renderToStaticMarkup(
-      <Answer artifact={championWinRate} window={championWinRate.windows[0]} end="worst" />,
+      <Answer
+        artifact={championWinRate}
+        window={championWinRate.windows[0]}
+        end="worst"
+        censusTitle="Champions under 20 picks"
+      />,
     )
     expect(html).toContain('33% (95% CI: 22–46%, n=61)')
     expect(html).toContain('Answered')
@@ -47,18 +52,18 @@ describe('the Answer block', () => {
 
   it('renders insufficient data with its census and without an interval', () => {
     const html = renderToStaticMarkup(
-      <Answer artifact={teemo} window={teemo.windows[0]} end={null} />,
+      <Answer artifact={teemo} window={teemo.windows[0]} end={null} censusTitle="Presences of Teemo" />,
     )
     expect(html).toContain('Insufficient data')
     expect(html).toContain('4 of 3,091 games')
-    expect(html).toContain('Census')
+    expect(html).toContain('Presences of Teemo')
     expect(html).toContain('Teemo')
     expect(html).not.toContain('95% CI')
   })
 
   it('renders the verification query and the unblocking decision, and no answer', () => {
     const html = renderToStaticMarkup(
-      <Answer artifact={regions} window={regions.windows[0]} end={null} />,
+      <Answer artifact={regions} window={regions.windows[0]} end={null} censusTitle="Regions in knockouts" />,
     )
     expect(html).toContain('Not verifiable')
     expect(html).toContain('select count(distinct tab)')
@@ -68,7 +73,12 @@ describe('the Answer block', () => {
   })
 
   it('renders nothing for an end the card does not publish', () => {
-    const html = renderToStaticMarkup(<Answer artifact={presence} window={presence.windows[1]} end="worst" />)
+    const html = renderToStaticMarkup(<Answer
+        artifact={presence}
+        window={presence.windows[1]}
+        end="worst"
+        censusTitle="Champions under 20 presences"
+      />)
     expect(html).toBe('')
   })
 })

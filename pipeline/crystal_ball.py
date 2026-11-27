@@ -292,15 +292,24 @@ def _kp_components(part: int, team_kills: int, n: int) -> dict:
     """The numbers a kill-participation column needs, as numbers.
 
     The page prints the share and its interval; it never derives one. The denominator
-    travels beside them, because a share without its denominator is the bug this
-    catalogue refuses, and the column used to hide it inside a sentence.
+    and the sample travel beside them, because a share without its denominator is the
+    bug this catalogue refuses.
+
+    Kill participation is ``(kills + assists) / team kills`` over the games that state
+    side kills, as metric-definitions.md defines it. The caller therefore passes a
+    numerator, a denominator and an ``n`` restricted to those games; a window that
+    states none answers with no share at all rather than a zero, because a measure the
+    model does not carry is absent, not zero.
     """
+    if n == 0 or team_kills == 0:
+        return {"team_kills": None, "kp": None, "kp_low": None, "kp_high": None, "kp_n": 0}
     interval = _wilson_share(part, n, team_kills)
     return {
         "team_kills": team_kills,
-        "kp": part / team_kills if team_kills else 0.0,
+        "kp": part / team_kills,
         "kp_low": interval["low"],
         "kp_high": interval["high"],
+        "kp_n": n,
     }
 
 
@@ -753,13 +762,18 @@ def build_champion_kda(con: duckdb.DuckDBPyConnection, q: Question, window: Wind
                 "k": [],
                 "d": [],
                 "a": [],
-                "team_kills": 0,
+                "kp_part": 0,
+                "kp_denominator": 0,
+                "kp_n": 0,
             },
         )
         entry["k"].append(row["kills"])
         entry["d"].append(row["deaths"])
         entry["a"].append(row["assists"])
-        entry["team_kills"] += row["team_kills"] or 0
+        if row["team_kills"] is not None:
+            entry["kp_part"] += row["kills"] + row["assists"]
+            entry["kp_denominator"] += row["team_kills"]
+            entry["kp_n"] += 1
 
     candidates = []
     for key in sorted(grouped):
@@ -775,19 +789,18 @@ def build_champion_kda(con: duckdb.DuckDBPyConnection, q: Question, window: Wind
         kills_sum = int(kills.sum())
         deaths_sum = int(deaths.sum())
         assists_sum = int(assists.sum())
-        team_kills = int(entry["team_kills"])
         components = {
             "kills": kills_sum,
             "deaths": deaths_sum,
             "assists": assists_sum,
-            **_kp_components(kills_sum + assists_sum, team_kills, n),
+            **_kp_components(entry["kp_part"], entry["kp_denominator"], entry["kp_n"]),
         }
         candidates.append(
             _ratio_candidate(
                 entry["name"], entry["path"], float(value), n,
                 _bootstrap_interval(low, high),
-                part=kills_sum + assists_sum,
-                denominator=team_kills,
+                part=entry["kp_part"] if entry["kp_n"] else None,
+                denominator=entry["kp_denominator"] or None,
                 components=components,
             )
         )
@@ -938,19 +951,18 @@ def build_player_kda(con: duckdb.DuckDBPyConnection, q: Question, window: Window
         kills_sum = int(kills.sum())
         deaths_sum = int(deaths.sum())
         assists_sum = int(assists.sum())
-        team_kills = int(entry["team_kills"])
         components = {
             "kills": kills_sum,
             "deaths": deaths_sum,
             "assists": assists_sum,
-            **_kp_components(kills_sum + assists_sum, team_kills, n),
+            **_kp_components(entry["kp_part"], entry["kp_denominator"], entry["kp_n"]),
         }
         candidates.append(
             _ratio_candidate(
                 entry["name"], entry["path"], float(value), n,
                 _bootstrap_interval(low, high),
-                part=kills_sum + assists_sum,
-                denominator=team_kills,
+                part=entry["kp_part"] if entry["kp_n"] else None,
+                denominator=entry["kp_denominator"] or None,
                 components=components,
             )
         )

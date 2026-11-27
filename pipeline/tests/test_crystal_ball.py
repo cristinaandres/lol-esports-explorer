@@ -191,22 +191,46 @@ def test_the_champion_kda_carries_its_components(con) -> None:
     for candidate in best["candidates"]:
         components = candidate["components"]
         assert set(components) == {
-            "kills", "deaths", "assists", "team_kills", "kp", "kp_low", "kp_high"
+            "kills", "deaths", "assists", "team_kills", "kp", "kp_low", "kp_high", "kp_n"
         }
         value = (components["kills"] + components["assists"]) / max(1, components["deaths"])
         assert value == pytest.approx(candidate["metric"], rel=1e-9)
-        # The share, its interval and its denominator are numbers the page prints;
-        # a sentence would be formatted here and could not be checked or translated.
-        assert components["kp"] == pytest.approx(
-            (components["kills"] + components["assists"]) / components["team_kills"], rel=1e-9
-        )
+        # The share, its interval, its denominator and its sample are numbers the page
+        # prints; a sentence would be formatted here and could not be checked.
         assert 0.0 <= components["kp_low"] <= components["kp"] <= components["kp_high"] <= 1.0
+        assert 0 < components["kp_n"] <= candidate["n"]
 
     senna = next(candidate for candidate in best["candidates"] if candidate["name"] == "Senna")
     assert senna["n"] == 21
     assert senna["components"]["kills"] == 79
     assert senna["components"]["deaths"] == 34
     assert senna["components"]["assists"] == 208
+
+
+def test_kill_participation_is_measured_on_the_games_that_state_it(con) -> None:
+    """The numerator, the denominator and the sample are the same games.
+
+    Side kills are stated on 5,624 of 6,182 rows, so summing the numerator over every
+    row against a denominator over the stated ones once published shares above 100%
+    (Janna, 111% at the pin) and a fabricated 0% in the seasons that state none.
+    """
+    question = next(q for q in crystal_ball.QUESTIONS if q.id == "champion-kda")
+    windows = {window.key: window for window in crystal_ball.windows(con)}
+
+    best, _ = crystal_ball.build_window(con, question, windows["all"])
+    for candidate in best["candidates"]:
+        components = candidate["components"]
+        if components["kp"] is None:
+            assert components["team_kills"] is None
+            assert components["kp_n"] == 0
+            continue
+        assert 0.0 <= components["kp"] <= 1.0
+        assert components["kp_n"] <= candidate["n"]
+
+    # Season 2012 states no side kills at all: the card carries no share rather than 0%.
+    early, _ = crystal_ball.build_window(con, question, windows["season:2012"])
+    assert early["candidates"]
+    assert all(candidate["components"]["kp"] is None for candidate in early["candidates"])
 
 
 def test_the_threshold_census_names_the_measure(con) -> None:

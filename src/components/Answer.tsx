@@ -18,13 +18,13 @@ export function Answer({
   artifact,
   window,
   end,
-  censusTitle = 'Census',
+  censusTitle,
 }: {
   artifact: QuestionArtifact
   window: Window
   end: End | null
   /** What the census counts, in the words the page's recipe chose. */
-  censusTitle?: string
+  censusTitle: string
 }) {
   const record = end === 'worst' ? window.records.worst : window.records.best
   if (!record) return null
