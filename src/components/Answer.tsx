@@ -18,10 +18,13 @@ export function Answer({
   artifact,
   window,
   end,
+  censusTitle = 'Census',
 }: {
   artifact: QuestionArtifact
   window: Window
   end: End | null
+  /** What the census counts, in the words the page's recipe chose. */
+  censusTitle?: string
 }) {
   const record = end === 'worst' ? window.records.worst : window.records.best
   if (!record) return null
@@ -73,7 +76,7 @@ export function Answer({
 
       {record.census ? (
         <div className="border-line mt-5 border-t pt-4">
-          <p className={LABEL_CLASS}>Census</p>
+          <p className={LABEL_CLASS}>{censusTitle}</p>
           <ul className="text-fog-300 mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm tabular-nums">
             {record.census.map((row) => (
               <li key={row.name}>

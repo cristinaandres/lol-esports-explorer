@@ -1,3 +1,4 @@
+import { useId, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 
 import { Answer } from '../components/Answer'
@@ -9,6 +10,8 @@ import { PageHeader } from '../components/PageHeader'
 import { Skeleton } from '../components/Skeleton'
 import { Stat, StatRow } from '../components/Stat'
 import type { Column } from '../components/DataTable'
+import { pageConfig } from '../lib/almanacPages'
+import type { ColumnSpec } from '../lib/almanacPages'
 import {
   candidateSlice,
   classLabel,
@@ -24,7 +27,7 @@ import {
   updateParams,
   windowFor,
 } from '../lib/almanac'
-import { orderRule, recordFor, seasonOptions, windowByKey, windowLabel } from '../lib/answer'
+import { orderRule, percentNumber, percentOf, recordFor, seasonOptions, windowByKey, windowLabel } from '../lib/answer'
 import type { End, QuestionArtifact, QuestionId, Unit } from '../lib/answer'
 import { useQuestion } from '../lib/data'
 import { count, dayMonthYear, stripDateSuffix } from '../lib/format'
@@ -78,12 +81,20 @@ export function AlmanacEntryView({
   const worst = hasWorst(artifact)
   const effectiveEnd: End | null = worst ? end : null
   const window = windowFor(artifact, season)
+  const config = pageConfig(artifact.id)
+  const seasons = seasonOptions(artifact)
+  const controlRow = seasons.length > 0 || worst || artifact.family === 'top-1'
+  const carried = seasons.length
+    ? `It carries ${seasons[seasons.length - 1].label} to ${seasons[0].label}, and all games.`
+    : 'It carries all games only.'
+  const [answerOpen, setAnswerOpen] = useState(false)
+  const answerId = useId()
   const controls = (value: string) => (
     <TimeControls
       season={value}
       end={effectiveEnd}
       top={top}
-      seasons={seasonOptions(artifact)}
+      seasons={seasons}
       ends={worst ? ['best', 'worst'] : ['best']}
       showTop={artifact.family === 'top-1'}
       onChange={onChange}
@@ -104,11 +115,11 @@ export function AlmanacEntryView({
     return (
       <>
         {header}
-        <div className="mb-8">{controls('all')}</div>
+        {controlRow ? <div className="mb-8">{controls('all')}</div> : null}
         <p className="border-line bg-ink-900 text-fog-300 rounded-xl border p-4 text-sm leading-relaxed">
           {season === 'all'
             ? 'This question has no all-games window.'
-            : `Season ${season} is not published for this question.`}{' '}
+            : `Season ${season} is not published for this question. ${carried}`}{' '}
           <Link className="text-gold" to={`/almanac/${artifact.id}`}>
             Open all games
           </Link>
@@ -123,7 +134,7 @@ export function AlmanacEntryView({
     return (
       <>
         {header}
-        <div className="mb-8">{controls(season)}</div>
+        {controlRow ? <div className="mb-8">{controls(season)}</div> : null}
         <p className="border-line bg-ink-900 text-fog-300 rounded-xl border p-4 text-sm leading-relaxed">
           This window has no record for that end.
         </p>
@@ -153,84 +164,7 @@ export function AlmanacEntryView({
     points.flatMap((point) => [point.low, point.high]),
     unit,
   )
-  const kdaColumns: Column<DotPoint>[] = [
-    {
-      key: 'kills',
-      label: 'Kills',
-      align: 'right',
-      render: (point) =>
-        point.components?.kills === null || point.components?.kills === undefined
-          ? '—'
-          : count(Number(point.components.kills)),
-    },
-    {
-      key: 'deaths',
-      label: 'Deaths',
-      align: 'right',
-      render: (point) =>
-        point.components?.deaths === null || point.components?.deaths === undefined
-          ? '—'
-          : count(Number(point.components.deaths)),
-    },
-    {
-      key: 'assists',
-      label: 'Assists',
-      align: 'right',
-      render: (point) =>
-        point.components?.assists === null || point.components?.assists === undefined
-          ? '—'
-          : count(Number(point.components.assists)),
-    },
-    {
-      key: 'kp',
-      label: 'Kill participation',
-      align: 'right',
-      render: (point) => (point.components?.kp ? String(point.components.kp) : '—'),
-    },
-  ]
-  const killsColumns: Column<DotPoint>[] = [
-    {
-      key: 'kills',
-      label: 'Kills',
-      align: 'right',
-      render: (point) =>
-        point.components?.kills === null || point.components?.kills === undefined
-          ? '—'
-          : count(Number(point.components.kills)),
-    },
-  ]
-  const teamKillsColumns: Column<DotPoint>[] = [
-    {
-      key: 'team_kills',
-      label: 'Team kills',
-      align: 'right',
-      render: (point) =>
-        point.components?.team_kills === null || point.components?.team_kills === undefined
-          ? '—'
-          : count(Number(point.components.team_kills)),
-    },
-  ]
-  const winsColumns: Column<DotPoint>[] = [
-    {
-      key: 'wins',
-      label: 'Wins',
-      align: 'right',
-      render: (point) =>
-        point.components?.wins === null || point.components?.wins === undefined
-          ? '—'
-          : count(Number(point.components.wins)),
-    },
-  ]
-  const extraColumns =
-    artifact.id === 'champion-kda' || artifact.id === 'player-kda'
-      ? kdaColumns
-      : artifact.id === 'player-kills'
-        ? killsColumns
-        : artifact.id === 'player-kill-participation'
-          ? teamKillsColumns
-          : artifact.id === 'team-win-rate'
-            ? winsColumns
-            : undefined
+  const extraColumns = columnsFor(config.columns)
   const seriesPoints: BucketPoint[] = artifact.series.map((point) => ({
     key: point.label,
     label: point.label,
@@ -288,26 +222,16 @@ export function AlmanacEntryView({
   const binsChart =
     record.bins && record.bins.length > 0 ? (
       <Histogram
-        title={artifact.id === 'unique-champions' ? 'The simulation' : 'The distribution'}
+        title={config.histogram?.title ?? 'The distribution'}
         caption={
-          artifact.id === 'unique-champions'
-            ? `${count(binTotal)} simulated seasons; the answer above is the median and the 90% interval.`
-            : artifact.id === 'game-length-32'
-              ? `${count(binTotal)} games with a stated duration; the line marks 32:00, and the share counts games at or under it.`
-              : artifact.id === 'shortest-game'
-                ? `${count(binTotal)} games with a stated duration; the line marks the shortest decile.`
-                : `${count(binTotal)} player-games in this window; the line marks ${record.marker?.label ?? 'the threshold'}.`
+          config.histogram
+            ? config.histogram.caption(binTotal, record.marker?.label ?? 'the threshold')
+            : `${count(binTotal)} rows in this window; the line marks ${record.marker?.label ?? 'the threshold'}.`
         }
         bins={record.bins.map((bin) => ({ key: bin.key, label: bin.label, count: bin.count }))}
         total={binTotal}
         marker={record.marker ?? null}
-        unitLabel={
-          artifact.id === 'unique-champions'
-            ? 'simulations'
-            : artifact.id === 'game-length-32' || artifact.id === 'shortest-game'
-              ? 'games'
-              : 'player-games'
-        }
+        unitLabel={config.histogram?.unit ?? 'rows'}
       />
     ) : null
 
@@ -332,7 +256,7 @@ export function AlmanacEntryView({
   return (
     <>
       {header}
-      <div className="mb-8">{controls(season)}</div>
+      {controlRow ? <div className="mb-8">{controls(season)}</div> : null}
 
       <StatRow>
         <Stat label="Season" value={window.season === null ? 'All games' : String(window.season)} />
@@ -343,7 +267,37 @@ export function AlmanacEntryView({
       </StatRow>
 
       <div className="mt-8">
-        <Answer artifact={artifact} window={window} end={effectiveEnd} />
+        <button
+          type="button"
+          aria-expanded={answerOpen}
+          aria-controls={answerId}
+          onClick={() => setAnswerOpen((open) => !open)}
+          className="border-line bg-ink-900 hover:border-line-bright hover:bg-ink-850 flex w-full items-center justify-between gap-4 rounded-xl border p-4 text-left transition-colors"
+        >
+          <span className="flex flex-col gap-1">
+            <span className="text-fog-100 text-sm font-semibold tracking-tight">
+              {answerOpen ? 'Hide the answer' : 'Show the answer'}
+            </span>
+            <span className="text-fog-500 text-xs">
+              The number, its interval and its sample; the evidence, the limits and the source.
+            </span>
+          </span>
+          <span aria-hidden="true" className="text-fog-600 font-mono text-sm">
+            {answerOpen ? '−' : '+'}
+          </span>
+        </button>
+        <p className="text-fog-600 mt-3 max-w-3xl text-xs leading-relaxed">
+          An estimate is published from {artifact.thresholds.min_n} games up; below that the
+          counts stay visible as a census.
+        </p>
+        <div id={answerId} hidden={!answerOpen} className="mt-4">
+          <Answer
+            artifact={artifact}
+            window={window}
+            end={effectiveEnd}
+            censusTitle={config.census}
+          />
+        </div>
       </div>
 
       {artifact.family === 'top-1' ? (
@@ -376,4 +330,36 @@ export function AlmanacEntryView({
       </p>
     </>
   )
+}
+
+/**
+ * The recipe's columns, as the table wants them.
+ *
+ * Every column prints the pipeline's numbers and nothing else: a count as a count, a
+ * share with its interval beside it and never on its own. A component the record does
+ * not carry is an em dash, because this site prints absence as absence, not as zero.
+ */
+function columnsFor(specs: ColumnSpec[]): Column<DotPoint>[] {
+  return specs.map((spec) => ({
+    key: spec.key,
+    label: spec.label,
+    align: 'right',
+    render: (point) => componentText(point.components, spec),
+  }))
+}
+
+function componentText(
+  components: DotPoint['components'],
+  spec: ColumnSpec,
+): string {
+  const value = components?.[spec.key]
+  if (value === null || value === undefined) return '—'
+  if (spec.kind === 'count') return count(Number(value))
+
+  const low = components?.[`${spec.key}_low`]
+  const high = components?.[`${spec.key}_high`]
+  if (low === null || low === undefined || high === null || high === undefined) {
+    return percentOf(Number(value))
+  }
+  return `${percentOf(Number(value))} (${percentNumber(Number(low))}–${percentNumber(Number(high))}%)`
 }

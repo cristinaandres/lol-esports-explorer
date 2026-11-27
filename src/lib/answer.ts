@@ -82,7 +82,11 @@ export type Candidate = {
   interval: Interval | null
   lower_bound: number
   upper_bound: number
-  /** Question-specific columns the pipeline preformatted (KDA's kills, deaths, assists, KP). */
+  /**
+   * Question-specific columns the pipeline measured (KDA's kills, deaths, assists,
+   * team kills, and the kill-participation share with its bounds). Numbers, so the page
+   * prints them and never derives one; a share travels with its interval beside it.
+   */
   components?: Record<string, string | number | null>
 }
 

@@ -81,7 +81,7 @@ export function questionHref(id: QuestionId): string {
 /** `?season=2025` is a year; no parameter is the whole corpus. */
 export function parseSeason(value: string | null): string {
   if (!value || value === 'all') return 'all'
-  return /^\d{4}$/.test(value) ? value : 'all'
+  return value.trim()
 }
 
 export function parseTop(value: string | null): Top {
